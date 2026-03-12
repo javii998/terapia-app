@@ -1525,6 +1525,12 @@
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
                         <span style="font-size:1.4em;">⚡</span>
                         <h3 style="color:#667eea;margin:0;">Descarga directa</h3>
+                        <div id="rcMixedContentWarn" style="display:none;background:#fff3cd;border-left:4px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:.9em;">
+                        ⚠️ <strong>Estás usando la app desde internet (github.io).</strong><br>
+                        Para descargar recursos necesitas abrir la app desde el servidor local:<br>
+                        <code style="background:#f8f9fa;padding:2px 6px;border-radius:4px;">http://localhost:7734</code>
+                        &nbsp;(ejecuta <strong>iniciar.bat</strong> primero)
+                    </div>
                         <span id="rcServerBadge" style="margin-left:auto;padding:4px 12px;border-radius:20px;font-size:.8em;font-weight:600;background:#e0e0e0;color:#666;">Comprobando servidor…</span>
                         <span id="ghSyncBadge" onclick="ghPush()" title="Clic para sincronizar ahora" style="margin-left:8px;padding:4px 12px;border-radius:20px;font-size:.8em;font-weight:600;background:#e0e0e0;color:#666;cursor:pointer;">☁️ Conectando GitHub…</span>
                     </div>
@@ -4760,15 +4766,15 @@
                 </div>
 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-                    <div style="background:white;border:2px solid #e0e0e0;border-radius:12px;padding:16px;">
-                        <h4 style="margin-bottom:12px;">✋ Mano dominante</h4>
-                        <div class="form-group"><label>Ensayo 1 (segundos)</label><input type="number" id="nhptD1" min="0" max="600" step="0.1" placeholder="Ej: 18.5" style="margin:0;"></div>
-                        <div class="form-group" style="margin-bottom:0;"><label>Ensayo 2 (segundos)</label><input type="number" id="nhptD2" min="0" max="600" step="0.1" placeholder="Ej: 17.8" style="margin:0;"></div>
+                    <div style="background:white;border:2px solid #667eea;border-radius:12px;padding:16px;">
+                        <h4 style="color:#667eea;margin-bottom:12px;">✋ Mano derecha</h4>
+                        <div class="form-group"><label>Prueba (ensayo de práctica, segundos)</label><input type="number" id="nhptDP" min="0" max="600" step="0.1" placeholder="Ej: 20.0" style="margin:0;"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label>Real (ensayo registrado, segundos)</label><input type="number" id="nhptDR" min="0" max="600" step="0.1" placeholder="Ej: 17.8" style="margin:0;"></div>
                     </div>
-                    <div style="background:white;border:2px solid #e0e0e0;border-radius:12px;padding:16px;">
-                        <h4 style="margin-bottom:12px;">🤚 Mano no dominante</h4>
-                        <div class="form-group"><label>Ensayo 1 (segundos)</label><input type="number" id="nhptND1" min="0" max="600" step="0.1" placeholder="Ej: 20.1" style="margin:0;"></div>
-                        <div class="form-group" style="margin-bottom:0;"><label>Ensayo 2 (segundos)</label><input type="number" id="nhptND2" min="0" max="600" step="0.1" placeholder="Ej: 19.6" style="margin:0;"></div>
+                    <div style="background:white;border:2px solid #764ba2;border-radius:12px;padding:16px;">
+                        <h4 style="color:#764ba2;margin-bottom:12px;">🤚 Mano izquierda</h4>
+                        <div class="form-group"><label>Prueba (ensayo de práctica, segundos)</label><input type="number" id="nhptIP" min="0" max="600" step="0.1" placeholder="Ej: 22.0" style="margin:0;"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label>Real (ensayo registrado, segundos)</label><input type="number" id="nhptIR" min="0" max="600" step="0.1" placeholder="Ej: 19.6" style="margin:0;"></div>
                     </div>
                 </div>
 
@@ -4786,39 +4792,51 @@
         function nhptCalcular() {
             const sexo   = document.getElementById('nhptSexo').value;
             const edad   = parseInt(document.getElementById('nhptEdad').value);
-            const d1     = parseFloat(document.getElementById('nhptD1').value);
-            const d2     = parseFloat(document.getElementById('nhptD2').value);
-            const nd1    = parseFloat(document.getElementById('nhptND1').value);
-            const nd2    = parseFloat(document.getElementById('nhptND2').value);
+            const dp     = parseFloat(document.getElementById('nhptDP').value);  // derecha prueba
+            const dr     = parseFloat(document.getElementById('nhptDR').value);  // derecha real
+            const ip     = parseFloat(document.getElementById('nhptIP').value);  // izquierda prueba
+            const ir     = parseFloat(document.getElementById('nhptIR').value);  // izquierda real
             const lat    = document.getElementById('nhptLateralidad').value;
             const obs    = document.getElementById('nhptObs').value.trim();
 
             if (!sexo)                { alert('Selecciona el sexo del paciente.'); return; }
             if (isNaN(edad) || edad < 20) { alert('Introduce la edad del paciente (mínimo 20 años).'); return; }
-            if (isNaN(d1) || isNaN(d2) || isNaN(nd1) || isNaN(nd2)) {
-                alert('Introduce todos los tiempos de los cuatro ensayos.'); return;
+            if (isNaN(dp) || isNaN(dr) || isNaN(ip) || isNaN(ir)) {
+                alert('Introduce los cuatro tiempos (prueba y real de cada mano).'); return;
             }
 
             const ageIdx  = nhptGetAgeIdx(edad);
             const norms   = nhptNorms[sexo][ageIdx];
-            const meanDom = norms[0], sdDom = norms[1];
-            const meanND  = norms[2], sdND  = norms[3];
 
-            const tDom    = ((d1 + d2) / 2).toFixed(2);
-            const tND     = ((nd1 + nd2) / 2).toFixed(2);
-            const zDom    = nhptZscore(parseFloat(tDom), meanDom, sdDom);
-            const zND     = nhptZscore(parseFloat(tND), meanND, sdND);
-            const iDom    = nhptInterpret(zDom);
-            const iND     = nhptInterpret(zND);
+            // Asignar normas según lateralidad: mano dominante usa norma Dom, no dominante usa ND
+            const latEsDerecha = lat === 'derecha';
+            const normsDer = latEsDerecha ? [norms[0], norms[1]] : [norms[2], norms[3]];
+            const normsIzq = latEsDerecha ? [norms[2], norms[3]] : [norms[0], norms[1]];
+
+            // Solo el tiempo REAL se compara con baremos; el de prueba queda registrado como referencia
+            const tDer    = dr.toFixed(2);
+            const tIzq    = ir.toFixed(2);
+            const zDer    = nhptZscore(dr, normsDer[0], normsDer[1]);
+            const zIzq    = nhptZscore(ir, normsIzq[0], normsIzq[1]);
+            const iDer    = nhptInterpret(zDer);
+            const iIzq    = nhptInterpret(zIzq);
+
+            // Para compatibilidad con nhptGuardar (usa tDom/tND)
+            const tDom = latEsDerecha ? tDer : tIzq;
+            const tND  = latEsDerecha ? tIzq : tDer;
+            const zDom = latEsDerecha ? zDer : zIzq;
+            const zND  = latEsDerecha ? zIzq : zDer;
+            const iDom = latEsDerecha ? iDer : iIzq;
+            const iND  = latEsDerecha ? iIzq : iDer;
 
             const ageLabels = ['20-24','25-29','30-34','35-39','40-44','45-49','50-54','55-59','60-64','65-69','70-74','75+'];
             const ageLabel  = ageLabels[ageIdx];
             const sexLabel  = sexo === 'male' ? 'Masculino' : 'Femenino';
             const latLabel  = lat === 'derecha' ? 'Derecha' : 'Izquierda';
 
-            // Asimetría
-            const asim = Math.abs(parseFloat(tDom) - parseFloat(tND)).toFixed(1);
-            const asimPct = ((parseFloat(tND) - parseFloat(tDom)) / parseFloat(tDom) * 100).toFixed(1);
+            // Asimetría (basada en tiempos reales)
+            const asim = Math.abs(dr - ir).toFixed(1);
+            const asimPct = ((ir - dr) / dr * 100).toFixed(1);
 
             const html = `
                 <div style="border-top:3px solid #667eea;padding-top:20px;margin-top:10px;">
@@ -4829,30 +4847,32 @@
                     </p>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
-                        <!-- Mano dominante -->
-                        <div style="background:white;border:2px solid ${iDom.color};border-radius:12px;padding:16px;">
-                            <div style="font-weight:700;font-size:1em;margin-bottom:8px;color:#333;">✋ Mano dominante</div>
-                            <div style="font-size:0.88em;color:#666;margin-bottom:6px;">Ensayo 1: ${d1} s · Ensayo 2: ${d2} s</div>
-                            <div style="font-size:1.5em;font-weight:700;color:${iDom.color};margin-bottom:4px;">${tDom} s</div>
+                        <!-- Mano derecha -->
+                        <div style="background:white;border:2px solid ${iDer.color};border-radius:12px;padding:16px;">
+                            <div style="font-weight:700;font-size:1em;margin-bottom:8px;color:#333;">✋ Mano derecha${latEsDerecha ? ' <span style=\"font-size:.75em;background:#667eea;color:white;border-radius:10px;padding:1px 7px;\">dominante</span>' : ''}</div>
+                            <div style="font-size:0.88em;color:#888;margin-bottom:4px;">🔸 Prueba: <strong>${dp} s</strong></div>
+                            <div style="font-size:0.88em;color:#666;margin-bottom:6px;">✅ Real: <strong>${dr} s</strong> <em style="font-size:.85em;">(puntuación registrada)</em></div>
+                            <div style="font-size:1.5em;font-weight:700;color:${iDer.color};margin-bottom:4px;">${tDer} s</div>
                             <div style="font-size:0.85em;color:#888;margin-bottom:10px;">
-                                Norma ${ageLabel} ${sexLabel}: ${meanDom} s (DT ${sdDom}) · Umbral +1DT: ${(meanDom+sdDom).toFixed(1)} s
+                                Norma ${ageLabel} ${sexLabel} (${latEsDerecha?'dom.':'no dom.'}): ${normsDer[0]} s (DT ${normsDer[1]}) · Umbral: ${(normsDer[0]+normsDer[1]).toFixed(1)} s
                             </div>
-                            <div style="background:${iDom.color}15;border-left:4px solid ${iDom.color};border-radius:6px;padding:8px 12px;">
-                                <span style="font-weight:700;color:${iDom.color};">${iDom.label}</span><br>
-                                <small style="color:#555;">z = +${zDom} DT · ${iDom.detail}</small>
+                            <div style="background:${iDer.color}15;border-left:4px solid ${iDer.color};border-radius:6px;padding:8px 12px;">
+                                <span style="font-weight:700;color:${iDer.color};">${iDer.label}</span><br>
+                                <small style="color:#555;">z = +${zDer} DT · ${iDer.detail}</small>
                             </div>
                         </div>
-                        <!-- Mano no dominante -->
-                        <div style="background:white;border:2px solid ${iND.color};border-radius:12px;padding:16px;">
-                            <div style="font-weight:700;font-size:1em;margin-bottom:8px;color:#333;">🤚 Mano no dominante</div>
-                            <div style="font-size:0.88em;color:#666;margin-bottom:6px;">Ensayo 1: ${nd1} s · Ensayo 2: ${nd2} s</div>
-                            <div style="font-size:1.5em;font-weight:700;color:${iND.color};margin-bottom:4px;">${tND} s</div>
+                        <!-- Mano izquierda -->
+                        <div style="background:white;border:2px solid ${iIzq.color};border-radius:12px;padding:16px;">
+                            <div style="font-weight:700;font-size:1em;margin-bottom:8px;color:#333;">🤚 Mano izquierda${!latEsDerecha ? ' <span style=\"font-size:.75em;background:#764ba2;color:white;border-radius:10px;padding:1px 7px;\">dominante</span>' : ''}</div>
+                            <div style="font-size:0.88em;color:#888;margin-bottom:4px;">🔸 Prueba: <strong>${ip} s</strong></div>
+                            <div style="font-size:0.88em;color:#666;margin-bottom:6px;">✅ Real: <strong>${ir} s</strong> <em style="font-size:.85em;">(puntuación registrada)</em></div>
+                            <div style="font-size:1.5em;font-weight:700;color:${iIzq.color};margin-bottom:4px;">${tIzq} s</div>
                             <div style="font-size:0.85em;color:#888;margin-bottom:10px;">
-                                Norma ${ageLabel} ${sexLabel}: ${meanND} s (DT ${sdND}) · Umbral +1DT: ${(meanND+sdND).toFixed(1)} s
+                                Norma ${ageLabel} ${sexLabel} (${!latEsDerecha?'dom.':'no dom.'}): ${normsIzq[0]} s (DT ${normsIzq[1]}) · Umbral: ${(normsIzq[0]+normsIzq[1]).toFixed(1)} s
                             </div>
-                            <div style="background:${iND.color}15;border-left:4px solid ${iND.color};border-radius:6px;padding:8px 12px;">
-                                <span style="font-weight:700;color:${iND.color};">${iND.label}</span><br>
-                                <small style="color:#555;">z = +${zND} DT · ${iND.detail}</small>
+                            <div style="background:${iIzq.color}15;border-left:4px solid ${iIzq.color};border-radius:6px;padding:8px 12px;">
+                                <span style="font-weight:700;color:${iIzq.color};">${iIzq.label}</span><br>
+                                <small style="color:#555;">z = +${zIzq} DT · ${iIzq.detail}</small>
                             </div>
                         </div>
                     </div>
@@ -4905,15 +4925,15 @@
                         El 9HPT evalúa destreza fina de dedos y debe usarse junto con otras medidas de función de miembro superior.
                     </div>
 
-                    <button class="btn btn-success" onclick="nhptGuardar('${tDom}','${tND}','${zDom}','${zND}','${iDom.label}','${iND.label}','${ageLabel}','${sexLabel}','${latLabel}',\`${obs.replace(/`/g,"'")}\`)">💾 Guardar evaluación</button>
+                    <button class="btn btn-success" onclick="nhptGuardar('${dp}','${dr}','${ip}','${ir}','${zDer}','${zIzq}','${iDer.label}','${iIzq.label}','${ageLabel}','${sexLabel}','${latLabel}',\`${obs.replace(/`/g,"'")}\`)">💾 Guardar evaluación</button>
                     <button class="btn btn-secondary" onclick="renderEvaluationForm()" style="margin-top:8px;">🔄 Nueva Evaluación</button>
                 </div>
             `;
             document.getElementById('nhptResultado').innerHTML = html;
         }
 
-        function nhptGuardar(tDom, tND, zDom, zND, labelDom, labelND, ageLabel, sexLabel, latLabel, obs) {
-            const interpretation = `Mano dominante: ${tDom}s (z=+${zDom} → ${labelDom}) | Mano no dominante: ${tND}s (z=+${zND} → ${labelND}) | Grupo normativo: ${ageLabel} ${sexLabel} (Mathiowetz 1985)`;
+        function nhptGuardar(dpVal, drVal, ipVal, irVal, zDer, zIzq, labelDer, labelIzq, ageLabel, sexLabel, latLabel, obs) {
+            const interpretation = `MD derecha prueba: ${dpVal}s | MD derecha real: ${drVal}s (z=+${zDer} → ${labelDer}) | MD izquierda prueba: ${ipVal}s | MD izquierda real: ${irVal}s (z=+${zIzq} → ${labelIzq}) | Grupo normativo: ${ageLabel} ${sexLabel} (Mathiowetz 1985)`;
             const evaluation = {
                 id: Date.now(),
                 patientId: nhptPatObj.id,
@@ -4922,13 +4942,15 @@
                 scaleName: 'Nine Hole Peg Test (9HPT)',
                 isNHPT: true,
                 answers: [
-                    { itemName: 'Mano dominante (media 2 ensayos)', selectedOption: `${tDom} segundos`, points: parseFloat(tDom) },
-                    { itemName: 'Mano no dominante (media 2 ensayos)', selectedOption: `${tND} segundos`, points: parseFloat(tND) },
-                    { itemName: 'Grupo normativo', selectedOption: `${ageLabel} años, ${sexLabel}`, points: 0 },
+                    { itemName: 'Mano derecha — Prueba', selectedOption: `${dpVal} segundos`, points: parseFloat(dpVal) },
+                    { itemName: 'Mano derecha — Real', selectedOption: `${drVal} segundos`, points: parseFloat(drVal) },
+                    { itemName: 'Mano izquierda — Prueba', selectedOption: `${ipVal} segundos`, points: parseFloat(ipVal) },
+                    { itemName: 'Mano izquierda — Real', selectedOption: `${irVal} segundos`, points: parseFloat(irVal) },
                     { itemName: 'Lateralidad', selectedOption: latLabel, points: 0 },
+                    { itemName: 'Grupo normativo', selectedOption: `${ageLabel} años, ${sexLabel}`, points: 0 },
                     { itemName: 'Observaciones', selectedOption: obs || '—', points: 0 }
                 ],
-                totalPoints: parseFloat(tDom),
+                totalPoints: parseFloat(drVal),
                 interpretation,
                 date: new Date().toISOString()
             };
@@ -7480,7 +7502,7 @@
             populateSessionPatientSelect();
             initDarkMode();
             renderDashboard();
-            initCalendar();
+            // El calendario se inicializa de forma lazy al abrir la pestaña
             setTimeout(ingAutoGenerar, 800);
             // Sincronización con GitHub (arranca en background)
             setTimeout(ghActivate, 1200);
@@ -7530,6 +7552,11 @@
             } else if (tabName === 'evaluaciones') {
                 renderEvaluationForm();
             } else if (tabName === 'recursos') {
+                // Si estamos en github.io, avisar que el servidor no puede conectar
+                if (window.location.protocol === 'https:' && window.location.hostname !== 'localhost') {
+                    const warn = document.getElementById('rcMixedContentWarn');
+                    if (warn) warn.style.display = 'block';
+                }
                 rcCheckServer();
                 rcRender();
             } else if (tabName === 'objetivos') {
@@ -7537,8 +7564,16 @@
             } else if (tabName === 'sesiones') {
                 populateSessionPatientSelect();
             } else if (tabName === 'calendario') {
-                if (calendar) {
-                    setTimeout(function(){ calendar.updateSize(); calendar.refetchEvents(); }, 100);
+                if (!calendar) {
+                    // Primera vez: inicializar ahora que el contenedor es visible
+                    setTimeout(function(){
+                        initCalendar();
+                    }, 50);
+                } else {
+                    setTimeout(function(){
+                        calendar.updateSize();
+                        calendar.refetchEvents();
+                    }, 100);
                 }
             } else if (tabName === 'ingresos') {
                 ingInit();
@@ -11488,8 +11523,39 @@
             const titulo = document.getElementById('rcTitulo').value.trim();
             const notas = document.getElementById('rcNotas').value.trim();
 
-            if (!tipo || !sub) { alert('Elige tipo y subcategoría.'); return; }
+            // Caso especial: recurso descargado y subido a GitHub
+            const ghPending = window._rcPendingGh;
+            if (ghPending) {
+                if (!tipo || !sub) { alert('Elige tipo y subcategoría.'); return; }
+                const btn = document.querySelector('#recursoFormPanel .btn');
+                btn.textContent = '⏳ Guardando…';
+                btn.disabled = true;
+                const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+                const meta = {
+                    id,
+                    titulo: titulo || ghPending.nombre.replace(/\.[^.]+$/, ''),
+                    tipo, subcategoria: sub,
+                    etiquetas: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+                    notas,
+                    nombre: ghPending.nombre,
+                    mime: ghPending.mime,
+                    size: ghPending.size,
+                    github_url: ghPending.github_url,
+                    fecha: new Date().toISOString()
+                };
+                await rcSaveMeta(meta);
+                // No guardamos blob local — el archivo vive en GitHub
+                window._rcPendingGh = null;
+                btn.textContent = '💾 Guardar en biblioteca';
+                btn.disabled = false;
+                rcCancelar();
+                rcRender();
+                alert('✅ Recurso guardado. Disponible en todos tus dispositivos ☁️');
+                return;
+            }
+
             if (rcPendingFiles.length === 0) { alert('No hay archivos seleccionados.'); return; }
+            if (!tipo || !sub) { alert('Elige tipo y subcategoría.'); return; }
 
             const btn = document.querySelector('#recursoFormPanel .btn');
             btn.textContent = '⏳ Guardando…';
@@ -11605,33 +11671,53 @@
             lista.innerHTML = html;
         }
 
+        // ── Guardar recurso con URL de GitHub ────────────────────────
+        async function rcGuardarRecursoGitHub(nombre, mime, size, github_url) {
+            // Mostrar formulario de categorización
+            const panel = document.getElementById('recursoFormPanel');
+            if (panel) panel.style.display = 'block';
+            const tituloInput = document.getElementById('rcTitulo');
+            if (tituloInput) tituloInput.value = nombre.replace(/\.[^.]+$/, '');
+            // Guardar datos pendientes para cuando el usuario pulse "Guardar"
+            window._rcPendingGh = { nombre, mime, size, github_url };
+            rcPendingFiles = [];
+        }
+
         // ── Viewer ───────────────────────────────────────────────────
         async function rcView(id) {
             const todos = await rcGetAll();
             const meta  = todos.find(r => r.id === id);
             if (!meta) return;
-            const blob  = await rcGetFile(id);
-            if (!blob) { alert('Archivo no encontrado en la base de datos.'); return; }
 
-            const url  = URL.createObjectURL(blob);
+            // Si tiene URL de GitHub usarla directamente, si no cargar blob local
+            let resolvedUrl;
+            if (meta.github_url) {
+                resolvedUrl = meta.github_url;
+            } else {
+                const blob = await rcGetFile(id);
+                if (!blob) { alert('Archivo no encontrado en la base de datos.'); return; }
+                resolvedUrl = URL.createObjectURL(blob);
+            }
+
             const ext  = meta.nombre.split('.').pop().toLowerCase();
             const isV  = meta.mime.startsWith('video/') || ['mp4','mov','webm','avi'].includes(ext);
             const isI  = meta.mime.startsWith('image/') || ['jpg','jpeg','png','gif','webp'].includes(ext);
             const isPDF= meta.mime === 'application/pdf' || ext === 'pdf';
+            const ghBadge = meta.github_url ? '<span style="background:#28a745;color:white;padding:2px 8px;border-radius:10px;font-size:.75em;margin-left:8px;">☁️ GitHub</span>' : '';
 
             let content = '';
             if (isV) {
-                content = `<video src="${url}" controls autoplay style="max-width:88vw;max-height:80vh;border-radius:10px;"></video>`;
+                content = `<video src="${resolvedUrl}" controls autoplay style="max-width:88vw;max-height:80vh;border-radius:10px;"></video>`;
             } else if (isI) {
-                content = `<img src="${url}" style="max-width:88vw;max-height:80vh;border-radius:10px;object-fit:contain;">`;
+                content = `<img src="${resolvedUrl}" style="max-width:88vw;max-height:80vh;border-radius:10px;object-fit:contain;">`;
             } else if (isPDF) {
-                content = `<iframe src="${url}" style="width:85vw;height:80vh;border:none;border-radius:10px;"></iframe>`;
+                content = `<iframe src="${resolvedUrl}" style="width:85vw;height:80vh;border:none;border-radius:10px;"></iframe>`;
             } else {
-                content = `<div style="color:white;text-align:center;padding:40px;"><div style="font-size:4em;margin-bottom:20px;">📎</div><p>${meta.nombre}</p><a href="${url}" download="${meta.nombre}" style="color:#667eea;">Descargar archivo</a></div>`;
+                content = `<div style="color:white;text-align:center;padding:40px;"><div style="font-size:4em;margin-bottom:20px;">📎</div><p>${meta.nombre}</p><a href="${resolvedUrl}" download="${meta.nombre}" target="_blank" style="color:#667eea;">Descargar archivo</a></div>`;
             }
 
             document.getElementById('rcViewerContent').innerHTML = content;
-            document.getElementById('rcViewerTitle').textContent = meta.titulo;
+            document.getElementById('rcViewerTitle').innerHTML = meta.titulo + ghBadge;
             const v = document.getElementById('rcViewer');
             v.style.display = 'flex';
         }
@@ -11652,7 +11738,17 @@
         async function rcDescargar(id) {
             const todos = await rcGetAll();
             const meta  = todos.find(r => r.id === id);
-            const blob  = await rcGetFile(id);
+            if (!meta) return;
+            if (meta.github_url) {
+                // Recurso en GitHub → abrir en nueva pestaña para descargar
+                const a = document.createElement('a');
+                a.href = meta.github_url;
+                a.download = meta.nombre;
+                a.target = '_blank';
+                a.click();
+                return;
+            }
+            const blob = await rcGetFile(id);
             if (!blob) { alert('Archivo no encontrado.'); return; }
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -12151,23 +12247,37 @@
                     throw new Error(err.error || resp.statusText);
                 }
 
-                // Get filename from Content-Disposition
-                const cd = resp.headers.get("Content-Disposition") || "";
-                const m  = cd.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)/i);
-                const nombre = m ? decodeURIComponent(m[1].trim()) : "descarga";
-                const mime   = resp.headers.get("Content-Type") || "application/octet-stream";
+                const contentType = resp.headers.get("Content-Type") || "";
 
-                const blob = await resp.blob();
+                if (contentType.includes("application/json")) {
+                    // El servidor subió el archivo a GitHub → tenemos URL pública
+                    const data = await resp.json();
+                    if (!data.ok) throw new Error(data.error || "Error desconocido");
 
-                status.innerHTML = `<div style="background:#d4edda;border-left:4px solid #28a745;border-radius:8px;padding:12px 16px;font-size:.9em;">
-                    ✅ Descargado: <strong>${nombre}</strong> (${rcFmtSize(blob.size)})
-                    — Ahora categorízalo abajo 👇
-                </div>`;
+                    status.innerHTML = `<div style="background:#d4edda;border-left:4px solid #28a745;border-radius:8px;padding:12px 16px;font-size:.9em;">
+                        ✅ <strong>${data.nombre}</strong> (${rcFmtSize(data.size)}) subido a GitHub ☁️<br>
+                        <small style="color:#555">Disponible en todos tus dispositivos — Categorízalo abajo 👇</small>
+                    </div>`;
 
-                // Feed into the existing file-categorization flow
-                const file = new File([blob], nombre, { type: mime });
-                rcPendingFiles = [file];
-                rcFilesSelected(rcPendingFiles);
+                    // Guardar como recurso con URL de GitHub (sin blob local)
+                    rcGuardarRecursoGitHub(data.nombre, data.mime, data.size, data.url);
+
+                } else {
+                    // Fallback: el servidor devolvió el archivo directamente
+                    const cd = resp.headers.get("Content-Disposition") || "";
+                    const m  = cd.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)/i);
+                    const nombre = m ? decodeURIComponent(m[1].trim()) : "descarga";
+                    const mime   = contentType || "application/octet-stream";
+                    const blob   = await resp.blob();
+
+                    status.innerHTML = `<div style="background:#fff3cd;border-left:4px solid #ffc107;border-radius:8px;padding:12px 16px;font-size:.9em;">
+                        ⚠️ Guardado solo en este dispositivo: <strong>${nombre}</strong>
+                    </div>`;
+
+                    const file = new File([blob], nombre, { type: mime });
+                    rcPendingFiles = [file];
+                    rcFilesSelected(rcPendingFiles);
+                }
 
                 document.getElementById('rcUrlInput').value = "";
 
