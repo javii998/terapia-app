@@ -10641,38 +10641,46 @@
                     day: 'Día'
                 },
                 events: function(fetchInfo, successCallback, failureCallback) {
+                  try {
                     var evts = [];
                     var rangeStart = new Date(fetchInfo.start);
                     var rangeEnd   = new Date(fetchInfo.end);
 
+                    function isValidDate(d) { return d instanceof Date && !isNaN(d.getTime()); }
+                    function safeDate(str) { var d = new Date(str); return isValidDate(d) ? d : null; }
+
                     // ── Sesiones reales ──────────────────────────────────────
                     sessions.forEach(function(s) {
-                        var patient = patients.find(function(p){ return p.id === s.patientId; });
-                        // Construir start con hora si existe
-                        var prog = (typeof ingProgramadas !== 'undefined') ? ingProgramadas.find(function(p){ return p.id === s.fromProgId; }) : null;
-                        var hora = (prog && prog.hora) ? prog.hora : (s.hora || null);
-                        var startStr = hora ? s.date + 'T' + hora + ':00' : s.date;
-                        var endStr = null;
-                        var dur = s.duration || (prog && prog.duracion ? prog.duracion : null);
-                        if (hora && dur) {
-                            endStr = new Date(new Date(startStr).getTime() + dur * 60000).toISOString();
-                        } else if (hora) {
-                            // Default 45 min if no duration set
-                            endStr = new Date(new Date(startStr).getTime() + 45 * 60000).toISOString();
-                        }
-                        var pendiente = s.autogenerada && !s.activities;
-                        var color = pendiente ? '#ff9800' : '#667eea';
-                        var nombre = patient ? patient.name : (s.patientName || 'Paciente');
-                        var titulo = nombre + (hora ? ' ' + hora : '') + (pendiente ? ' ⚡' : '');
-                        evts.push({
-                            id: s.id,
-                            title: titulo,
-                            start: startStr,
-                            end: endStr,
-                            backgroundColor: color,
-                            borderColor: color,
-                            extendedProps: { session: s, tipo: 'sesion' }
-                        });
+                        try {
+                            if (!s.date) return;
+                            var patient = patients.find(function(p){ return p.id === s.patientId; });
+                            var prog = (typeof ingProgramadas !== 'undefined') ? ingProgramadas.find(function(p){ return p.id === s.fromProgId; }) : null;
+                            var hora = (prog && prog.hora) ? prog.hora : (s.hora || null);
+                            var startStr = hora ? s.date + 'T' + hora + ':00' : s.date;
+                            if (!safeDate(startStr)) return; // fecha inválida → saltar
+                            var endStr = null;
+                            var dur = s.duration || (prog && prog.duracion ? prog.duracion : null);
+                            if (hora && dur) {
+                                var endD = safeDate(startStr);
+                                if (endD) endStr = new Date(endD.getTime() + dur * 60000).toISOString();
+                            } else if (hora) {
+                                var endD2 = safeDate(startStr);
+                                if (endD2) endStr = new Date(endD2.getTime() + 45 * 60000).toISOString();
+                            }
+                            var pendiente = s.autogenerada && !s.activities;
+                            var color = pendiente ? '#ff9800' : '#667eea';
+                            var nombre = patient ? patient.name : (s.patientName || 'Paciente');
+                            var titulo = nombre + (hora ? ' ' + hora : '') + (pendiente ? ' ⚡' : '');
+                            evts.push({
+                                id: s.id,
+                                title: titulo,
+                                start: startStr,
+                                end: endStr,
+                                backgroundColor: color,
+                                borderColor: color,
+                                extendedProps: { session: s, tipo: 'sesion' }
+                            });
+                        } catch(e) { console.warn('Sesión con fecha inválida ignorada:', s.id, e.message); }
                     });
 
                     // ── Programaciones recurrentes (aún no generadas, futuras) ──
@@ -10754,7 +10762,10 @@
                     }
 
                     successCallback(evts);
-                },
+                } catch(globalErr) {
+                    console.error('Error en events callback:', globalErr);
+                    successCallback([]);
+                }},
                 eventClick: function(info) {
                     var tipo = info.event.extendedProps.tipo;
                     if (tipo === 'sesion') {
