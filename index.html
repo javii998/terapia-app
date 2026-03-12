@@ -13,8 +13,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <script>
+        // Fallback si FullCalendar no carga del CDN principal
+        window.addEventListener('load', function() {
+            if (typeof FullCalendar === 'undefined') {
+                var s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.11/index.global.min.js';
+                document.head.appendChild(s);
+            }
+        });
+    </script>
     <style>
         * {
             margin: 0;
@@ -7564,20 +7574,21 @@
             } else if (tabName === 'sesiones') {
                 populateSessionPatientSelect();
             } else if (tabName === 'calendario') {
-                if (!calendar) {
-                    // Esperar a que termine la animación fadeIn (500ms) antes de inicializar
-                    setTimeout(function(){
+                // Esperar animación fadeIn (500ms) + tiempo para que FullCalendar esté cargado
+                function _tryInitCalendar(attemptsLeft) {
+                    if (typeof FullCalendar === 'undefined') {
+                        if (attemptsLeft > 0) setTimeout(function(){ _tryInitCalendar(attemptsLeft-1); }, 300);
+                        else document.getElementById('calendar').innerHTML = '<div style="padding:40px;text-align:center;color:#e74c3c;">⚠️ FullCalendar no cargó. Comprueba la conexión a internet y recarga.</div>';
+                        return;
+                    }
+                    if (!calendar) {
                         initCalendar();
-                        // Forzar recálculo de tamaño tras el render inicial
-                        setTimeout(function(){ if (calendar) { calendar.updateSize(); calendar.refetchEvents(); } }, 100);
-                    }, 520);
-                } else {
-                    // Ya inicializado: refrescar tamaño tras la animación
-                    setTimeout(function(){
+                    } else {
                         calendar.updateSize();
                         calendar.refetchEvents();
-                    }, 520);
+                    }
                 }
+                setTimeout(function(){ _tryInitCalendar(10); }, 520);
             } else if (tabName === 'ingresos') {
                 ingInit();
             }
@@ -10594,15 +10605,18 @@
 
         // ===== CALENDARIO =====
         function initCalendar() {
+            if (typeof FullCalendar === 'undefined') {
+                document.getElementById('calendar').innerHTML = '<div style="padding:40px;text-align:center;color:#e74c3c;">⚠️ FullCalendar no cargó. Comprueba la conexión a internet y recarga la página.</div>';
+                return;
+            }
             const calendarEl = document.getElementById('calendar');
             if (!calendarEl) return;
+            if (calendar) { calendar.updateSize(); calendar.refetchEvents(); return; }
 
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'es',
-                height: 'auto',
-                contentHeight: 600,
-                aspectRatio: 1.8,
+                height: 650,
                 slotMinTime: '07:00:00',
                 slotMaxTime: '21:00:00',
                 slotDuration: '00:30:00',
