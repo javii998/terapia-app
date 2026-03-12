@@ -7565,15 +7565,18 @@
                 populateSessionPatientSelect();
             } else if (tabName === 'calendario') {
                 if (!calendar) {
-                    // Primera vez: inicializar ahora que el contenedor es visible
+                    // Esperar a que termine la animación fadeIn (500ms) antes de inicializar
                     setTimeout(function(){
                         initCalendar();
-                    }, 50);
+                        // Forzar recálculo de tamaño tras el render inicial
+                        setTimeout(function(){ if (calendar) { calendar.updateSize(); calendar.refetchEvents(); } }, 100);
+                    }, 520);
                 } else {
+                    // Ya inicializado: refrescar tamaño tras la animación
                     setTimeout(function(){
                         calendar.updateSize();
                         calendar.refetchEvents();
-                    }, 100);
+                    }, 520);
                 }
             } else if (tabName === 'ingresos') {
                 ingInit();
