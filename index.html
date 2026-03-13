@@ -1324,10 +1324,18 @@
 
             <!-- Tab: Calendario -->
             <div id="calendario" class="tab-content">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2>Calendario de Sesiones</h2>
-                    <button class="btn" onclick="showQuickSessionForm()">➕ Nueva Sesión Rápida</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap:wrap; gap:8px;">
+                    <h2 style="margin:0;">Calendario de Sesiones</h2>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <label style="cursor:pointer;">
+                            <input type="file" accept=".ics" style="display:none" onchange="icsImportar(this)">
+                            <span class="btn btn-secondary" style="font-size:.9em;">📅 Importar .ics (Foortia/Igaleno)</span>
+                        </label>
+                        <button class="btn btn-secondary" style="font-size:.9em;" onclick="icsLimpiar()" title="Eliminar eventos importados">🗑️ Limpiar .ics</button>
+                        <button class="btn" onclick="showQuickSessionForm()">➕ Nueva Sesión Rápida</button>
+                    </div>
                 </div>
+                <div id="icsBadge" style="display:none;background:#fff3cd;border-left:4px solid #ff9800;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:.88em;"></div>
                 <div class="calendar-container">
                     <div id="calendar"></div>
                 </div>
@@ -7574,6 +7582,7 @@
             } else if (tabName === 'sesiones') {
                 populateSessionPatientSelect();
             } else if (tabName === 'calendario') {
+                icsRestaurarBadge();
                 // Esperar animación fadeIn (500ms) + tiempo para que FullCalendar esté cargado
                 function _tryInitCalendar(attemptsLeft) {
                     if (typeof FullCalendar === 'undefined') {
@@ -10603,6 +10612,135 @@
             document.getElementById('recentActivity').innerHTML = html;
         }
 
+        // ===== IMPORTACIÓN ICS (Foortia / Igaleno) =====
+
+        function icsParseDate(str) {
+            // Formato: 20260311T190000 o 20260311T190000Z
+            if (!str || str.length < 8) return null;
+            str = str.replace('Z','').trim();
+            var y = str.substring(0,4), mo = str.substring(4,6), d = str.substring(6,8);
+            if (str.length >= 15) {
+                var h = str.substring(9,11), mi = str.substring(11,13);
+                return y + '-' + mo + '-' + d + 'T' + h + ':' + mi + ':00';
+            }
+            return y + '-' + mo + '-' + d;
+        }
+
+        function icsParseText(str) {
+            // Descodificar líneas partidas (RFC 5545: continuación con espacio/tab)
+            return (str || '').replace(/\r?\n[ \t]/g, '').replace(/\\n/g,'\n').replace(/\\,/g,',').trim();
+        }
+
+        function icsNormName(s) {
+            // Quitar prefijos TO-, notas como "no viene por...", sufijos (TO2)
+            s = s.replace(/\s*\(TO\d*\)\s*$/i, '');           // quitar (TO2)
+            s = s.replace(/^.*?TO\s*[-–]\s*/i, '');             // quitar "TO -"
+            s = s.replace(/^[^a-záéíóúüñ]+/i, '');               // quitar basura inicial
+            // Si hay un guión con nota ("no viene por lluvia-Nombre"), quedarse con lo de después
+            var dash = s.lastIndexOf('-');
+            if (dash > 0 && dash < s.length - 2) s = s.substring(dash + 1);
+            return s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        }
+
+        function icsMatchPatient(summary) {
+            // Devuelve el paciente que mejor coincide con el summary del evento ICS
+            var haystack = icsNormName(summary);
+            var best = null, bestScore = 0;
+            patients.forEach(function(p) {
+                var needle = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+                var words  = needle.split(/\s+/).filter(function(w){ return w.length > 2; });
+                if (words.length === 0) return;
+                var matched = words.filter(function(w){ return haystack.includes(w); }).length;
+                var score   = matched / words.length;
+                if (score > bestScore && score >= 0.5) { bestScore = score; best = p; }
+            });
+            return best;
+        }
+
+        function icsImportar(input) {
+            var file = input.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var text = e.target.result;
+                var eventos = [];
+                var blocks = text.split(/BEGIN:VEVENT/i);
+                blocks.shift();
+                blocks.forEach(function(block) {
+                    var lines = block.replace(/\r/g,'').split('\n');
+                    var unfolded = [];
+                    lines.forEach(function(l) {
+                        if (/^[ \t]/.test(l) && unfolded.length > 0) {
+                            unfolded[unfolded.length-1] += l.substring(1);
+                        } else { unfolded.push(l); }
+                    });
+                    var ev = {};
+                    unfolded.forEach(function(line) {
+                        var sep = line.indexOf(':');
+                        if (sep < 0) return;
+                        var key = line.substring(0, sep).split(';')[0].toUpperCase().trim();
+                        var val = line.substring(sep+1).trim();
+                        if (key === 'UID')         ev.uid     = val;
+                        if (key === 'SUMMARY')     ev.summary = icsParseText(val);
+                        if (key === 'DTSTART')     ev.start   = icsParseDate(val);
+                        if (key === 'DTEND')       ev.end     = icsParseDate(val);
+                        if (key === 'DESCRIPTION') ev.description = icsParseText(val);
+                    });
+                    if (!ev.uid || !ev.summary || !ev.start) return;
+
+                    // Intentar vincular con paciente existente
+                    var pat = icsMatchPatient(ev.summary);
+                    if (pat) {
+                        ev.patientId   = pat.id;
+                        ev.patientName = pat.name;
+                        ev.matched     = true;
+                    }
+                    eventos.push(ev);
+                });
+
+                var matched   = eventos.filter(function(e){ return e.matched; }).length;
+                var unmatched = eventos.length - matched;
+
+                localStorage.setItem('ics_eventos', JSON.stringify(eventos));
+                localStorage.setItem('ics_nombre', file.name);
+
+                var badge = document.getElementById('icsBadge');
+                if (badge) {
+                    badge.style.display = 'block';
+                    badge.innerHTML = '📅 <strong>' + file.name + '</strong> — '
+                        + eventos.length + ' eventos: '
+                        + '<span style="color:#155724;font-weight:600;">' + matched + ' vinculados</span> con pacientes'
+                        + (unmatched > 0 ? ', <span style="color:#856404;">' + unmatched + ' sin vincular</span> (naranja)' : '')
+                        + '.';
+                }
+
+                if (calendar) calendar.refetchEvents();
+                input.value = '';
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function icsLimpiar() {
+            if (!confirm('¿Eliminar todos los eventos importados de .ics?')) return;
+            localStorage.removeItem('ics_eventos');
+            localStorage.removeItem('ics_nombre');
+            var badge = document.getElementById('icsBadge');
+            if (badge) badge.style.display = 'none';
+            if (calendar) calendar.refetchEvents();
+        }
+
+        function icsRestaurarBadge() {
+            var nombre = localStorage.getItem('ics_nombre');
+            var evts   = JSON.parse(localStorage.getItem('ics_eventos') || '[]');
+            if (nombre && evts.length > 0) {
+                var badge = document.getElementById('icsBadge');
+                if (badge) {
+                    badge.style.display = 'block';
+                    badge.innerHTML = '📅 <strong>' + nombre + '</strong> — ' + evts.length + ' eventos importados. Color naranja en el calendario.';
+                }
+            }
+        }
+
         // ===== CALENDARIO =====
         function initCalendar() {
             if (typeof FullCalendar === 'undefined') {
@@ -10761,6 +10899,31 @@
                         });
                     }
 
+                    // ── Eventos importados de .ics (Foortia/Igaleno) ────────
+                    try {
+                        var icsEvts = JSON.parse(localStorage.getItem('ics_eventos') || '[]');
+                        icsEvts.forEach(function(ev) {
+                            // Si está vinculado a paciente: azul como sesión propia; si no: naranja
+                            var color = ev.matched ? '#667eea' : '#e67e22';
+                            var border = ev.matched ? '#5a67d8' : '#d35400';
+                            var label  = ev.matched ? ev.patientName : ('📅 ' + ev.summary);
+                            // Añadir hora al título si está disponible
+                            var hora = ev.start && ev.start.length > 10 ? ev.start.substring(11,16) : null;
+                            if (hora) label += ' ' + hora;
+                            evts.push({
+                                id: 'ics_' + ev.uid,
+                                title: label,
+                                start: ev.start,
+                                end: ev.end || null,
+                                backgroundColor: color,
+                                borderColor: border,
+                                textColor: '#fff',
+                                editable: false,
+                                extendedProps: { tipo: 'ics', ev: ev }
+                            });
+                        });
+                    } catch(e) {}
+
                     successCallback(evts);
                 } catch(globalErr) {
                     console.error('Error en events callback:', globalErr);
@@ -10768,7 +10931,16 @@
                 }},
                 eventClick: function(info) {
                     var tipo = info.event.extendedProps.tipo;
-                    if (tipo === 'sesion') {
+                    if (tipo === 'ics') {
+                        var ev = info.event.extendedProps.ev;
+                        var inicio = ev.start ? ev.start.replace('T',' ').substring(0,16) : '';
+                        var fin    = ev.end   ? ev.end.replace('T',' ').substring(0,16)   : '';
+                        var msg = '📅 ' + ev.summary;
+                        if (inicio) msg += ' — ' + inicio + (fin ? ' → ' + fin.substring(11) : '');
+                        msg += ' (Foortia/Igaleno, solo lectura)';
+                        alert(msg);
+                        return;
+                    } else if (tipo === 'sesion') {
                         editSession(info.event.extendedProps.session.id);
                     } else if (tipo === 'programada') {
                         var prog = info.event.extendedProps.prog;
