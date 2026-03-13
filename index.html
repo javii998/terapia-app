@@ -1264,8 +1264,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>📋 Escalas de Terapia Ocupacional</h1>
-            <p class="subtitle">Sistema totalmente configurable - Incluye escalas pre-cargadas editables</p>
+            <h1>📋 Sistema configurable de Terapia Ocupacional</h1>
+            <p class="subtitle">por Javier Fuentes Navarro</p>
         </header>
 
         <div class="tab-container">
@@ -10687,37 +10687,174 @@
                         if (key === 'DESCRIPTION') ev.description = icsParseText(val);
                     });
                     if (!ev.uid || !ev.summary || !ev.start) return;
-
-                    // Intentar vincular con paciente existente
                     var pat = icsMatchPatient(ev.summary);
-                    if (pat) {
-                        ev.patientId   = pat.id;
-                        ev.patientName = pat.name;
-                        ev.matched     = true;
-                    }
+                    if (pat) { ev.patientId = pat.id; ev.patientName = pat.name; ev.matched = true; }
+                    else { ev.rawName = icsNormName(ev.summary); }
                     eventos.push(ev);
                 });
 
-                var matched   = eventos.filter(function(e){ return e.matched; }).length;
-                var unmatched = eventos.length - matched;
+                // ── Paso 1: detectar pacientes nuevos y preguntar ──────────
+                var nuevosNombres = {};
+                eventos.forEach(function(ev) {
+                    if (!ev.matched && ev.rawName && !ev.rawName.includes('bloqueada')) {
+                        // Capitalizar nombre
+                        var nombre = ev.rawName.replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+                        var clave  = ev.rawName;
+                        if (!nuevosNombres[clave]) nuevosNombres[clave] = nombre;
+                    }
+                });
 
-                localStorage.setItem('ics_eventos', JSON.stringify(eventos));
-                localStorage.setItem('ics_nombre', file.name);
+                var nuevosCreados = {};
+                Object.keys(nuevosNombres).forEach(function(clave) {
+                    var nombre = nuevosNombres[clave];
+                    var crear  = confirm('El paciente "' + nombre + '" no está en tu app.\n¿Quieres crearlo?');
+                    if (crear) {
+                        var id = Date.now() + Math.floor(Math.random()*1000);
+                        var nuevoPaciente = { id: id, name: nombre, notes: 'Importado desde .ics', createdAt: new Date().toISOString() };
+                        patients.push(nuevoPaciente);
+                        nuevosCreados[clave] = nuevoPaciente;
+                    }
+                });
+                saveData();
 
-                var badge = document.getElementById('icsBadge');
-                if (badge) {
-                    badge.style.display = 'block';
-                    badge.innerHTML = '📅 <strong>' + file.name + '</strong> — '
-                        + eventos.length + ' eventos: '
-                        + '<span style="color:#155724;font-weight:600;">' + matched + ' vinculados</span> con pacientes'
-                        + (unmatched > 0 ? ', <span style="color:#856404;">' + unmatched + ' sin vincular</span> (naranja)' : '')
-                        + '.';
+                // Vincular eventos con pacientes recién creados
+                eventos.forEach(function(ev) {
+                    if (!ev.matched && ev.rawName) {
+                        var p = nuevosCreados[ev.rawName];
+                        if (p) { ev.patientId = p.id; ev.patientName = p.name; ev.matched = true; }
+                    }
+                });
+
+                // ── Paso 2: detectar pacientes sin tarifa y mostrar formulario ──
+                var pacientesSinTarifa = [];
+                var vistosIds = {};
+                eventos.forEach(function(ev) {
+                    if (!ev.matched || !ev.patientId) return;
+                    if (vistosIds[ev.patientId]) return;
+                    vistosIds[ev.patientId] = true;
+                    var tarifa = (typeof ingTarifas !== 'undefined') ? ingTarifas.find(function(t){ return String(t.patientId) === String(ev.patientId); }) : null;
+                    if (!tarifa || !tarifa.precio) {
+                        pacientesSinTarifa.push({ id: ev.patientId, name: ev.patientName });
+                    }
+                });
+
+                if (pacientesSinTarifa.length > 0) {
+                    icsFormularioTarifas(pacientesSinTarifa, function() {
+                        icsFinalizarImport(eventos, file.name);
+                    });
+                } else {
+                    icsFinalizarImport(eventos, file.name);
                 }
 
-                if (calendar) calendar.refetchEvents();
                 input.value = '';
             };
             reader.readAsText(file, 'UTF-8');
+        }
+
+        function icsFormularioTarifas(pacientes, callback) {
+            // Modal para introducir tarifas de pacientes sin precio
+            var overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            var modal = document.createElement('div');
+            modal.style.cssText = 'background:#fff;border-radius:16px;padding:32px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
+            var rows = pacientes.map(function(p) {
+                return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;">'
+                    + '<span style="font-weight:500;color:#333;">' + p.name + '</span>'
+                    + '<div style="display:flex;align-items:center;gap:6px;">'
+                    + '<input type="number" id="tarifa_' + p.id + '" placeholder="0" min="0" step="0.5" style="width:90px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:1em;text-align:right;">'
+                    + '<span style="color:#666;">€/ses</span>'
+                    + '</div></div>';
+            }).join('');
+            modal.innerHTML = '<h3 style="margin:0 0 6px;color:#333;">💶 Tarifas por sesión</h3>'
+                + '<p style="color:#666;margin:0 0 20px;font-size:.9em;">Estos pacientes no tienen tarifa asignada. Introduce el precio por sesión para que se contabilicen en ingresos.</p>'
+                + rows
+                + '<div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">'
+                + '<button id="icsSkipTarifas" style="padding:10px 20px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer;color:#666;">Ahora no</button>'
+                + '<button id="icsGuardarTarifas" style="padding:10px 24px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Guardar tarifas</button>'
+                + '</div>';
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+
+            function guardar() {
+                pacientes.forEach(function(p) {
+                    var inp = document.getElementById('tarifa_' + p.id);
+                    var precio = inp ? parseFloat(inp.value) : 0;
+                    if (!precio || precio <= 0) return;
+                    if (typeof ingTarifas === 'undefined') window.ingTarifas = [];
+                    var existing = ingTarifas.find(function(t){ return String(t.patientId) === String(p.id); });
+                    if (existing) {
+                        existing.precio = precio;
+                    } else {
+                        ingTarifas.push({ id: Date.now() + Math.random(), patientId: p.id, patientName: p.name, precio: precio, tipo: 'sesion' });
+                    }
+                });
+                localStorage.setItem('ingTarifas', JSON.stringify(ingTarifas));
+                document.body.removeChild(overlay);
+                callback();
+            }
+            document.getElementById('icsGuardarTarifas').onclick = guardar;
+            document.getElementById('icsSkipTarifas').onclick = function() { document.body.removeChild(overlay); callback(); };
+        }
+
+        function icsFinalizarImport(eventos, nombre) {
+            // ── Paso 3: registrar sesiones en ingresos ─────────────────────
+            var sesionesRegistradas = 0;
+            eventos.forEach(function(ev) {
+                if (!ev.matched || !ev.patientId || !ev.start) return;
+                var fecha = ev.start.substring(0, 10);
+                var hora  = ev.start.length > 10 ? ev.start.substring(11, 16) : null;
+
+                // Evitar duplicados: no registrar si ya existe sesión ese día para ese paciente
+                var yaExiste = (typeof ingProgramadas !== 'undefined') && ingProgramadas.some(function(p) {
+                    return String(p.patientId) === String(ev.patientId) && p.fecha === fecha;
+                });
+                if (yaExiste) return;
+
+                // Buscar tarifa
+                var tarifa = (typeof ingTarifas !== 'undefined') ? ingTarifas.find(function(t){ return String(t.patientId) === String(ev.patientId); }) : null;
+                var precio = tarifa ? parseFloat(tarifa.precio) : 0;
+
+                // Registrar como sesión puntual en ingProgramadas para que aparezca en ingresos
+                if (typeof ingProgramadas === 'undefined') window.ingProgramadas = [];
+                var nuevaSesion = {
+                    id: 'ics_' + ev.uid,
+                    patientId:   ev.patientId,
+                    patientName: ev.patientName,
+                    fecha:       fecha,
+                    hora:        hora,
+                    precio:      precio,
+                    recurrente:  false,
+                    pagado:      false,
+                    fromIcs:     true,
+                    source:      nombre
+                };
+                ingProgramadas.push(nuevaSesion);
+                sesionesRegistradas++;
+            });
+
+            if (sesionesRegistradas > 0) {
+                localStorage.setItem('ingProgramadas', JSON.stringify(ingProgramadas));
+            }
+
+            // Guardar eventos ICS para el calendario
+            localStorage.setItem('ics_eventos', JSON.stringify(eventos));
+            localStorage.setItem('ics_nombre', nombre);
+
+            var matched   = eventos.filter(function(e){ return e.matched; }).length;
+            var unmatched = eventos.length - matched;
+            var badge = document.getElementById('icsBadge');
+            if (badge) {
+                badge.style.display = 'block';
+                badge.innerHTML = '📅 <strong>' + nombre + '</strong> — '
+                    + eventos.length + ' eventos: '
+                    + '<span style="color:#155724;font-weight:600;">' + matched + ' vinculados</span>'
+                    + (unmatched > 0 ? ', <span style="color:#856404;">' + unmatched + ' sin vincular</span>' : '')
+                    + (sesionesRegistradas > 0 ? ' · <span style="color:#1a56a0;font-weight:600;">+' + sesionesRegistradas + ' en ingresos</span>' : '')
+                    + '.';
+            }
+
+            if (calendar) calendar.refetchEvents();
+            if (typeof ingRender === 'function') ingRender();
         }
 
         function icsLimpiar() {
