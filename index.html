@@ -10644,17 +10644,36 @@
 
         function icsMatchPatient(summary) {
             // Devuelve el paciente que mejor coincide con el summary del evento ICS
+            // Prioriza: mayor score → más palabras del paciente en el ICS → nombre más largo en ICS
             var haystack = icsNormName(summary);
-            var best = null, bestScore = 0;
+            var best = null, bestScore = 0, bestWords = 0;
             patients.forEach(function(p) {
                 var needle = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
                 var words  = needle.split(/\s+/).filter(function(w){ return w.length > 2; });
                 if (words.length === 0) return;
                 var matched = words.filter(function(w){ return haystack.includes(w); }).length;
                 var score   = matched / words.length;
-                if (score > bestScore && score >= 0.5) { bestScore = score; best = p; }
+                if (score < 0.5) return;
+                // Priorizar: score más alto, luego más palabras coincidentes, luego más palabras del paciente
+                if (score > bestScore || (score === bestScore && words.length > bestWords)) {
+                    bestScore = score; bestWords = words.length; best = p;
+                }
             });
             return best;
+        }
+
+        function icsPickBestSummary(summaries) {
+            // De varios summaries para el mismo paciente, elegir el más informativo (más largo, sin prefijos de nota)
+            if (!summaries || summaries.length === 0) return '';
+            var clean = summaries.filter(function(s) {
+                var n = icsNormName(s);
+                // Descartar si es solo una nota sin nombre real
+                return n.length > 3 && !/^(bloqueada|no viene|cancelad|festivo|semana santa)/i.test(n);
+            });
+            if (clean.length === 0) return summaries[0];
+            // Ordenar por longitud del nombre extraído descendente
+            clean.sort(function(a, b) { return icsNormName(b).length - icsNormName(a).length; });
+            return clean[0];
         }
 
         function icsImportar(input) {
@@ -10662,7 +10681,18 @@
             if (!file) return;
             var reader = new FileReader();
             reader.onload = function(e) {
-                var text = e.target.result;
+                // Intentar UTF-8 primero; si hay caracteres rotos (Ã©, Ã­) usar Latin-1
+                var bytes = new Uint8Array(e.target.result);
+                var text;
+                try {
+                    text = new TextDecoder('utf-8', {fatal: true}).decode(bytes);
+                } catch(err) {
+                    text = new TextDecoder('iso-8859-1').decode(bytes);
+                }
+                // Doble check: si aún hay Ã seguido de carácter latino, era Latin-1 mal etiquetado
+                if (/\u00c3[\u0080-\u00bf]/.test(text)) {
+                    text = new TextDecoder('iso-8859-1').decode(bytes);
+                }
                 var eventos = [];
                 var blocks = text.split(/BEGIN:VEVENT/i);
                 blocks.shift();
@@ -10694,14 +10724,22 @@
                 });
 
                 // ── Paso 1: detectar pacientes nuevos y preguntar ──────────
-                var nuevosNombres = {};
+                // Agrupar summaries por clave normalizada para elegir el más completo
+                var nuevosGrupos = {};
                 eventos.forEach(function(ev) {
-                    if (!ev.matched && ev.rawName && !ev.rawName.includes('bloqueada')) {
-                        // Capitalizar nombre
-                        var nombre = ev.rawName.replace(/\b\w/g, function(c){ return c.toUpperCase(); });
-                        var clave  = ev.rawName;
-                        if (!nuevosNombres[clave]) nuevosNombres[clave] = nombre;
+                    if (!ev.matched && ev.rawName && !/^(bloqueada|no viene|cancelad|festivo|semana santa)/i.test(ev.rawName)) {
+                        var clave = ev.rawName;
+                        if (!nuevosGrupos[clave]) nuevosGrupos[clave] = [];
+                        nuevosGrupos[clave].push(ev.summary);
                     }
+                });
+                var nuevosNombres = {};
+                Object.keys(nuevosGrupos).forEach(function(clave) {
+                    var bestSummary = icsPickBestSummary(nuevosGrupos[clave]);
+                    var bestRaw     = icsNormName(bestSummary);
+                    // Capitalizar correctamente
+                    var nombre = bestRaw.replace(/(?:^|\s)\S/g, function(c){ return c.toUpperCase(); });
+                    nuevosNombres[clave] = nombre;
                 });
 
                 var nuevosCreados = {};
@@ -10748,7 +10786,7 @@
 
                 input.value = '';
             };
-            reader.readAsText(file, 'UTF-8');
+            reader.readAsArrayBuffer(file);
         }
 
         function icsFormularioTarifas(pacientes, callback) {
