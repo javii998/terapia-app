@@ -10920,7 +10920,15 @@
                     + '.';
             }
 
-            if (calendar) calendar.refetchEvents();
+            // Refrescar calendario con pequeño delay para que el modal se cierre antes
+            setTimeout(function() {
+                if (calendar) {
+                    calendar.refetchEvents();
+                    calendar.updateSize();
+                } else if (document.getElementById('calendario') && document.getElementById('calendario').classList.contains('active')) {
+                    if (typeof initCalendar === 'function') initCalendar();
+                }
+            }, 300);
             if (typeof ingRender === 'function') ingRender();
         }
 
