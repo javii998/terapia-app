@@ -1264,8 +1264,13 @@
 <body>
     <div class="container">
         <header>
-            <h1>📋 Sistema configurable de Terapia Ocupacional</h1>
-            <p class="subtitle">por Javier Fuentes Navarro</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div>
+                    <h1 style="margin:0;">📋 Sistema configurable de Terapia Ocupacional</h1>
+                    <p class="subtitle" style="margin:4px 0 0;">por Javier Fuentes Navarro</p>
+                </div>
+                <span id="ghSyncBadge" onclick="GH.token ? ghPush() : ghShowSetup()" title="Clic para sincronizar o configurar GitHub" style="padding:6px 14px;border-radius:20px;font-size:.82em;font-weight:600;background:#e0e0e0;color:#666;cursor:pointer;white-space:nowrap;">☁️ GitHub</span>
+            </div>
         </header>
 
         <div class="tab-container">
@@ -1550,7 +1555,7 @@
                         &nbsp;(ejecuta <strong>iniciar.bat</strong> primero)
                     </div>
                         <span id="rcServerBadge" style="margin-left:auto;padding:4px 12px;border-radius:20px;font-size:.8em;font-weight:600;background:#e0e0e0;color:#666;">Comprobando servidor…</span>
-                        <span id="ghSyncBadge" onclick="ghPush()" title="Clic para sincronizar ahora" style="margin-left:8px;padding:4px 12px;border-radius:20px;font-size:.8em;font-weight:600;background:#e0e0e0;color:#666;cursor:pointer;">☁️ Conectando GitHub…</span>
+
                     </div>
                     <div id="rcServerOff" style="display:none;background:#fff3cd;border-left:4px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:.9em;">
                         ⚠️ El servidor local no está activo. <strong>Abre <code>iniciar.bat</code></strong> para activar la descarga directa, o arrastra los archivos manualmente abajo.
