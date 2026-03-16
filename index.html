@@ -10719,7 +10719,10 @@
                     if (!ev.uid || !ev.summary || !ev.start) return;
                     var pat = icsMatchPatient(ev.summary);
                     if (pat) { ev.patientId = pat.id; ev.patientName = pat.name; ev.matched = true; }
-                    else { ev.rawName = icsNormName(ev.summary); }
+                    else {
+                        ev.rawName     = icsNormName(ev.summary);   // clave normalizada (sin tildes) para matching
+                        ev.rawOriginal = ev.summary;                 // texto original para mostrar nombre
+                    }
                     eventos.push(ev);
                 });
 
@@ -10729,16 +10732,35 @@
                 eventos.forEach(function(ev) {
                     if (!ev.matched && ev.rawName && !/^(bloqueada|no viene|cancelad|festivo|semana santa)/i.test(ev.rawName)) {
                         var clave = ev.rawName;
-                        if (!nuevosGrupos[clave]) nuevosGrupos[clave] = [];
+                        if (!nuevosGrupos[clave]) { nuevosGrupos[clave] = []; nuevosGrupos[clave].originals = []; }
                         nuevosGrupos[clave].push(ev.summary);
+                        if (ev.rawOriginal) nuevosGrupos[clave].originals.push(ev.rawOriginal);
                     }
                 });
                 var nuevosNombres = {};
                 Object.keys(nuevosGrupos).forEach(function(clave) {
-                    var bestSummary = icsPickBestSummary(nuevosGrupos[clave]);
-                    var bestRaw     = icsNormName(bestSummary);
-                    // Capitalizar correctamente
-                    var nombre = bestRaw.replace(/(?:^|\s)\S/g, function(c){ return c.toUpperCase(); });
+                    // Buscar el summary original más completo (no normalizado) para el nombre
+                    var originals = nuevosGrupos[clave].originals || [];
+                    var bestOriginal = originals.length > 0
+                        ? originals.sort(function(a,b){ return icsNormName(b).length - icsNormName(a).length; })[0]
+                        : null;
+                    var nombre;
+                    if (bestOriginal) {
+                        // Limpiar prefijos TO-, notas, sufijos (TO2) del original (conservando tildes)
+                        var s = bestOriginal;
+                        s = s.replace(/\s*\(TO\d*\)\s*$/i, '');
+                        s = s.replace(/^.*?TO\s*[-–]\s*/i, '');
+                        s = s.replace(/^[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]+/, '');
+                        var dash = s.lastIndexOf('-');
+                        if (dash > 0 && dash < s.length - 2) s = s.substring(dash + 1);
+                        nombre = s.trim();
+                        // Capitalizar solo si está todo en mayúsculas o minúsculas
+                        if (nombre === nombre.toUpperCase() || nombre === nombre.toLowerCase()) {
+                            nombre = nombre.replace(/(?:^|\s)\S/g, function(c){ return c.toUpperCase(); });
+                        }
+                    } else {
+                        nombre = clave.replace(/(?:^|\s)\S/g, function(c){ return c.toUpperCase(); });
+                    }
                     nuevosNombres[clave] = nombre;
                 });
 
@@ -10756,11 +10778,18 @@
                 saveData();
 
                 // Vincular eventos con pacientes recién creados
+                // Re-ejecutar icsMatchPatient ahora que patients tiene los nuevos
                 eventos.forEach(function(ev) {
-                    if (!ev.matched && ev.rawName) {
+                    if (ev.matched) return;
+                    // 1. Buscar por clave exacta
+                    if (ev.rawName && nuevosCreados[ev.rawName]) {
                         var p = nuevosCreados[ev.rawName];
-                        if (p) { ev.patientId = p.id; ev.patientName = p.name; ev.matched = true; }
+                        ev.patientId = p.id; ev.patientName = p.name; ev.matched = true;
+                        return;
                     }
+                    // 2. Re-intentar matching completo (ahora patients incluye los nuevos)
+                    var pat2 = icsMatchPatient(ev.summary);
+                    if (pat2) { ev.patientId = pat2.id; ev.patientName = pat2.name; ev.matched = true; }
                 });
 
                 // ── Paso 2: detectar pacientes sin tarifa y mostrar formulario ──
