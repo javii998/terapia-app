@@ -10844,20 +10844,25 @@
             document.body.appendChild(overlay);
 
             function guardar() {
+                // Asegurar que ingTarifas es siempre un array válido
+                var tarifas;
+                try { tarifas = JSON.parse(localStorage.getItem('ingTarifas') || '[]'); } catch(e) { tarifas = []; }
+                if (!Array.isArray(tarifas)) tarifas = [];
+
                 pacientes.forEach(function(p) {
                     var inp = document.getElementById('tarifa_' + p.id);
                     var precio = inp ? parseFloat(inp.value) : 0;
                     if (!precio || precio <= 0) return;
-                    if (typeof ingTarifas === 'undefined') window.ingTarifas = [];
-                    if (!Array.isArray(ingTarifas)) { ingTarifas = JSON.parse(localStorage.getItem('ingTarifas') || '[]'); }
-                    var existing = ingTarifas.find(function(t){ return String(t.patientId) === String(p.id); });
+                    var existing = tarifas.find(function(t){ return String(t.patientId) === String(p.id); });
                     if (existing) {
                         existing.precio = precio;
                     } else {
-                        ingTarifas.push({ id: Date.now() + Math.random(), patientId: p.id, patientName: p.name, precio: precio, tipo: 'sesion' });
+                        tarifas.push({ id: Date.now() + Math.random(), patientId: p.id, patientName: p.name, precio: precio, tipo: 'sesion' });
                     }
                 });
-                localStorage.setItem('ingTarifas', JSON.stringify(ingTarifas));
+                localStorage.setItem('ingTarifas', JSON.stringify(tarifas));
+                // Sincronizar variable global
+                if (typeof ingTarifas !== 'undefined') window.ingTarifas = tarifas;
                 document.body.removeChild(overlay);
                 callback();
             }
