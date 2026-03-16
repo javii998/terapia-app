@@ -10799,7 +10799,8 @@
                     if (!ev.matched || !ev.patientId) return;
                     if (vistosIds[ev.patientId]) return;
                     vistosIds[ev.patientId] = true;
-                    var tarifa = (typeof ingTarifas !== 'undefined') ? ingTarifas.find(function(t){ return String(t.patientId) === String(ev.patientId); }) : null;
+                    var _tarifas = (typeof ingTarifas !== 'undefined' && Array.isArray(ingTarifas)) ? ingTarifas : JSON.parse(localStorage.getItem('ingTarifas') || '[]');
+                    var tarifa = _tarifas.find(function(t){ return String(t.patientId) === String(ev.patientId); });
                     if (!tarifa || !tarifa.precio) {
                         pacientesSinTarifa.push({ id: ev.patientId, name: ev.patientName });
                     }
@@ -10848,6 +10849,7 @@
                     var precio = inp ? parseFloat(inp.value) : 0;
                     if (!precio || precio <= 0) return;
                     if (typeof ingTarifas === 'undefined') window.ingTarifas = [];
+                    if (!Array.isArray(ingTarifas)) { ingTarifas = JSON.parse(localStorage.getItem('ingTarifas') || '[]'); }
                     var existing = ingTarifas.find(function(t){ return String(t.patientId) === String(p.id); });
                     if (existing) {
                         existing.precio = precio;
@@ -10878,7 +10880,8 @@
                 if (yaExiste) return;
 
                 // Buscar tarifa
-                var tarifa = (typeof ingTarifas !== 'undefined') ? ingTarifas.find(function(t){ return String(t.patientId) === String(ev.patientId); }) : null;
+                var _tf = (typeof ingTarifas !== 'undefined' && Array.isArray(ingTarifas)) ? ingTarifas : JSON.parse(localStorage.getItem('ingTarifas') || '[]');
+                var tarifa = _tf.find(function(t){ return String(t.patientId) === String(ev.patientId); });
                 var precio = tarifa ? parseFloat(tarifa.precio) : 0;
 
                 // Registrar como sesión puntual en ingProgramadas para que aparezca en ingresos
