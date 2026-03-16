@@ -10775,7 +10775,7 @@
                         nuevosCreados[clave] = nuevoPaciente;
                     }
                 });
-                saveData();
+                localStorage.setItem('patients', JSON.stringify(patients));
 
                 // Vincular eventos con pacientes recién creados
                 // Re-ejecutar icsMatchPatient ahora que patients tiene los nuevos
