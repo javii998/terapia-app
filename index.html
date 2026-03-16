@@ -12289,7 +12289,11 @@
                     if (!r.ok) throw new Error('GitHub load ' + r.status);
                     const j = await r.json();
                     this._sha = j.sha;
-                    const decoded = JSON.parse(atob(j.content.replace(/\n/g, '')));
+                    // Decodificar base64 respetando UTF-8 (tildes, ñ, etc.)
+                    const b64 = j.content.replace(/\n/g, '');
+                    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+                    const text = new TextDecoder('utf-8').decode(bytes);
+                    const decoded = JSON.parse(text);
                     return decoded;
                 } catch(e) {
                     console.warn('GH.load error:', e.message);
