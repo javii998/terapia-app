@@ -10799,7 +10799,7 @@
                     if (!ev.matched || !ev.patientId) return;
                     if (vistosIds[ev.patientId]) return;
                     vistosIds[ev.patientId] = true;
-                    var _tarifas = (typeof ingTarifas !== 'undefined' && Array.isArray(ingTarifas)) ? ingTarifas : JSON.parse(localStorage.getItem('ingTarifas') || '[]');
+                    var _tarifas = []; try { var _rt = typeof ingTarifas !== 'undefined' && Array.isArray(ingTarifas) ? ingTarifas : JSON.parse(localStorage.getItem('ingTarifas')||'[]'); if(Array.isArray(_rt)) _tarifas = _rt; } catch(e){}
                     var tarifa = _tarifas.find(function(t){ return String(t.patientId) === String(ev.patientId); });
                     if (!tarifa || !tarifa.precio) {
                         pacientesSinTarifa.push({ id: ev.patientId, name: ev.patientName });
