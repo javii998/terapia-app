@@ -5667,12 +5667,17 @@
         // Helper: busca SS dado PD en tabla [[ss,min,max],...]
         function _lookupSS(pd, table) {
             if (pd === null || pd === undefined || !table) return null;
+            let maxSS = 1, maxPD = 0;
             for (const e of table) {
                 const [ss, lo, hi] = e;
                 if (lo === null) continue;
                 const hh = (hi === null || hi === undefined) ? lo : hi;
                 if (pd >= lo && pd <= hh) return ss;
+                // Rastrear el máximo de la tabla
+                if (hh > maxPD) { maxPD = hh; maxSS = ss; }
             }
+            // Si PD supera el techo de la tabla → asignar el SS máximo disponible
+            if (pd > maxPD && maxPD > 0) return maxSS;
             return null;
         }
 
@@ -7218,7 +7223,9 @@
                 const r = abasResp[k]||{};
                 const raw = Object.values(r).reduce((s,v)=>s+v,0);
                 const max = abasStructure[k].items*4;
-                const ss = pdToScaledForm(k, raw, age, isParent, ageMonths) || Math.max(1, Math.min(19, Math.round(1 + (raw/max)*18)));
+                // pdToScaledForm devuelve null solo si no hay tabla para esa edad/área
+                // En ese caso usar SS=7 (media) como fallback neutral en vez de fórmula lineal
+                const ss = pdToScaledForm(k, raw, age, isParent, ageMonths) || 7;
                 scores[k] = { raw, max, ss };
             });
 
