@@ -6922,8 +6922,94 @@
                         <select id="abasRel"><option value="madre">Madre</option><option value="padre">Padre</option><option value="ambos">Ambos padres</option><option value="tutor">Tutor/a</option><option value="profesor">Profesor/a</option><option value="docente">Docente/Educador/a</option><option value="otro">Otro</option></select>
                     </div>
                     <button class="btn" onclick="abasBegin()">Comenzar Cuestionario ➡</button>
+                        <button class="btn btn-secondary" onclick="abasBeginManual()">📝 Introducir PD manualmente</button>
+                    </div>
                 </div>`;
         }
+
+        function abasBeginManual() {
+            const bd  = document.getElementById('abasBD').value;
+            const inf = document.getElementById('abasInf').value.trim();
+            if (!bd || !inf) { alert('Completa fecha de nacimiento e informador primero'); return; }
+
+            const today = new Date(), birth = new Date(bd);
+            let years = today.getFullYear() - birth.getFullYear();
+            let months = today.getMonth() - birth.getMonth();
+            if (today.getDate() < birth.getDate()) months--;
+            if (months < 0) { years--; months += 12; }
+            if (years < 5 || years > 21) { alert('Edad fuera del rango ABAS-II (5-21 años)'); return; }
+
+            const isParent = !(document.getElementById('abasForm') && document.getElementById('abasForm').value === 'teacher');
+            abasPatData = { age: years, ageMonths: months, inf, isTeacher: !isParent };
+
+            const areas = [
+                { key: 'comunicacion',          label: 'Comunicación',                        max: 96 },
+                { key: 'recursos_comunitarios', label: 'Utilización de Recursos Comunitarios', max: 92 },
+                { key: 'habilidades_academicas',label: 'Habilidades Académicas Funcionales',   max: 92 },
+                { key: 'vida_hogar',            label: 'Vida en el Hogar',                     max: 96 },
+                { key: 'salud_seguridad',       label: 'Salud y Seguridad',                    max: 88 },
+                { key: 'ocio',                  label: 'Ocio',                                 max: 88 },
+                { key: 'autocuidado',           label: 'Autocuidado',                          max: 96 },
+                { key: 'autodireccion',         label: 'Autodirección',                        max: 100 },
+                { key: 'social',                label: 'Social',                               max: 92 },
+            ];
+
+            const rows = areas.map(a => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+                    <label style="font-weight:500;color:#333;flex:1;">${a.label}</label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" id="manualPD_${a.key}" min="0" max="${a.max}" placeholder="0"
+                            style="width:80px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:1em;text-align:right;">
+                        <span style="color:#888;font-size:.85em;">/ ${a.max}</span>
+                    </div>
+                </div>`).join('');
+
+            document.getElementById('evaluationProgress').innerHTML = `
+                <div style="background:#f8f9fa;border-radius:15px;padding:25px;margin-top:20px;">
+                    <h3 style="color:#667eea;margin-bottom:6px;">📝 Introducir Puntuaciones Directas — ABAS-II</h3>
+                    <p style="color:#666;font-size:.9em;margin-bottom:20px;">
+                        Evaluado: <strong>${abasPatObj.name}</strong> · ${years} años ${months} meses · ${inf}
+                    </p>
+                    ${rows}
+                    <div style="display:flex;gap:10px;margin-top:20px;">
+                        <button class="btn btn-success" onclick="abasCalcManual()">✅ Calcular resultados</button>
+                        <button class="btn btn-secondary" onclick="abasBegin()">← Volver al cuestionario</button>
+                    </div>
+                </div>`;
+        }
+
+        function abasCalcManual() {
+            const areas = [
+                { key: 'comunicacion',          max: 96  },
+                { key: 'recursos_comunitarios', max: 92  },
+                { key: 'habilidades_academicas',max: 92  },
+                { key: 'vida_hogar',            max: 96  },
+                { key: 'salud_seguridad',       max: 88  },
+                { key: 'ocio',                  max: 88  },
+                { key: 'autocuidado',           max: 96  },
+                { key: 'autodireccion',         max: 100 },
+                { key: 'social',                max: 92  },
+            ];
+
+            // Leer PDs del formulario
+            abasResp = {};
+            let allFilled = true;
+            areas.forEach(a => {
+                const val = parseInt(document.getElementById('manualPD_' + a.key)?.value);
+                if (isNaN(val)) { allFilled = false; return; }
+                // Simular respuestas: distribuir uniformemente para que sumen la PD
+                // Pero más fácil: inyectar directamente en el cálculo
+                abasResp[a.key] = { _manualPD: val, _manualMax: a.max };
+            });
+
+            if (!allFilled && !confirm('Algunas áreas están vacías (se usará 0). ¿Continuar?')) return;
+
+            // Parchear abasCalc para que use las PDs manuales
+            window._abasManualMode = true;
+            abasCalc();
+            window._abasManualMode = false;
+        }
+
 
         function abasBegin() {
             const bd = document.getElementById('abasBD').value;
@@ -7221,10 +7307,13 @@
             const scores = {};
             abasAreaKeys.forEach(k => {
                 const r = abasResp[k]||{};
-                const raw = Object.values(r).reduce((s,v)=>s+v,0);
-                const max = abasStructure[k].items*4;
-                // pdToScaledForm devuelve null solo si no hay tabla para esa edad/área
-                // En ese caso usar SS=7 (media) como fallback neutral en vez de fórmula lineal
+                // Modo manual: usar PD directa introducida por el usuario
+                const raw = (window._abasManualMode && r._manualPD !== undefined)
+                    ? r._manualPD
+                    : Object.values(r).filter(v => typeof v === 'number' && v !== undefined).reduce((s,v)=>s+v,0);
+                const max = (window._abasManualMode && r._manualMax !== undefined)
+                    ? r._manualMax
+                    : abasStructure[k].items*4;
                 const ss = pdToScaledForm(k, raw, age, isParent, ageMonths) || 7;
                 scores[k] = { raw, max, ss };
             });
