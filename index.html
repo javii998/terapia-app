@@ -7298,7 +7298,8 @@
         function abasCalc() {
             let total=0, answered=0;
             abasAreaKeys.forEach(k=>{ total+=abasStructure[k].items; answered+=abasResp[k]?Object.keys(abasResp[k]).length:0; });
-            if (answered<total && !confirm(`Faltan ${total-answered} preguntas. ¿Calcular de todas formas?`)) return;
+            // En modo manual no verificar preguntas sin responder
+            if (!window._abasManualMode && answered<total && !confirm(`Faltan ${total-answered} preguntas. ¿Calcular de todas formas?`)) return;
 
             const age = abasPatData.age || 10;
             const ageMonths = abasPatData.ageMonths || 0;
@@ -7364,6 +7365,15 @@
                     abasAreaKeys.forEach(k => {
                         const area = abasStructure[k];
                         const resp = abasResp[k] || {};
+                        // Modo manual: guardar solo la PD directa
+                        if (window._abasManualMode && resp._manualPD !== undefined) {
+                            a.push({
+                                itemName: area.name,
+                                selectedOption: 'PD: ' + resp._manualPD + '/' + resp._manualMax,
+                                points: resp._manualPD
+                            });
+                            return;
+                        }
                         area.questions.forEach((q, qi) => {
                             const val = resp[qi];
                             const opt = abasResponseOptions.find(o => o.value === val);
