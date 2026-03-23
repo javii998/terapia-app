@@ -9625,7 +9625,102 @@
                 doc.text(`Escala: ${evaluation.scaleName}`, margin, y); y += 7;
                 doc.setFont(undefined, 'normal');
 
-                // Score box
+                // ── ABAS-II: informe detallado ──────────────────────────────
+                if (evaluation.isABAS) {
+                    // Parsear interpretation: "CAG PD=518/840 (PT≈40) | Conceptual PD=170/288 (PT≈40) | Social..."
+                    const interp = evaluation.interpretation || '';
+                    const parseBlock = (label) => {
+                        const m = interp.match(new RegExp(label + '\\s+PD=(\\d+)\/(\\d+)\\s*\\(PT[≈~]?(\\d+)\\)'));
+                        return m ? { pd: +m[1], max: +m[2], pt: +m[3] } : null;
+                    };
+                    const gac = parseBlock('CAG');
+                    const con = parseBlock('Conceptual');
+                    const soc = parseBlock('Social');
+                    const pra = parseBlock('Práctico');
+
+                    function ptInterp(pt) {
+                        if (!pt) return '—';
+                        if (pt >= 130) return 'Muy superior';
+                        if (pt >= 120) return 'Superior';
+                        if (pt >= 110) return 'Por encima de la media';
+                        if (pt >= 90)  return 'Media';
+                        if (pt >= 80)  return 'Por debajo de la media';
+                        if (pt >= 70)  return 'Límite';
+                        return 'Extremadamente bajo';
+                    }
+                    function ptPc(pt) {
+                        if (!pt) return '—';
+                        const tbl = {40:0.1,45:0.1,50:0.1,55:0.1,60:0.4,65:1,70:2,75:5,80:9,85:16,90:25,95:37,100:50,105:63,110:75,115:84,120:91,125:95,130:98,135:99,140:99.6};
+                        const keys = Object.keys(tbl).map(Number).sort((a,b)=>a-b);
+                        let closest = keys[0];
+                        for (const k of keys) { if (Math.abs(k-pt) <= Math.abs(closest-pt)) closest=k; }
+                        return tbl[closest] + '%';
+                    }
+
+                    // GAC box
+                    if (gac) {
+                        doc.setFillColor(102, 126, 234);
+                        doc.roundedRect(margin, y, pageWidth - 2*margin, 28, 4, 4, 'F');
+                        doc.setTextColor(255,255,255);
+                        doc.setFontSize(13); doc.setFont(undefined,'bold');
+                        doc.text('CAG — Compuesto Adaptativo General', margin+8, y+9);
+                        doc.setFontSize(12);
+                        doc.text(`PT: ${gac.pt}   Percentil: ${ptPc(gac.pt)}   PD: ${gac.pd}/${gac.max}`, margin+8, y+19);
+                        doc.setFontSize(10); doc.setFont(undefined,'normal');
+                        doc.text(`Interpretación: ${ptInterp(gac.pt)}`, margin+8, y+25);
+                        y += 34;
+                    }
+
+                    // Tabla de dominios
+                    const dominios = [
+                        ['CONCEPTUAL', con, '#4a90d9', ['Comunicación','Hab. Académicas','Autodirección']],
+                        ['SOCIAL',     soc, '#27ae60', ['Social','Ocio']],
+                        ['PRÁCTICO',   pra, '#e67e22', ['Autocuidado','Vida en el Hogar','Salud y Seguridad','Rec. Comunitarios']],
+                    ];
+                    dominios.forEach(([lbl, dom, hex, areas]) => {
+                        if (!dom) return;
+                        if (y > 240) { doc.addPage(); y = 20; }
+                        const rgb = hex === '#4a90d9' ? [74,144,217] : hex === '#27ae60' ? [39,174,96] : [230,126,34];
+                        doc.setFillColor(...rgb);
+                        doc.roundedRect(margin, y, pageWidth-2*margin, 22, 3, 3, 'F');
+                        doc.setTextColor(255,255,255);
+                        doc.setFontSize(11); doc.setFont(undefined,'bold');
+                        doc.text(`Dominio ${lbl}`, margin+6, y+8);
+                        doc.setFontSize(10); doc.setFont(undefined,'normal');
+                        doc.text(`PT: ${dom.pt}  |  Percentil: ${ptPc(dom.pt)}  |  PD: ${dom.pd}/${dom.max}  |  ${ptInterp(dom.pt)}`, margin+6, y+16);
+                        y += 26;
+                        // Áreas del dominio
+                        doc.setTextColor(0,0,0); doc.setFontSize(9);
+                        const areaAnswers = (evaluation.answers||[]).filter(a => areas.some(ar => a.itemName && a.itemName.toLowerCase().includes(ar.toLowerCase().split(' ')[0].toLowerCase())));
+                        areaAnswers.forEach(a => {
+                            if (y > 270) { doc.addPage(); y = 20; }
+                            doc.setFont(undefined,'bold'); doc.text('• '+a.itemName, margin+4, y);
+                            doc.setFont(undefined,'normal'); doc.setTextColor(80,80,80);
+                            doc.text(a.selectedOption, margin+50, y);
+                            doc.setTextColor(0,0,0);
+                            y += 6;
+                        });
+                        y += 4;
+                    });
+
+                    // Interpretación clínica
+                    if (y > 250) { doc.addPage(); y = 20; }
+                    doc.setFontSize(12); doc.setFont(undefined,'bold'); doc.setTextColor(102,126,234);
+                    doc.text('Interpretación Clínica', margin, y); y += 7;
+                    doc.setDrawColor(102,126,234); doc.line(margin, y, pageWidth-margin, y); y += 6;
+                    doc.setFontSize(10); doc.setFont(undefined,'normal'); doc.setTextColor(0,0,0);
+                    const clinText = gac
+                        ? `El evaluado obtiene un CAG de PT=${gac.pt} (Percentil ${ptPc(gac.pt)}), lo que corresponde a un nivel "${ptInterp(gac.pt)}" de conducta adaptativa general. `
+                        + (con ? `En el Dominio Conceptual obtiene PT=${con.pt} (${ptInterp(con.pt)}). ` : '')
+                        + (soc ? `En el Dominio Social obtiene PT=${soc.pt} (${ptInterp(soc.pt)}). ` : '')
+                        + (pra ? `En el Dominio Práctico obtiene PT=${pra.pt} (${ptInterp(pra.pt)}).` : '')
+                        : evaluation.interpretation;
+                    const clinLines = doc.splitTextToSize(clinText, pageWidth-2*margin);
+                    clinLines.forEach(l => { if (y>270){doc.addPage();y=20;} doc.text(l,margin,y); y+=6; });
+                    y += 8;
+
+                } else {
+                // ── Escala genérica ─────────────────────────────────────────
                 doc.setFillColor(240, 247, 255);
                 doc.roundedRect(margin, y, pageWidth - 2 * margin, 22, 3, 3, 'F');
                 doc.setFontSize(14);
@@ -9664,6 +9759,7 @@
                         doc.setTextColor(0, 0, 0);
                     });
                 }
+                } // fin else escala genérica
 
                 // Footer
                 const totalPages = doc.internal.getNumberOfPages();
