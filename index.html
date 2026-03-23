@@ -7113,23 +7113,34 @@
 
         // Helper: dado un objeto {pt: [min,max]} devuelve el PT para una suma dada
         function _lookupPT(tablaEdad, suma) {
+            // Formato: { suma: [PT_min, PT_max] }
+            // Las keys son sumas de escalares, los valores son rangos de PT
             if (!tablaEdad) return null;
-            let maxPT = 40, maxSuma = 0, minPT = 160, minSuma = 999;
-            for (const [pt, rng] of Object.entries(tablaEdad)) {
-                if (rng === null) continue;
-                const [lo, hi] = rng;
-                if (lo === null) continue;
-                if (suma >= lo && suma <= hi) return parseInt(pt);
-                // Rastrear extremos para manejar fuera de rango
-                const ptN = parseInt(pt);
-                if (hi > maxSuma) { maxSuma = hi; maxPT = ptN; }
-                if (lo < minSuma) { minSuma = lo; minPT = ptN; }
+            const sumaStr = String(parseInt(suma));
+            if (tablaEdad[sumaStr]) {
+                const rng = tablaEdad[sumaStr];
+                if (Array.isArray(rng) && rng.length >= 2) return Math.round((rng[0] + rng[1]) / 2);
+                if (typeof rng === 'number') return rng;
             }
-            // Si suma supera el techo → PT máximo de la tabla
-            if (suma > maxSuma && maxSuma > 0) return maxPT;
-            // Si suma está por debajo del suelo → PT mínimo de la tabla
-            if (suma < minSuma) return minPT;
-            return null;
+            // Si no hay entrada exacta, buscar la más cercana
+            const keys = Object.keys(tablaEdad).map(Number).filter(k => !isNaN(k)).sort((a,b)=>a-b);
+            if (keys.length === 0) return null;
+            const s = parseInt(suma);
+            // Por encima del máximo → PT del máximo
+            if (s > keys[keys.length-1]) {
+                const rng = tablaEdad[String(keys[keys.length-1])];
+                return Array.isArray(rng) ? Math.round((rng[0]+rng[1])/2) : rng;
+            }
+            // Por debajo del mínimo → PT del mínimo
+            if (s < keys[0]) {
+                const rng = tablaEdad[String(keys[0])];
+                return Array.isArray(rng) ? Math.round((rng[0]+rng[1])/2) : rng;
+            }
+            // Buscar la key más cercana
+            let closest = keys[0];
+            for (const k of keys) { if (Math.abs(k-s) < Math.abs(closest-s)) closest=k; }
+            const rng = tablaEdad[String(closest)];
+            return Array.isArray(rng) ? Math.round((rng[0]+rng[1])/2) : rng;
         }
 
         // ---- TABLA A.2: TEACHER FORM, suma escalares → PT por edad ----
