@@ -7281,9 +7281,14 @@
         // Función principal: suma escalares → PT compuesto (exacta del manual)
         function sumaEscalarToPT(suma, dominio, age, isParent) {
             const tabla = isParent ? abasA6P : abasA2T;
-            const tablaEdad = tabla[age] || tabla[Math.min(Math.max(age,5),21)];
-            if (!tablaEdad || !tablaEdad[dominio]) return _fallbackPT(suma, dominio);
+            const ageInt = parseInt(age);
+            const tablaEdad = tabla[ageInt] || tabla[String(ageInt)] || tabla[Math.min(Math.max(ageInt,5),21)];
+            if (!tablaEdad || !tablaEdad[dominio]) {
+                console.warn('sumaEscalarToPT: no tabla para edad', ageInt, 'dominio', dominio, 'isParent', isParent);
+                return _fallbackPT(suma, dominio);
+            }
             const pt = _lookupPT(tablaEdad[dominio], suma);
+            console.log('sumaEscalarToPT:', dominio, 'suma=', suma, 'age=', ageInt, '→ PT=', pt);
             return pt !== null ? Math.max(40, Math.min(160, pt)) : _fallbackPT(suma, dominio);
         }
 
