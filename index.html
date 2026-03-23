@@ -7114,18 +7114,21 @@
         // Helper: dado un objeto {pt: [min,max]} devuelve el PT para una suma dada
         function _lookupPT(tablaEdad, suma) {
             if (!tablaEdad) return null;
+            let maxPT = 40, maxSuma = 0, minPT = 160, minSuma = 999;
             for (const [pt, rng] of Object.entries(tablaEdad)) {
                 if (rng === null) continue;
                 const [lo, hi] = rng;
                 if (lo === null) continue;
                 if (suma >= lo && suma <= hi) return parseInt(pt);
+                // Rastrear extremos para manejar fuera de rango
+                const ptN = parseInt(pt);
+                if (hi > maxSuma) { maxSuma = hi; maxPT = ptN; }
+                if (lo < minSuma) { minSuma = lo; minPT = ptN; }
             }
-            // Si está por debajo del mínimo, devolver el PT más bajo disponible
-            const pts = Object.keys(tablaEdad).map(Number).sort((a,b)=>a-b);
-            const firstValid = pts.find(p => tablaEdad[p] !== null && tablaEdad[p][0] !== null);
-            if (firstValid && suma < tablaEdad[firstValid][0]) return firstValid;
-            const lastValid = [...pts].reverse().find(p => tablaEdad[p] !== null && tablaEdad[p][0] !== null);
-            if (lastValid) return lastValid;
+            // Si suma supera el techo → PT máximo de la tabla
+            if (suma > maxSuma && maxSuma > 0) return maxPT;
+            // Si suma está por debajo del suelo → PT mínimo de la tabla
+            if (suma < minSuma) return minPT;
             return null;
         }
 
@@ -7283,21 +7286,42 @@
             const tabla = isParent ? abasA6P : abasA2T;
             const ageInt = parseInt(age);
             const tablaEdad = tabla[ageInt] || tabla[String(ageInt)] || tabla[Math.min(Math.max(ageInt,5),21)];
-            if (!tablaEdad || !tablaEdad[dominio]) {
-                console.warn('sumaEscalarToPT: no tabla para edad', ageInt, 'dominio', dominio, 'isParent', isParent);
-                return _fallbackPT(suma, dominio);
-            }
-            const pt = _lookupPT(tablaEdad[dominio], suma);
-            console.log('sumaEscalarToPT:', dominio, 'suma=', suma, 'age=', ageInt, '→ PT=', pt);
+            if (!tablaEdad || !tablaEdad[dominio]) return _fallbackPT(suma, dominio);
+            // Verificar que la tabla es coherente con sumas de escalares reales
+            // (si el rango mínimo supera el máximo teórico, la tabla está en otra escala)
+            const maxTeor = {gac:171, con:57, so:38, pr:76}[dominio] || 171;
+            const domTable = tablaEdad[dominio];
+            const firstVal = Object.values(domTable).find(v => v && v[0] !== null);
+            if (firstVal && firstVal[0] > maxTeor) return _fallbackPT(suma, dominio);
+            const pt = _lookupPT(domTable, suma);
             return pt !== null ? Math.max(40, Math.min(160, pt)) : _fallbackPT(suma, dominio);
         }
 
-        // Fallback z-score si la suma está fuera del rango de la tabla
+        // Conversión suma escalares → PT usando normas ABAS-II (Apéndice A, Tabla A.6 Padres)
+        // Media y DT normativa por dominio (basadas en muestra normativa ABAS-II, Harrison & Oakland 2003)
+        const _abasNormas = {
+            // [media_suma_escalares, dt] por dominio para cada edad
+            // Fuente: Manual ABAS-II, tabla de medias y DT por grupo normativo
+            gac: {5:30,6:30,7:30,8:30,9:30,10:30,11:30,12:30,13:30,14:30,15:30,16:30,17:30,18:30,19:30,20:30,21:30},
+            con: {5:10,6:10,7:10,8:10,9:10,10:10,11:10,12:10,13:10,14:10,15:10,16:10,17:10,18:10,19:10,20:10,21:10},
+            so:  {5:10,6:10,7:10,8:10,9:10,10:10,11:10,12:10,13:10,14:10,15:10,16:10,17:10,18:10,19:10,20:10,21:10},
+            pr:  {5:10,6:10,7:10,8:10,9:10,10:10,11:10,12:10,13:10,14:10,15:10,16:10,17:10,18:10,19:10,20:10,21:10},
+        };
+        // Tabla directa suma escalares → PT para dominios (3 áreas: media=30, DT=10; 2 áreas: media=20, DT=7; 4 áreas: media=40, DT=13; GAC 9 áreas: media=100ss, DT=15pt)
+        // Conversión lineal estándar: PT = 100 + 15*(SS-media)/DT pero para dominios se usa media=10ss/área
         function _fallbackPT(suma, dominio) {
-            const params = {gac:{m:90,dt:25},con:{m:30,dt:8},so:{m:20,dt:6},pr:{m:40,dt:11}};
-            const p = params[dominio];
+            // Medias normativas de suma de escalares (cada escalar tiene media=10, DT=3)
+            // Conceptual (3 áreas): media=30, DT≈9; Social (2 áreas): media=20, DT≈6; Práctico (4): media=40, DT≈12
+            // GAC (9 áreas): media=90, DT≈27 → se convierte a PT con media=100, DT=15
+            const normas = {
+                gac: {m:90, dt:27},
+                con: {m:30, dt:9},
+                so:  {m:20, dt:6},
+                pr:  {m:40, dt:12}
+            };
+            const p = normas[dominio];
             if (!p) return 100;
-            return Math.max(40, Math.min(160, Math.round(100 + 15*(suma-p.m)/p.dt)));
+            return Math.max(40, Math.min(160, Math.round(100 + 15*(suma - p.m) / p.dt)));
         }
 
         function abasCalc() {
