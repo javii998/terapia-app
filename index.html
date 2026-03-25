@@ -7306,17 +7306,52 @@
 
         // Función principal: suma escalares → PT compuesto (exacta del manual)
         function sumaEscalarToPT(suma, dominio, age, isParent) {
+            // DEBUG: Mostrar parámetros de entrada
+            if (window._abasDebug) {
+                console.log(`=== sumaEscalarToPT ===`);
+                console.log(`Parámetros: suma=${suma}, dominio=${dominio}, age=${age}, isParent=${isParent}`);
+            }
+            
             const tabla = isParent ? abasA6P : abasA2T;
             const ageInt = parseInt(age);
             const tablaEdad = tabla[ageInt] || tabla[String(ageInt)] || tabla[Math.min(Math.max(ageInt,5),21)];
-            if (!tablaEdad || !tablaEdad[dominio]) return _fallbackPT(suma, dominio);
+            
+            if (window._abasDebug) {
+                console.log(`Tabla usada: ${isParent ? 'abasA6P' : 'abasA2T'}`);
+                console.log(`ageInt: ${ageInt}`);
+                console.log(`tablaEdad existe: ${!!tablaEdad}`);
+                console.log(`tablaEdad[${dominio}] existe: ${!!(tablaEdad && tablaEdad[dominio])}`);
+            }
+            
+            if (!tablaEdad || !tablaEdad[dominio]) {
+                if (window._abasDebug) console.log(`Usando _fallbackPT porque no hay tabla`);
+                return _fallbackPT(suma, dominio);
+            }
+            
             // Verificar que la tabla es coherente con sumas de escalares reales
             // (si el rango mínimo supera el máximo teórico, la tabla está en otra escala)
             const maxTeor = {gac:171, con:57, so:38, pr:76}[dominio] || 171;
             const domTable = tablaEdad[dominio];
             const firstVal = Object.values(domTable).find(v => v && v[0] !== null);
-            if (firstVal && firstVal[0] > maxTeor) return _fallbackPT(suma, dominio);
+            
+            if (window._abasDebug) {
+                console.log(`maxTeor[${dominio}]: ${maxTeor}`);
+                console.log(`firstVal: ${firstVal}`);
+                if (firstVal) console.log(`firstVal[0] > maxTeor: ${firstVal[0] > maxTeor}`);
+            }
+            
+            if (firstVal && firstVal[0] > maxTeor) {
+                if (window._abasDebug) console.log(`Usando _fallbackPT por inconsistencia de tabla`);
+                return _fallbackPT(suma, dominio);
+            }
+            
             const pt = _lookupPT(domTable, suma);
+            
+            if (window._abasDebug) {
+                console.log(`pt de _lookupPT: ${pt}`);
+                console.log(`Math.max(40, Math.min(160, ${pt})): ${Math.max(40, Math.min(160, pt))}`);
+            }
+            
             return pt !== null ? Math.max(40, Math.min(160, pt)) : _fallbackPT(suma, dominio);
         }
 
@@ -7516,6 +7551,16 @@
                 console.log('Datos paciente:', abasPatData);
                 console.log('Respuestas:', abasResp);
                 console.log('');
+                
+                // DEBUG: Verificar resolución de clave de edad
+                if (isParent) {
+                    const ageKey = _getParentAgeKey(age, ageMonths);
+                    console.log('=== CLAVE DE EDAD ===');
+                    console.log('Edad original:', age, 'años', ageMonths, 'meses');
+                    console.log('Clave de edad resuelta:', ageKey);
+                    console.log('parseInt(age):', parseInt(age));
+                    console.log('');
+                }
             }
             
             abasAreaKeys.forEach(k => {
