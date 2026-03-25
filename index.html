@@ -7068,6 +7068,7 @@
             html += `<div style="display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;">
                 ${idx>0 ? `<button class="btn btn-secondary" style="flex:1;min-width:110px;" onclick="abasPrev()">⬅ Anterior</button>` : ''}
                 ${!isLast ? `<button class="btn" style="flex:1;min-width:110px;" onclick="abasNext()">Siguiente ➡</button>` : ''}
+                ${!isLast ? `<button class="btn btn-info" style="flex:1;min-width:110px;" onclick="abasGoToEnd()">⏭ Ir al final</button>` : ''}
                 ${isLast ? `<button class="btn btn-success" style="flex:1;min-width:110px;" onclick="abasCalc()">✅ Calcular</button>` : ''}
                 ${isLast ? `<button class="btn btn-warning" style="flex:1;min-width:110px;" onclick="toggleDebug()">🔍 Debug</button>` : ''}
             </div>`;
@@ -7085,6 +7086,11 @@
                 console.log('=== MODO DEBUG ABAS-II ACTIVADO ===');
                 console.log('Los cálculos detallados aparecerán aquí al presionar "Calcular"');
             }
+        }
+
+        function abasGoToEnd() {
+            window.abasCurrentIdx = abasAreaKeys.length - 1;
+            abasShowArea(window.abasCurrentIdx);
         }
 
         function abasSelOpt(key, qi, val, btn) {
