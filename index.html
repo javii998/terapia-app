@@ -7491,6 +7491,11 @@
         }
 
         function abasCalc() {
+            // DEBUG: Verificar que la función se está llamando
+            if (window._abasDebug) {
+                console.log('=== INICIANDO CÁLCULO ABAS-II ===');
+            }
+            
             let total=0, answered=0;
             abasAreaKeys.forEach(k=>{ total+=abasStructure[k].items; answered+=abasResp[k]?Object.keys(abasResp[k]).length:0; });
             // En modo manual no verificar preguntas sin responder
@@ -7504,10 +7509,12 @@
             
             // DEBUG: Mostrar información básica
             if (window._abasDebug) {
-                console.log('=== DEBUG ABAS-II ===');
+                console.log('=== DATOS BÁSICOS ===');
                 console.log('Edad:', age, 'años', ageMonths, 'meses');
                 console.log('Formulario:', formLabel);
                 console.log('Modo manual:', window._abasManualMode);
+                console.log('Datos paciente:', abasPatData);
+                console.log('Respuestas:', abasResp);
                 console.log('');
             }
             
@@ -7585,6 +7592,7 @@
                 console.log(`Búsqueda en tabla: edad ${age}, dominio 'so', suma ${socSS}`);
                 debugTablaLookup(age, 'so', socSS);
                 console.log('');
+                console.log('=== CÁLCULO COMPLETADO ===');
             }
 
             const evalRec = {
