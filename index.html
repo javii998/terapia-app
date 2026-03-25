@@ -7069,7 +7069,7 @@
                 ${idx>0 ? `<button class="btn btn-secondary" style="flex:1;min-width:110px;" onclick="abasPrev()">⬅ Anterior</button>` : ''}
                 ${!isLast ? `<button class="btn" style="flex:1;min-width:110px;" onclick="abasNext()">Siguiente ➡</button>` : ''}
                 ${!isLast ? `<button class="btn btn-info" style="flex:1;min-width:110px;" onclick="abasGoToEnd()">⏭ Ir al final</button>` : ''}
-                ${isLast ? `<button class="btn btn-success" style="flex:1;min-width:110px;" onclick="abasCalc()">✅ Calcular</button>` : ''}
+                ${isLast ? `<button class="btn btn-success" style="flex:1;min-width:110px;" onclick="console.log('Botón Calcular presionado'); abasCalc()">✅ Calcular</button>` : ''}
                 ${isLast ? `<button class="btn btn-warning" style="flex:1;min-width:110px;" onclick="toggleDebug()">🔍 Debug</button>` : ''}
             </div>`;
 
@@ -7532,10 +7532,18 @@
         }
 
         function abasCalc() {
+            // DEBUG: Verificar que la función se está llamando SIEMPRE
+            console.log('!!! abasCalc() fue llamada !!!');
+            console.log('window._abasDebug:', window._abasDebug);
+            
             // DEBUG: Verificar que la función se está llamando
             if (window._abasDebug) {
                 console.log('=== INICIANDO CÁLCULO ABAS-II ===');
             }
+            
+            // DEBUG FORZADO: Siempre mostrar inicio
+            console.log('=== INICIO FORZADO DE CÁLCULO ===');
+            console.log('Respuestas disponibles:', abasResp);
             
             let total=0, answered=0;
             abasAreaKeys.forEach(k=>{ total+=abasStructure[k].items; answered+=abasResp[k]?Object.keys(abasResp[k]).length:0; });
