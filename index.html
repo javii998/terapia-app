@@ -7089,8 +7089,8 @@
         }
 
         function abasGoToEnd() {
-            window.abasCurrentIdx = abasAreaKeys.length - 1;
-            abasShowArea(window.abasCurrentIdx);
+            abasAreaIdx = abasAreaKeys.length - 1;
+            abasRenderArea(abasAreaIdx);
         }
 
         function abasSelOpt(key, qi, val, btn) {
