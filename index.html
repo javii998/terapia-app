@@ -5636,7 +5636,7 @@
             ocio:                [{eq:'5',min:0,max:42},{eq:'6',min:43,max:44},{eq:'7',min:45,max:49},{eq:'8',min:50,max:51},{eq:'9',min:52,max:52},{eq:'10-11',min:53,max:53},{eq:'12-13',min:54,max:55},{eq:'14-15',min:null,max:null},{eq:'16-18',min:56,max:59},{eq:'19-21',min:60,max:66}],
             autocuidado:         [{eq:'5',min:0,max:48},{eq:'6',min:49,max:52},{eq:'7',min:53,max:59},{eq:'8',min:60,max:61},{eq:'9',min:62,max:63},{eq:'10-11',min:64,max:67},{eq:'12-13',min:68,max:69},{eq:'14-15',min:null,max:null},{eq:'16-18',min:70,max:70},{eq:'19-21',min:71,max:72}],
             autodireccion:       [{eq:'5',min:0,max:39},{eq:'6',min:40,max:43},{eq:'7',min:44,max:50},{eq:'8',min:51,max:51},{eq:'9',min:52,max:55},{eq:'10-11',min:56,max:59},{eq:'12-13',min:null,max:null},{eq:'14-15',min:60,max:61},{eq:'16-18',min:62,max:67},{eq:'19-21',min:68,max:75}],
-            social:              [{eq:'5',min:0,max:53},{eq:'6',min:54,max:55},{eq:'7',min:56,max:57},{eq:'8',min:58,max:59},{eq:'9',min:null,max:null},{eq:'10-11',min:60,max:60},{eq:'12-13',min:61,max:61},{eq:'14-15',min:62,max:62},{eq:'16-18',min:63,max:64},{eq:'19-21',min:65,max:69}]
+            social:              [{eq:'5',min:0,max:53},{eq:'6',min:54,max:57},{eq:'7',min:58,max:59},{eq:'8',min:60,max:60},{eq:'9',min:61,max:61},{eq:'10',min:62,max:62},{eq:'11',min:63,max:63},{eq:'12',min:64,max:64},{eq:'13',min:65,max:65},{eq:'14',min:66,max:66},{eq:'15',min:67,max:67},{eq:'16',min:68,max:68},{eq:'17-21',min:69,max:70}]
         };
 
         const abasEdadEqEscolarProfesores = {
@@ -7069,10 +7069,22 @@
                 ${idx>0 ? `<button class="btn btn-secondary" style="flex:1;min-width:110px;" onclick="abasPrev()">⬅ Anterior</button>` : ''}
                 ${!isLast ? `<button class="btn" style="flex:1;min-width:110px;" onclick="abasNext()">Siguiente ➡</button>` : ''}
                 ${isLast ? `<button class="btn btn-success" style="flex:1;min-width:110px;" onclick="abasCalc()">✅ Calcular</button>` : ''}
+                ${isLast ? `<button class="btn btn-warning" style="flex:1;min-width:110px;" onclick="toggleDebug()">🔍 Debug</button>` : ''}
             </div>`;
 
             document.getElementById('evaluationProgress').innerHTML = html;
             window.scrollTo(0,0);
+        }
+
+        function toggleDebug() {
+            window._abasDebug = !window._abasDebug;
+            const status = window._abasDebug ? 'ACTIVADO' : 'DESACTIVADO';
+            alert(`Modo debug ${status}\n\nLos cálculos se mostrarán en la consola (F12 > Console)`);
+            if (window._abasDebug) {
+                console.clear();
+                console.log('=== MODO DEBUG ABAS-II ACTIVADO ===');
+                console.log('Los cálculos detallados aparecerán aquí al presionar "Calcular"');
+            }
         }
 
         function abasSelOpt(key, qi, val, btn) {
@@ -7335,6 +7347,149 @@
             return Math.max(40, Math.min(160, Math.round(100 + 15*(suma - p.m) / p.dt)));
         }
 
+        // Funciones auxiliares para debug
+        function getEdadEquivalente(areaKey, pd, isParent) {
+            const tabla = isParent ? abasEdadEqEscolarPadres : abasEdadEqEscolarProfesores;
+            const areaTabla = tabla[areaKey];
+            if (!areaTabla) return 'No disponible';
+            
+            for (const rango of areaTabla) {
+                if (pd >= rango.min && (rango.max === null || pd <= rango.max)) {
+                    return rango.eq;
+                }
+            }
+            const maxRango = areaTabla[areaTabla.length - 1];
+            return `>${maxRango.eq}`;
+        }
+        
+        function ptToPercentil(pt) {
+            // Apéndice B: PT → Percentil
+            if (pt <= 40) return '<1';
+            if (pt <= 44) return '1';
+            if (pt <= 47) return '2';
+            if (pt <= 49) return '3';
+            if (pt <= 51) return '4';
+            if (pt <= 52) return '5';
+            if (pt <= 54) return '6';
+            if (pt <= 55) return '7';
+            if (pt <= 56) return '8';
+            if (pt <= 57) return '9';
+            if (pt <= 58) return '10';
+            if (pt <= 59) return '11';
+            if (pt <= 60) return '12';
+            if (pt <= 61) return '13';
+            if (pt <= 62) return '14';
+            if (pt <= 63) return '15';
+            if (pt <= 64) return '16';
+            if (pt <= 65) return '17';
+            if (pt <= 66) return '18';
+            if (pt <= 67) return '19';
+            if (pt <= 68) return '20';
+            if (pt <= 69) return '21';
+            if (pt <= 70) return '22';
+            if (pt <= 71) return '23';
+            if (pt <= 72) return '24';
+            if (pt <= 73) return '25';
+            if (pt <= 74) return '26';
+            if (pt <= 75) return '27';
+            if (pt <= 76) return '28';
+            if (pt <= 77) return '29';
+            if (pt <= 78) return '30';
+            if (pt <= 79) return '31';
+            if (pt <= 80) return '32';
+            if (pt <= 81) return '33';
+            if (pt <= 82) return '34';
+            if (pt <= 83) return '35';
+            if (pt <= 84) return '36';
+            if (pt <= 85) return '37';
+            if (pt <= 86) return '38';
+            if (pt <= 87) return '39';
+            if (pt <= 88) return '40';
+            if (pt <= 89) return '41';
+            if (pt <= 90) return '42';
+            if (pt <= 91) return '43';
+            if (pt <= 92) return '44';
+            if (pt <= 93) return '45';
+            if (pt <= 94) return '46';
+            if (pt <= 95) return '47';
+            if (pt <= 96) return '48';
+            if (pt <= 97) return '49';
+            if (pt <= 98) return '50';
+            if (pt <= 99) return '51';
+            if (pt <= 100) return '52';
+            if (pt <= 101) return '53';
+            if (pt <= 102) return '54';
+            if (pt <= 103) return '55';
+            if (pt <= 104) return '56';
+            if (pt <= 105) return '57';
+            if (pt <= 106) return '58';
+            if (pt <= 107) return '59';
+            if (pt <= 108) return '60';
+            if (pt <= 109) return '61';
+            if (pt <= 110) return '62';
+            if (pt <= 111) return '63';
+            if (pt <= 112) return '64';
+            if (pt <= 113) return '65';
+            if (pt <= 114) return '66';
+            if (pt <= 115) return '67';
+            if (pt <= 116) return '68';
+            if (pt <= 117) return '69';
+            if (pt <= 118) return '70';
+            if (pt <= 119) return '71';
+            if (pt <= 120) return '72';
+            if (pt <= 121) return '73';
+            if (pt <= 122) return '74';
+            if (pt <= 123) return '75';
+            if (pt <= 124) return '76';
+            if (pt <= 125) return '77';
+            if (pt <= 126) return '78';
+            if (pt <= 127) return '79';
+            if (pt <= 128) return '80';
+            if (pt <= 129) return '81';
+            if (pt <= 130) return '82';
+            if (pt <= 131) return '83';
+            if (pt <= 132) return '84';
+            if (pt <= 133) return '85';
+            if (pt <= 134) return '86';
+            if (pt <= 135) return '87';
+            if (pt <= 136) return '88';
+            if (pt <= 137) return '89';
+            if (pt <= 138) return '90';
+            if (pt <= 139) return '91';
+            if (pt <= 140) return '92';
+            if (pt <= 141) return '93';
+            if (pt <= 142) return '94';
+            if (pt <= 143) return '95';
+            if (pt <= 144) return '96';
+            if (pt <= 145) return '97';
+            if (pt <= 146) return '98';
+            if (pt <= 147) return '99';
+            return '>99';
+        }
+        
+        function debugTablaLookup(age, dominio, suma) {
+            const tabla = abasA6P[age];
+            if (!tabla || !tabla[dominio]) {
+                console.log(`  Tabla no encontrada para edad ${age}, dominio ${dominio}`);
+                return;
+            }
+            
+            console.log(`  Valores disponibles en tabla[${age}][${dominio}]:`);
+            const claves = Object.keys(tabla[dominio]).map(Number).sort((a,b)=>a-b);
+            const alrededor = claves.filter(k => Math.abs(k - suma) <= 5);
+            
+            if (alrededor.length > 0) {
+                console.log(`  Valores cercanos a ${suma}:`);
+                alrededor.forEach(k => {
+                    const val = tabla[dominio][k];
+                    console.log(`    ${k}: [${val[0]}, ${val[1]}]`);
+                });
+            } else {
+                console.log(`  Rango completo: ${claves[0]} - ${claves[claves.length-1]}`);
+                console.log(`  Valor más cercano: ${_lookupPT(tabla[dominio], suma)}`);
+            }
+        }
+
         function abasCalc() {
             let total=0, answered=0;
             abasAreaKeys.forEach(k=>{ total+=abasStructure[k].items; answered+=abasResp[k]?Object.keys(abasResp[k]).length:0; });
@@ -7346,6 +7501,16 @@
             const isParent = !abasPatData.isTeacher;
             const formLabel = isParent ? 'Escolar-Padres (Tabla A.5)' : 'Escolar-Profesores (Tabla A.1)';
             const scores = {};
+            
+            // DEBUG: Mostrar información básica
+            if (window._abasDebug) {
+                console.log('=== DEBUG ABAS-II ===');
+                console.log('Edad:', age, 'años', ageMonths, 'meses');
+                console.log('Formulario:', formLabel);
+                console.log('Modo manual:', window._abasManualMode);
+                console.log('');
+            }
+            
             abasAreaKeys.forEach(k => {
                 const r = abasResp[k]||{};
                 // Modo manual: usar PD directa introducida por el usuario
@@ -7357,6 +7522,14 @@
                     : abasStructure[k].items*4;
                 const ss = pdToScaledForm(k, raw, age, isParent, ageMonths) || 7;
                 scores[k] = { raw, max, ss };
+                
+                // DEBUG: Mostrar cálculo por área
+                if (window._abasDebug) {
+                    console.log(`Área: ${k}`);
+                    console.log(`  PD: ${raw}/${max}`);
+                    console.log(`  Puntuación escalar: ${ss}`);
+                    console.log(`  Edad equivalente: ${getEdadEquivalente(k, raw, isParent)}`);
+                }
             });
 
             // Dominio Conceptual: Com + FA + SD
@@ -7395,6 +7568,24 @@
             const cagRaw = con.raw + soc.raw + pra.raw;
             const cagMax = con.max + soc.max + pra.max;
             const ci=abasCI[age]||abasCI[10];
+            
+            // DEBUG: Mostrar cálculo de dominios y CAG
+            if (window._abasDebug) {
+                console.log('');
+                console.log('=== DOMINIOS ===');
+                console.log(`Conceptual: SS=${conSS}, PT=${conPT}, Percentil=${ptToPercentil(conPT)}`);
+                console.log(`Social: SS=${socSS}, PT=${socPT}, Percentil=${ptToPercentil(socPT)}`);
+                console.log(`Práctico: SS=${praSS}, PT=${praPT}, Percentil=${ptToPercentil(praPT)}`);
+                console.log(`CAG: SS=${gagSS}, PT=${cagPT}, Percentil=${ptToPercentil(cagPT)}`);
+                console.log('');
+                console.log('=== DETALLE SOCIAL ===');
+                console.log(`Social: PD=${scores.social.raw}, SS=${scores.social.ss}`);
+                console.log(`Ocio: PD=${scores.ocio.raw}, SS=${scores.ocio.ss}`);
+                console.log(`Suma Social: ${socSS} escalares → PT ${socPT}`);
+                console.log(`Búsqueda en tabla: edad ${age}, dominio 'so', suma ${socSS}`);
+                debugTablaLookup(age, 'so', socSS);
+                console.log('');
+            }
 
             const evalRec = {
                 id:Date.now(), patientId:abasPatObj.id, patientName:abasPatObj.name,
