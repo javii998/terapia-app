@@ -7328,19 +7328,17 @@
                 return _fallbackPT(suma, dominio);
             }
             
-            // Verificar que la tabla es coherente con sumas de escalares reales
-            // (si el rango mínimo supera el máximo teórico, la tabla está en otra escala)
-            const maxTeor = {gac:171, con:57, so:38, pr:76}[dominio] || 171;
-            const domTable = tablaEdad[dominio];
-            const firstVal = Object.values(domTable).find(v => v && v[0] !== null);
+            // Verificación desactivada: las tablas oficiales usan escala PT, no suma escalares
+            // const maxTeor = {gac:171, con:57, so:38, pr:76}[dominio] || 171;
+            // const domTable = tablaEdad[dominio];
+            // const firstVal = Object.values(domTable).find(v => v && v[0] !== null);
             
             if (window._abasDebug) {
-                console.log(`maxTeor[${dominio}]: ${maxTeor}`);
-                console.log(`firstVal: ${firstVal}`);
-                if (firstVal) console.log(`firstVal[0] > maxTeor: ${firstVal[0] > maxTeor}`);
+                console.log(`Usando tabla oficial directamente (escala PT)`);
             }
             
-            if (firstVal && firstVal[0] > maxTeor) {
+            // Desactivar verificación de coherencia para usar tablas oficiales
+            if (false) { // firstVal && firstVal[0] > maxTeor) {
                 if (window._abasDebug) console.log(`Usando _fallbackPT por inconsistencia de tabla`);
                 return _fallbackPT(suma, dominio);
             }
@@ -9026,8 +9024,20 @@
                 }
                 abasPatObj = patient;
                 // Reconstruir abasPatData desde la interpretación guardada
-                const age = patient.birthDate ? Math.floor((Date.now() - new Date(patient.birthDate)) / (365.25*24*3600*1000)) : 10;
-                abasPatData = { age, ageMonths: 0, bd: patient.birthDate || '', inf: '', isTeacher: false };
+                let age = 10, ageMonths = 0;
+                if (patient.birthDate) {
+                    const today = new Date();
+                    const birth = new Date(patient.birthDate);
+                    age = today.getFullYear() - birth.getFullYear();
+                    ageMonths = today.getMonth() - birth.getMonth();
+                    if (today.getDate() < birth.getDate()) ageMonths--;
+                    if (ageMonths < 0) { age--; ageMonths += 12; }
+                    console.log(`=== CÁLCULO DE EDAD CARGANDO ===`);
+                    console.log(`Fecha nacimiento: ${patient.birthDate}`);
+                    console.log(`Fecha actual: ${today.toISOString().split('T')[0]}`);
+                    console.log(`Edad calculada: ${age} años ${ageMonths} meses`);
+                }
+                abasPatData = { age, ageMonths, bd: patient.birthDate || '', inf: '', isTeacher: false };
                 window._abasEditId = ev.id;
                 switchTab('evaluaciones');
                 setTimeout(() => {
