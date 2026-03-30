@@ -1446,7 +1446,10 @@
         <header>
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                 <div>
-                    <h1 style="margin:0;">📋 Sistema configurable de Terapia Ocupacional</h1>
+                    <div style="display:flex;align-items:center;gap:12px;">
+            <h1 style="margin:0;font-size:1.8em;color:#2c3e50;">🧠 Terapia Ocupacional</h1>
+            <button onclick="loginLogout()" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:white;border:none;border-radius:20px;padding:6px 12px;font-size:0.8em;cursor:pointer;" title="Cerrar sesión">🚪 Salir</button>
+        </div>
                     <p class="subtitle" style="margin:4px 0 0;">por Javier Fuentes Navarro</p>
                 </div>
                 <span id="ghSyncBadge" onclick="GH.token ? ghPush() : ghShowSetup()" title="Clic para sincronizar o configurar GitHub" style="padding:6px 14px;border-radius:20px;font-size:.82em;font-weight:600;background:#e0e0e0;color:#666;cursor:pointer;white-space:nowrap;">☁️ GitHub</span>
@@ -1533,9 +1536,14 @@
             <div id="escalas" class="tab-content">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 style="margin: 0;">Mis Escalas Configuradas</h2>
-                    <button class="btn btn-secondary" onclick="resetToPreloadedScales()" style="font-size: 0.9em;">
-                        🔄 Restaurar escalas precargadas
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="abasImportarTablas()" style="font-size: 0.9em; background: linear-gradient(135deg,#e74c3c,#c0392b);">
+                            📊 Importar Tablas ABAS
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetToPreloadedScales()" style="font-size: 0.9em;">
+                            🔄 Restaurar escalas precargadas
+                        </button>
+                    </div>
                 </div>
                 <div class="alert alert-success" id="welcomeAlert" style="display: none;">
                     ✨ <strong>¡Escalas pre-cargadas!</strong> Hemos añadido 17 escalas profesionales que puedes usar directamente o modificar según tus necesidades.
@@ -1919,7 +1927,10 @@
                         <p style="color:#666;margin:4px 0 0 0;font-size:0.95em;">Tareas pendientes del sistema ABAS-II y desarrollo</p>
                     </div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button class="btn" onclick="tareasShowAddModal()">➕ Nueva Tarea</button>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <button class="btn" onclick="showAddScaleModal()">➕ Crear Escala</button>
+                            <button class="btn" style="background:linear-gradient(135deg,#e74c3c,#c0392b);" onclick="abasImportarTablas()">📊 Importar Tablas ABAS</button>
+                        </div>
                         <button class="btn" style="background:linear-gradient(135deg,#27ae60,#2ecc71);" onclick="tareasCompletarSeleccionadas()">✅ Completar</button>
                     </div>
                 </div>
@@ -2122,6 +2133,45 @@
                         <button class="btn" style="background:linear-gradient(135deg:#95a5a6,#7f8c8d);" onclick="seguridadLimpiarCache()">🧹 Limpiar Cache</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login -->
+    <div id="loginModal" style="display:fixed;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:3000;align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:16px;padding:40px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="text-align:center;margin-bottom:30px;">
+                <h1 style="margin:0;color:#2c3e50;font-size:2em;">🔒 Sistema ABAS-II</h1>
+                <p style="color:#7f8c8d;margin:10px 0 0 0;">Inicia sesión para acceder</p>
+            </div>
+            
+            <div id="loginForm">
+                <div class="form-group">
+                    <label style="display:block;margin-bottom:8px;font-weight:600;color:#2c3e50;">🔑 Contraseña</label>
+                    <input type="password" id="loginPassword" placeholder="Introduce tu contraseña" style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;box-sizing:border-box;" onkeypress="if(event.key==='Enter') loginVerificar()">
+                </div>
+                
+                <button onclick="loginVerificar()" style="width:100%;padding:14px;background:linear-gradient(135deg,#3498db,#2980b9);color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-top:20px;">
+                    🚀 Iniciar Sesión
+                </button>
+                
+                <div id="loginError" style="color:#e74c3c;text-align:center;margin-top:15px;display:none;">
+                    ⚠️ Contraseña incorrecta
+                </div>
+            </div>
+            
+            <div id="loginSetup" style="display:none;">
+                <div class="form-group">
+                    <label style="display:block;margin-bottom:8px;font-weight:600;color:#2c3e50;">🔐 Establecer Contraseña Maestra</label>
+                    <input type="password" id="setupPassword" placeholder="Mínimo 8 caracteres" style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;box-sizing:border-box;">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="setupPasswordConfirm" placeholder="Confirmar contraseña" style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;box-sizing:border-box;">
+                </div>
+                
+                <button onclick="loginSetupPassword()" style="width:100%;padding:14px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-top:20px;">
+                    ✅ Establecer Contraseña
+                </button>
             </div>
         </div>
     </div>
@@ -15663,6 +15713,212 @@
             `).join('');
         }
 
+        // ===== SISTEMA DE LOGIN =====
+        let isLoggedIn = false;
+
+        function loginInit() {
+            const modal = document.getElementById('loginModal');
+            const form = document.getElementById('loginForm');
+            const setup = document.getElementById('loginSetup');
+            
+            // Ocultar contenido principal hasta que se inicie sesión
+            document.querySelector('.main-container').style.display = 'none';
+            
+            if (!seguridadConfig.masterPasswordHash) {
+                // Primera vez - mostrar configuración
+                form.style.display = 'none';
+                setup.style.display = 'block';
+            } else {
+                // Mostrar formulario de login
+                form.style.display = 'block';
+                setup.style.display = 'none';
+            }
+            
+            modal.style.display = 'flex';
+            
+            // Enfocar campo de contraseña
+            setTimeout(() => {
+                const input = document.getElementById(form.style.display !== 'none' ? 'loginPassword' : 'setupPassword');
+                if (input) input.focus();
+            }, 100);
+        }
+
+        function loginVerificar() {
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (!password) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = '⚠️ Introduce una contraseña';
+                return;
+            }
+            
+            const hashInput = seguridadHashPassword(password);
+            
+            if (hashInput === seguridadConfig.masterPasswordHash) {
+                loginSuccess();
+            } else {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = '⚠️ Contraseña incorrecta';
+                document.getElementById('loginPassword').value = '';
+                
+                seguridadLogActividad('Intento de login fallido', 'WARNING');
+            }
+        }
+
+        function loginSetupPassword() {
+            const password = document.getElementById('setupPassword').value;
+            const confirm = document.getElementById('setupPasswordConfirm').value;
+            
+            if (password.length < 8) {
+                alert('La contraseña debe tener al menos 8 caracteres');
+                return;
+            }
+            
+            if (password !== confirm) {
+                alert('Las contraseñas no coinciden');
+                return;
+            }
+            
+            seguridadConfig.masterPasswordHash = seguridadHashPassword(password);
+            localStorage.setItem('seguridadConfig', JSON.stringify(seguridadConfig));
+            
+            seguridadLogActividad('Contraseña maestra establecida', 'SUCCESS');
+            
+            loginSuccess();
+        }
+
+        function loginSuccess() {
+            isLoggedIn = true;
+            document.getElementById('loginModal').style.display = 'none';
+            document.querySelector('.main-container').style.display = 'block';
+            
+            seguridadLogActividad('Login exitoso', 'SUCCESS');
+            
+            // Inicializar la aplicación
+            init();
+        }
+
+        function loginLogout() {
+            if (!confirm('¿Cerrar sesión actual?')) return;
+            
+            isLoggedIn = false;
+            document.querySelector('.main-container').style.display = 'none';
+            loginInit();
+            
+            seguridadLogActividad('Sesión cerrada', 'INFO');
+        }
+
+        // ===== IMPORTADOR DE TABLAS ABAS =====
+        function abasImportarTablas() {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:3000;align-items:center;justify-content:center;display:flex;';
+            modal.innerHTML = `
+                <div style="background:white;border-radius:16px;padding:30px;max-width:800px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                    <h2 style="margin:0 0 20px 0;color:#2c3e50;">📊 Importar Tablas ABAS-II</h2>
+                    <p style="color:#666;margin:0 0 20px 0;">Pega las tablas normativas del ABAS-II en formato texto. El sistema procesará automáticamente los datos.</p>
+                    
+                    <div style="margin-bottom:20px;">
+                        <label style="display:block;margin-bottom:8px;font-weight:600;">📋 Pegar tablas (formato texto):</label>
+                        <textarea id="abasTablaInput" style="width:100%;height:300px;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="Ejemplo:
+Edad 12 - GAC
+9 40
+10 41
+11 42
+...
+
+Edad 12 - Conceptual
+3 49
+4 50
+..."></textarea>
+                    </div>
+                    
+                    <div style="display:flex;gap:10px;justify-content:flex-end;">
+                        <button onclick="this.closest('[style*=position]').remove()" style="padding:10px 20px;background:#95a5a6;color:white;border:none;border-radius:8px;cursor:pointer;">Cancelar</button>
+                        <button onclick="abasProcesarTablas()" style="padding:10px 20px;background:linear-gradient(135deg,#3498db,#2980b9);color:white;border:none;border-radius:8px;cursor:pointer;">📊 Procesar Tablas</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function abasProcesarTablas() {
+            const texto = document.getElementById('abasTablaInput').value;
+            if (!texto.trim()) {
+                alert('Por favor, pega el contenido de las tablas');
+                return;
+            }
+            
+            try {
+                const lineas = texto.split('\n').filter(line => line.trim());
+                let edadActual = null;
+                let dominioActual = null;
+                let tablasProcesadas = 0;
+                
+                for (let linea of lineas) {
+                    linea = linea.trim();
+                    
+                    // Detectar edad y dominio
+                    if (linea.match(/^Edad\s+(\d+)/)) {
+                        const match = linea.match(/^Edad\s+(\d+)/);
+                        edadActual = parseInt(match[1]);
+                        continue;
+                    }
+                    
+                    // Detectar dominio
+                    if (linea.includes('- GAC')) {
+                        dominioActual = 'gac';
+                        continue;
+                    } else if (linea.includes('- Conceptual')) {
+                        dominioActual = 'con';
+                        continue;
+                    } else if (linea.includes('- Social')) {
+                        dominioActual = 'so';
+                        continue;
+                    } else if (linea.includes('- Práctico')) {
+                        dominioActual = 'pr';
+                        continue;
+                    }
+                    
+                    // Procesar línea de datos (suma escalar y PT)
+                    const datosMatch = linea.match(/^(\d+)\s+(\d+)$/);
+                    if (datosMatch && edadActual && dominioActual) {
+                        const suma = parseInt(datosMatch[1]);
+                        const pt = parseInt(datosMatch[2]);
+                        
+                        // Inicializar tabla si no existe
+                        if (!abasA6P[edadActual]) {
+                            abasA6P[edadActual] = {};
+                        }
+                        if (!abasA6P[edadActual][dominioActual]) {
+                            abasA6P[edadActual][dominioActual] = {};
+                        }
+                        
+                        // Guardar datos
+                        abasA6P[edadActual][dominioActual][suma] = [pt, pt];
+                        tablasProcesadas++;
+                    }
+                }
+                
+                if (tablasProcesadas > 0) {
+                    alert(`✅ Se procesaron ${tablasProcesadas} entradas de tablas ABAS-II correctamente.`);
+                    seguridadLogActividad(`Importadas ${tablasProcesadas} entradas de tablas ABAS-II`, 'SUCCESS');
+                    
+                    // Cerrar modal
+                    document.querySelector('[style*="position:fixed"][style*="rgba(0,0,0,0.8)"]').remove();
+                    
+                    // Recargar página para aplicar cambios
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    alert('⚠️ No se encontraron datos válidos en el texto. Verifica el formato.');
+                }
+                
+            } catch (error) {
+                alert('❌ Error procesando las tablas: ' + error.message);
+                seguridadLogActividad(`Error importando tablas: ${error.message}`, 'ERROR');
+            }
+        }
+
         // ===== SISTEMA DE SEGURIDAD =====
         let seguridadConfig = JSON.parse(localStorage.getItem('seguridadConfig') || '{}');
         let seguridadLog = JSON.parse(localStorage.getItem('seguridadLog') || '[]');
@@ -15878,22 +16134,34 @@
         }
 
         function seguridadEncriptar(texto) {
-            // Simple encriptación para demostración (XOR con clave)
+            // Encriptación segura con UTF-8
             const clave = 'terapia-app-2024';
             let resultado = '';
-            for (let i = 0; i < texto.length; i++) {
-                resultado += String.fromCharCode(texto.charCodeAt(i) ^ clave.charCodeAt(i % clave.length));
+            
+            // Convertir texto a bytes UTF-8
+            const textBytes = new TextEncoder().encode(texto);
+            const keyBytes = new TextEncoder().encode(clave);
+            
+            for (let i = 0; i < textBytes.length; i++) {
+                resultado += String.fromCharCode(textBytes[i] ^ keyBytes[i % keyBytes.length]);
             }
-            return btoa(resultado);
+            
+            // Usar btoa con caracteres seguros
+            return btoa(unescape(encodeURIComponent(resultado)));
         }
 
         function seguridadDesencriptar(textoEncriptado) {
             const clave = 'terapia-app-2024';
-            const texto = atob(textoEncriptado);
+            
+            // Decodificar de forma segura
+            const texto = decodeURIComponent(escape(atob(textoEncriptado)));
+            const keyBytes = new TextEncoder().encode(clave);
+            
             let resultado = '';
             for (let i = 0; i < texto.length; i++) {
-                resultado += String.fromCharCode(texto.charCodeAt(i) ^ clave.charCodeAt(i % clave.length));
+                resultado += String.fromCharCode(texto.charCodeAt(i) ^ keyBytes[i % keyBytes.length]);
             }
+            
             return resultado;
         }
 
@@ -16113,7 +16381,7 @@
             }
         }
 
-        window.onload = init;
+        window.onload = loginInit;
     </script>
 </body>
 </html>
