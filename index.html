@@ -1032,6 +1032,186 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.4);
         }
 
+        /* ===== BOTONES FLOTANTES TAREAS / CAMBIOS ===== */
+        .fab-group {
+            position: fixed;
+            bottom: 30px;
+            right: 100px;
+            display: flex;
+            gap: 12px;
+            z-index: 998;
+        }
+
+        .fab-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 1.3em;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .fab-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        .fab-btn .fab-tooltip {
+            position: absolute;
+            bottom: 65px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .fab-btn:hover .fab-tooltip {
+            opacity: 1;
+        }
+
+        .fab-tareas { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .fab-cambios { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+
+        /* ===== VENTANAS FLOTANTES PANEL ===== */
+        .panel-window {
+            position: fixed;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+            z-index: 2500;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 380px;
+            min-height: 300px;
+            resize: both;
+        }
+
+        .panel-window.visible {
+            display: flex;
+            animation: panelOpen 0.25s ease;
+        }
+
+        @keyframes panelOpen {
+            from { opacity: 0; transform: scale(0.92) translateY(20px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            color: white;
+            cursor: grab;
+            user-select: none;
+            border-radius: 16px 16px 0 0;
+            gap: 10px;
+        }
+
+        .panel-header:active { cursor: grabbing; }
+
+        .panel-header-title {
+            font-weight: 700;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-header-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .panel-header-btn {
+            background: rgba(255,255,255,0.25);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .panel-header-btn:hover { background: rgba(255,255,255,0.45); }
+
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+            background: #f8f9fa;
+        }
+
+        .panel-toolbar {
+            padding: 10px 18px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .panel-toolbar select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.85em;
+            background: white;
+        }
+
+        .panel-btn {
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .panel-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+        /* Badge contador en fab */
+        .fab-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.65em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+        }
+
         /* ===== PROGRESO Y COMPARACIÓN ===== */
         .progress-comparison {
             display: grid;
@@ -1279,6 +1459,9 @@
             <button class="tab" data-tab="calendario" onclick="switchTab('calendario', this)">📅 Calendario</button>
             <button class="tab" data-tab="sesiones" onclick="switchTab('sesiones', this)">📝 Sesiones</button>
             <button class="tab" data-tab="objetivos" onclick="switchTab('objetivos', this)">🎯 Objetivos</button>
+            <button class="tab" data-tab="tareas" onclick="switchTab('tareas', this)">📋 Tareas</button>
+            <button class="tab" data-tab="cambios" onclick="switchTab('cambios', this)">🔄 Cambios</button>
+            <button class="tab" data-tab="seguridad" onclick="switchTab('seguridad', this)">🔒 Seguridad</button>
             <button class="tab" data-tab="evaluaciones" onclick="switchTab('evaluaciones', this)">📊 Evaluaciones</button>
             <button class="tab" data-tab="escalas" onclick="switchTab('escalas', this)">⚙️ Escalas</button>
             <button class="tab" data-tab="crear-escala" onclick="switchTab('crear-escala', this)">➕ Crear</button>
@@ -1727,6 +1910,219 @@
                     <div id="ingContratosList"></div>
                 </div>
             </div>
+
+            <!-- Tab: Tareas -->
+            <div id="tareas" class="tab-content">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h2 style="margin:0;">📋 Gestión de Tareas</h2>
+                        <p style="color:#666;margin:4px 0 0 0;font-size:0.95em;">Tareas pendientes del sistema ABAS-II y desarrollo</p>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn" onclick="tareasShowAddModal()">➕ Nueva Tarea</button>
+                        <button class="btn" style="background:linear-gradient(135deg,#27ae60,#2ecc71);" onclick="tareasCompletarSeleccionadas()">✅ Completar</button>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:20px;">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+                        <select id="tareasFiltroCategoria" onchange="tareasRender()" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;">
+                            <option value="">Todas las categorías</option>
+                            <option value="abas">ABAS-II</option>
+                            <option value="tablas">Tablas Normativas</option>
+                            <option value="bug">Corrección de Bugs</option>
+                            <option value="feature">Nuevas Funciones</option>
+                            <option value="mejora">Mejoras</option>
+                        </select>
+                        <select id="tareasFiltroPrioridad" onchange="tareasRender()" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;">
+                            <option value="">Todas las prioridades</option>
+                            <option value="alta">🔴 Alta</option>
+                            <option value="media">🟡 Media</option>
+                            <option value="baja">🟢 Baja</option>
+                        </select>
+                        <select id="tareasFiltroEstado" onchange="tareasRender()" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;">
+                            <option value="">Todos los estados</option>
+                            <option value="pendiente">⏳ Pendiente</option>
+                            <option value="en-progreso">🔄 En progreso</option>
+                            <option value="completada">✅ Completada</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Lista de tareas -->
+                <div id="tareasLista"></div>
+
+                <!-- Panel estado baremos ABAS-II -->
+                <div style="margin-top:32px;border-top:2px solid #e0e0e0;padding-top:24px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                        <div>
+                            <h3 style="margin:0;font-size:1.1em;">📊 Estado de Baremos ABAS-II</h3>
+                            <p style="color:#666;margin:4px 0 0 0;font-size:0.85em;">Seguimiento de tablas pendientes de transcribir del PDF del manual</p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-small" style="background:linear-gradient(135deg,#667eea,#764ba2);" onclick="abasStatusRender()">🔄 Actualizar</button>
+                            <button class="btn btn-small" style="background:#17a2b8;" onclick="abasStatusHelp()">❓ Cómo transcribir</button>
+                        </div>
+                    </div>
+                    <div id="abasStatusPanel"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Cambios -->
+            <div id="cambios" class="tab-content">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h2 style="margin:0;">🔄 Registro de Cambios</h2>
+                        <p style="color:#666;margin:4px 0 0 0;font-size:0.95em;">Historial de modificaciones y planes para futuras versiones</p>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn" onclick="cambiosShowAddModal()">➕ Nuevo Cambio</button>
+                        <button class="btn" style="background:linear-gradient(135deg,#3498db,#2980b9);" onclick="cambiosExportar()">📥 Exportar</button>
+                    </div>
+                </div>
+
+                <!-- Filtros de versión -->
+                <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:20px;">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+                        <select id="cambiosFiltroVersion" onchange="cambiosRender()" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;">
+                            <option value="">Todas las versiones</option>
+                            <option value="1.0.0">v1.0.0 - Actual</option>
+                            <option value="futuro">🚀 Futuras versiones</option>
+                        </select>
+                        <select id="cambiosFiltroTipo" onchange="cambiosRender()" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;">
+                            <option value="">Todos los tipos</option>
+                            <option value="nuevo">✨ Nuevo</option>
+                            <option value="mejora">🔧 Mejora</option>
+                            <option value="correccion">🐛 Corrección</option>
+                            <option value="eliminado">🗑️ Eliminado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Lista de cambios -->
+                <div id="cambiosLista"></div>
+            </div>
+
+            <!-- Tab: Seguridad -->
+            <div id="seguridad" class="tab-content">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h2 style="margin:0;">🔒 Centro de Seguridad</h2>
+                        <p style="color:#666;margin:4px 0 0 0;font-size:0.95em;">Gestión de accesos, respaldos y protección de datos</p>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn" style="background:linear-gradient(135deg,#e74c3c,#c0392b);" onclick="seguridadEjecutarBackup()">💾 Backup Ahora</button>
+                        <button class="btn" style="background:linear-gradient(135deg,#27ae60,#2ecc71);" onclick="seguridadVerificarIntegridad()">🔍 Verificar</button>
+                    </div>
+                </div>
+
+                <!-- Estado de Seguridad -->
+                <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <h3 style="margin:0 0 16px 0;">📊 Estado Actual de Seguridad</h3>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;">
+                        <div style="background:white;border:1px solid #e0e0e0;border-radius:8px;padding:16px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                                <span style="font-size:1.5em;">🔐</span>
+                                <strong>Acceso</strong>
+                            </div>
+                            <div id="seguridadEstadoAcceso" style="color:#666;">Verificando...</div>
+                        </div>
+                        <div style="background:white;border:1px solid #e0e0e0;border-radius:8px;padding:16px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                                <span style="font-size:1.5em;">💾</span>
+                                <strong>Backup</strong>
+                            </div>
+                            <div id="seguridadEstadoBackup" style="color:#666;">Verificando...</div>
+                        </div>
+                        <div style="background:white;border:1px solid #e0e0e0;border-radius:8px;padding:16px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                                <span style="font-size:1.5em;">🔒</span>
+                                <strong>Encriptación</strong>
+                            </div>
+                            <div id="seguridadEstadoEncriptacion" style="color:#666;">Verificando...</div>
+                        </div>
+                        <div style="background:white;border:1px solid #e0e0e0;border-radius:8px;padding:16px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                                <span style="font-size:1.5em;">📡</span>
+                                <strong>Sincronización</strong>
+                            </div>
+                            <div id="seguridadEstadoSync" style="color:#666;">Verificando...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuración de Seguridad -->
+                <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <h3 style="margin:0 0 16px 0;">⚙️ Configuración de Seguridad</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                        <div>
+                            <h4 style="margin:0 0 12px 0;">🔐 Contraseña Maestra</h4>
+                            <div class="form-group">
+                                <label>Contraseña actual</label>
+                                <input type="password" id="seguridadPassActual" placeholder="•••••••••" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                            </div>
+                            <div class="form-group">
+                                <label>Nueva contraseña</label>
+                                <input type="password" id="seguridadPassNueva" placeholder="•••••••••" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                            </div>
+                            <div class="form-group">
+                                <label>Confirmar contraseña</label>
+                                <input type="password" id="seguridadPassConfirmar" placeholder="•••••••••" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                            </div>
+                            <button class="btn" onclick="seguridadCambiarPassword()">🔑 Cambiar Contraseña</button>
+                        </div>
+                        <div>
+                            <h4 style="margin:0 0 12px 0;">🛡️ Protección de Datos</h4>
+                            <div class="form-group">
+                                <label style="display:flex;align-items:center;gap:8px;">
+                                    <input type="checkbox" id="seguridadAutoBackup" checked>
+                                    <span>Backup automático diario</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label style="display:flex;align-items:center;gap:8px;">
+                                    <input type="checkbox" id="seguridadEncriptarDatos" checked>
+                                    <span>Encriptar datos sensibles</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label style="display:flex;align-items:center;gap:8px;">
+                                    <input type="checkbox" id="seguridadSesionExpira" checked>
+                                    <span>Cerrar sesión automáticamente (30 min)</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label style="display:flex;align-items:center;gap:8px;">
+                                    <input type="checkbox" id="seguridadLogActividad" checked>
+                                    <span>Registrar actividad de acceso</span>
+                                </label>
+                            </div>
+                            <button class="btn" onclick="seguridadGuardarConfiguracion()">💾 Guardar Configuración</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registro de Actividad -->
+                <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3 style="margin:0;">📋 Registro de Actividad</h3>
+                        <button class="btn" style="background:linear-gradient(135deg,#f39c12,#e67e22);" onclick="seguridadLimpiarLog()">🗑️ Limpiar Log</button>
+                    </div>
+                    <div id="seguridadLogActividad" style="max-height:300px;overflow-y:auto;background:white;border:1px solid #e0e0e0;border-radius:8px;padding:12px;font-family:monospace;font-size:0.85em;"></div>
+                </div>
+
+                <!-- Herramientas de Recuperación -->
+                <div style="background:#f8f9fa;border-radius:12px;padding:20px;">
+                    <h3 style="margin:0 0 16px 0;">🔧 Herramientas de Recuperación</h3>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+                        <button class="btn" style="background:linear-gradient(135deg,#3498db,#2980b9);" onclick="seguridadExportarDatos()">📥 Exportar Datos</button>
+                        <button class="btn" style="background:linear-gradient(135deg,#9b59b6,#8e44ad);" onclick="seguridadImportarDatos()">📤 Importar Datos</button>
+                        <button class="btn" style="background:linear-gradient(135deg,#e67e22,#d35400);" onclick="seguridadRestaurarBackup()">🔄 Restaurar Backup</button>
+                        <button class="btn" style="background:linear-gradient(135deg:#95a5a6,#7f8c8d);" onclick="seguridadLimpiarCache()">🧹 Limpiar Cache</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1736,6 +2132,79 @@
         <div id="rcViewerContent" style="max-width:90vw;max-height:85vh;display:flex;align-items:center;justify-content:center;"></div>
         <div id="rcViewerTitle" style="color:white;margin-top:14px;font-size:1em;opacity:0.8;"></div>
     </div>
+    <!-- Botones flotantes rápidos -->
+    <div class="fab-group">
+        <button class="fab-btn fab-tareas" onclick="panelToggle('panelTareas')" title="Tareas">
+            📋
+            <span class="fab-tooltip">Tareas pendientes</span>
+            <span class="fab-badge" id="fabBadgeTareas">0</span>
+        </button>
+        <button class="fab-btn fab-cambios" onclick="panelToggle('panelCambios')" title="Cambios">
+            🔄
+            <span class="fab-tooltip">Cambios / versiones</span>
+        </button>
+    </div>
+
+    <!-- Ventana flotante: Tareas -->
+    <div class="panel-window" id="panelTareas" style="width:480px;height:560px;top:80px;right:30px;">
+        <div class="panel-header" style="background:linear-gradient(135deg,#f093fb,#f5576c);" id="panelTareasHeader">
+            <div class="panel-header-title">📋 Tareas Pendientes</div>
+            <div class="panel-header-actions">
+                <button class="panel-header-btn" onclick="tareasShowAddModal()" title="Nueva tarea">➕</button>
+                <button class="panel-header-btn" onclick="tareasCompletarSeleccionadas()" title="Completar seleccionadas">✅</button>
+                <button class="panel-header-btn" onclick="panelToggle('panelTareas')" title="Cerrar">✕</button>
+            </div>
+        </div>
+        <div class="panel-toolbar">
+            <select id="panelTareasFiltroEstado" onchange="panelTareasRender()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;">
+                <option value="">Todos los estados</option>
+                <option value="pendiente">⏳ Pendiente</option>
+                <option value="en-progreso">🔄 En progreso</option>
+                <option value="completada">✅ Completada</option>
+            </select>
+            <select id="panelTareasFiltroCategoria" onchange="panelTareasRender()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;">
+                <option value="">Todas las categorías</option>
+                <option value="abas">ABAS-II</option>
+                <option value="tablas">Tablas Normativas</option>
+                <option value="bug">Bugs</option>
+                <option value="feature">Nuevas Funciones</option>
+                <option value="mejora">Mejoras</option>
+            </select>
+        </div>
+        <div class="panel-body" id="panelTareasBody">
+            <div style="text-align:center;padding:40px;color:#999;">Cargando tareas...</div>
+        </div>
+    </div>
+
+    <!-- Ventana flotante: Cambios -->
+    <div class="panel-window" id="panelCambios" style="width:480px;height:560px;top:80px;right:530px;">
+        <div class="panel-header" style="background:linear-gradient(135deg,#4facfe,#00c6fb);" id="panelCambiosHeader">
+            <div class="panel-header-title">🔄 Cambios / Próximas Versiones</div>
+            <div class="panel-header-actions">
+                <button class="panel-header-btn" onclick="cambiosShowAddModal()" title="Nuevo cambio">➕</button>
+                <button class="panel-header-btn" onclick="cambiosExportar()" title="Exportar">📥</button>
+                <button class="panel-header-btn" onclick="panelToggle('panelCambios')" title="Cerrar">✕</button>
+            </div>
+        </div>
+        <div class="panel-toolbar">
+            <select id="panelCambiosFiltroVersion" onchange="panelCambiosRender()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;">
+                <option value="">Todas las versiones</option>
+                <option value="1.0.0">v1.0.0 - Actual</option>
+                <option value="futuro">🚀 Futuras versiones</option>
+            </select>
+            <select id="panelCambiosFiltroTipo" onchange="panelCambiosRender()" style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.85em;">
+                <option value="">Todos los tipos</option>
+                <option value="nuevo">✨ Nuevo</option>
+                <option value="mejora">🔧 Mejora</option>
+                <option value="correccion">🐛 Corrección</option>
+                <option value="eliminado">🗑️ Eliminado</option>
+            </select>
+        </div>
+        <div class="panel-body" id="panelCambiosBody">
+            <div style="text-align:center;padding:40px;color:#999;">Cargando cambios...</div>
+        </div>
+    </div>
+
     <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Cambiar modo oscuro/claro">
         <span id="darkModeIcon">🌙</span>
     </button>
@@ -7163,6 +7632,8 @@
 
         // ---- TABLA A.2: TEACHER FORM, suma escalares → PT por edad ----
         // Estructura: abasA2T[age] = { gac:{pt:[min,max],...}, con:{...}, so:{...}, pr:{...} }
+
+
         const abasA2T = {
             5: {
                 gac:{9:[40,40],10:[41,41],11:[42,42],12:[43,43],13:[44,44],14:[45,45],15:[46,46],16:[47,47],17:[48,48],18:[49,49],19:[50,50],20:[51,51],21:[52,52],22:[53,53],23:[54,54],24:[55,55],25:[56,56],26:[57,57],27:[58,58],28:[59,59],29:[60,60],30:[61,60],31:[62,62],32:[63,63],33:[64,64],34:[65,65],35:[66,66],36:[67,67],37:[68,68],38:[69,69],39:[70,70],40:[71,71],41:[72,72],42:[73,73],43:[74,74],44:[75,75],45:[76,76],46:[77,77],47:[78,78],48:[79,79],49:[80,80],50:[81,81],51:[82,82],52:[83,83],53:[84,84],54:[85,85],55:[86,86],56:[87,87],57:[88,88],58:[89,89],59:[90,90],60:[91,91],61:[92,92],62:[93,93],63:[94,94],64:[65,65],65:[96,97],66:[98,98],67:[99,99],68:[100,100],69:[101,101],70:[102,102],71:[103,103],72:[104,104],73:[105,105],74:[106,106],75:[107,107],76:[108,108],77:[109,109],78:[110,110],79:[111,111],80:[112,112],81:[113,113],82:[114,114],83:[115,115],84:[116,116],85:[117,117],86:[118,118],87:[119,119],88:[120,120],89:[121,121],90:[122,122],91:[122,131]},
@@ -7262,7 +7733,7 @@
                 so:{2:[55,56],3:[57,58],4:[59,60],5:[61,62],6:[63,64],7:[65,66],8:[67,68],9:[69,70],10:[71,72],11:[73,74],12:[75,76],13:[77,78],14:[79,80],15:[81,82],16:[83,84],17:[85,86],18:[87,88],19:[89,90],20:[91,92],21:[93,94],22:[95,96],23:[97,98],24:[99,100],25:[101,102],26:[103,104],27:[105,106],28:[107,108],29:[109,110],30:[111,112],31:[113,114],32:[115,116],33:[117,118],34:[119,120],35:[121,122],36:[122,131]},
                 pr:{4:[40,41],5:[42,43],6:[44,45],7:[46,47],8:[48,49],9:[50,51],10:[52,53],11:[54,55],12:[56,57],13:[58,59],14:[60,61],15:[62,63],16:[64,65],17:[66,67],18:[68,69],19:[70,71],20:[72,73],21:[74,75],22:[76,77],23:[78,79],24:[80,81],25:[82,83],26:[84,85],27:[86,87],28:[88,89],29:[90,91],30:[92,93],31:[94,95],32:[96,97],33:[98,99],34:[100,101],35:[102,103],36:[104,105],37:[106,107],38:[108,109],39:[110,111],40:[112,113],41:[114,115],42:[116,117],43:[118,119],44:[120,121],45:[122,131]}
             },
-            10: {
+            10: { /* ⚠️ PENDIENTE: con[] tiene datos placeholder (transcribir de Tabla A.6 PDF) */
                 gac:{9:[40,40],10:[41,41],11:[42,42],12:[43,43],13:[44,44],14:[45,45],15:[46,46],16:[47,47],17:[48,48],18:[49,49],19:[50,50],20:[51,51],21:[52,52],22:[53,53],23:[54,54],24:[55,55],25:[56,56],26:[57,57],27:[58,58],28:[59,59],29:[60,60],30:[61,61],31:[62,62],32:[63,63],33:[64,64],34:[65,65],35:[66,66],36:[67,67],37:[68,68],38:[69,69],39:[70,70],40:[71,71],41:[72,72],42:[73,73],43:[74,74],44:[75,75],45:[76,76],46:[77,77],47:[78,78],48:[79,79],49:[80,80],50:[81,81],51:[82,82],52:[83,83],53:[84,84],54:[85,85],55:[86,86],56:[87,87],57:[88,88],58:[89,89],59:[90,90],60:[91,91],61:[92,92],62:[93,93],63:[94,94],64:[35,36],65:[37,38],66:[39,40],67:[41,42],68:[43,44],69:[45,46],70:[47,48],71:[49,50],72:[51,52],73:[53,54],74:[55,56],75:[57,58],76:[59,60],77:[61,62],78:[63,64],79:[8,8],80:[0,0],81:[0,0],82:[0,0],83:[0,0],84:[0,0],85:[0,0],86:[0,0],87:[0,0],88:[0,0],89:[0,0],90:[31,31],91:[0,0],92:[32,32],93:[0,0],94:[0,0],95:[37,37],96:[39,39],97:[0,0],98:[0,0],99:[0,0],100:[0,0]},
                 con:{3:[40,40],4:[40,40],5:[40,40],6:[40,40],7:[40,40],8:[40,40],9:[40,40],10:[40,40],11:[40,40],12:[40,40],13:[40,40],14:[40,40],15:[40,40],16:[40,40],17:[40,40],18:[49,49],19:[50,50],20:[51,51],21:[52,52],22:[53,53],23:[54,54],24:[55,55],25:[56,56],26:[57,57],27:[58,58],28:[59,59],29:[60,60],30:[61,61],31:[62,62],32:[62,62],33:[63,63],34:[63,63],35:[64,64],36:[64,64],37:[65,65],38:[65,65],39:[66,66],40:[66,66],41:[67,67],42:[67,67],43:[68,68],44:[68,68],45:[69,69],46:[69,69],47:[70,70],48:[70,70],49:[71,71],50:[72,72],51:[73,73],52:[74,74],53:[75,75],54:[76,76],55:[77,77],56:[78,78],57:[79,79]},
                 so:{2:[55,56],3:[57,58],4:[59,60],5:[61,62],6:[63,64],7:[65,66],8:[67,68],9:[69,70],10:[71,72],11:[73,74],12:[75,76],13:[77,78],14:[79,80],15:[81,82],16:[83,84],17:[85,86],18:[87,88],19:[89,90],20:[91,92],21:[93,94],22:[95,96],23:[97,98],24:[99,100],25:[101,102],26:[103,104],27:[105,106],28:[107,108],29:[109,110],30:[111,112],31:[113,114],32:[115,116],33:[117,118],34:[119,120],35:[121,122],36:[122,131]},
@@ -7274,7 +7745,7 @@
                 so:{2:[55,56],3:[57,58],4:[59,60],5:[61,62],6:[63,64],7:[65,66],8:[67,68],9:[69,70],10:[71,72],11:[73,74],12:[75,76],13:[77,78],14:[79,80],15:[81,82],16:[83,84],17:[85,86],18:[87,88],19:[89,90],20:[91,92],21:[93,94],22:[95,96],23:[97,98],24:[99,100],25:[101,102],26:[103,104],27:[105,106],28:[107,108],29:[109,110],30:[111,112],31:[113,114],32:[115,116],33:[117,118],34:[119,120],35:[121,122],36:[122,131]},
                 pr:{4:[40,41],5:[42,43],6:[44,45],7:[46,47],8:[48,49],9:[50,51],10:[52,53],11:[54,55],12:[56,57],13:[58,59],14:[60,61],15:[62,63],16:[64,65],17:[66,67],18:[68,69],19:[70,71],20:[72,73],21:[74,75],22:[76,77],23:[78,79],24:[80,81],25:[82,83],26:[84,85],27:[86,87],28:[88,89],29:[90,91],30:[92,93],31:[94,95],32:[96,97],33:[98,99],34:[100,101],35:[102,103],36:[104,105],37:[106,107],38:[108,109],39:[110,111],40:[112,113],41:[114,115],42:[116,117],43:[118,119],44:[120,121],45:[122,131]}
             },
-            12: {
+            12: { /* ⚠️ PENDIENTE: con[] tiene datos placeholder (transcribir de Tabla A.6 PDF) */
                 gac:{9:[40,40],10:[41,41],11:[42,42],12:[43,43],13:[44,44],14:[45,45],15:[46,46],16:[47,47],17:[48,48],18:[49,49],19:[50,50],20:[51,51],21:[52,52],22:[53,53],23:[54,54],24:[55,55],25:[56,56],26:[57,57],27:[58,58],28:[59,59],29:[60,60],30:[61,61],31:[62,62],32:[63,63],33:[64,64],34:[65,65],35:[66,66],36:[67,67],37:[68,68],38:[69,69],39:[70,70],40:[71,71],41:[72,72],42:[73,73],43:[74,74],44:[75,75],45:[76,76],46:[77,77],47:[78,78],48:[79,79],49:[80,80],50:[81,81],51:[82,82],52:[83,83],53:[84,84],54:[85,85],55:[86,86],56:[87,87],57:[88,88],58:[89,89],59:[90,90],60:[91,91],61:[92,92],62:[93,93],63:[94,94],64:[35,36],65:[37,38],66:[39,40],67:[41,42],68:[43,44],69:[45,46],70:[47,48],71:[49,50],72:[51,52],73:[53,54],74:[55,56],75:[57,58],76:[59,60],77:[61,62],78:[63,64],79:[8,8],80:[0,0],81:[0,0],82:[0,0],83:[0,0],84:[0,0],85:[0,0],86:[0,0],87:[0,0],88:[0,0],89:[0,0],90:[31,31],91:[0,0],92:[32,32],93:[0,0],94:[0,0],95:[37,37],96:[39,39],97:[0,0],98:[0,0],99:[0,0],100:[0,0],101:[0,0],102:[0,0],103:[0,0],104:[0,0],105:[63,63],106:[0,0],107:[0,0],108:[0,0],109:[0,0],110:[0,0],111:[77,77],112:[79,79],113:[81,81],114:[82,82],115:[84,84],116:[86,86],117:[87,87],118:[88,88],119:[90,90],120:[0,0]},
                 con:{3:[40,40],4:[40,40],5:[40,40],6:[40,40],7:[40,40],8:[40,40],9:[40,40],10:[40,40],11:[40,40],12:[40,40],13:[40,40],14:[40,40],15:[40,40],16:[40,40],17:[40,40],18:[49,49],19:[50,50],20:[51,51],21:[52,52],22:[53,53],23:[54,54],24:[55,55],25:[56,56],26:[57,57],27:[58,58],28:[59,59],29:[60,60],30:[61,61],31:[62,62],32:[62,62],33:[63,63],34:[63,63],35:[64,64],36:[64,64],37:[65,65],38:[65,65],39:[66,66],40:[66,66],41:[67,67],42:[67,67],43:[68,68],44:[68,68],45:[69,69],46:[69,69],47:[70,70],48:[70,70],49:[71,71],50:[72,72],51:[73,73],52:[74,74],53:[75,75],54:[76,76],55:[77,77],56:[78,78],57:[79,79]},
                 so:{2:[55,56],3:[57,58],4:[59,60],5:[61,62],6:[63,64],7:[65,66],8:[67,68],9:[69,70],10:[71,72],11:[73,74],12:[75,76],13:[77,78],14:[79,80],15:[81,82],16:[83,84],17:[85,86],18:[87,88],19:[89,90],20:[91,92],21:[93,94],22:[95,96],23:[97,98],24:[99,100],25:[101,102],26:[103,104],27:[105,106],28:[107,108],29:[109,110],30:[111,112],31:[113,114],32:[115,116],33:[117,118],34:[119,120],35:[121,122],36:[122,131]},
@@ -7304,6 +7775,170 @@
         abasA6P[16] = {gac:{66:[81,81],67:[81,81],68:[82,82],69:[83,83],70:[83,83],71:[84,84],72:[85,85],73:[85,85],75:[88,88],76:[88,88],77:[90,90],78:[90,90],79:[92,92],82:[94,94],83:[95,95],89:[101,101],90:[102,102],91:[102,102],93:[106,106],94:[107,107],100:[112,112],101:[113,113],102:[113,113],103:[114,114],110:[120,120],111:[120,120],112:[120,120],113:[120,120],114:[120,120],115:[120,120],116:[120,120],117:[120,120],118:[120,120],119:[120,120],120:[120,120],121:[120,120],122:[120,120],123:[120,120],124:[120,120],125:[120,120],126:[120,120],127:[120,120],128:[120,120],129:[120,120],130:[120,120],131:[120,120],132:[120,120],133:[120,120],134:[120,120],135:[120,120],136:[120,120],137:[120,120],138:[120,120],139:[120,120],140:[120,120],141:[120,120],142:[120,120],143:[120,120],144:[120,120],145:[120,120],146:[120,120],147:[120,120],148:[120,120],149:[120,120],150:[120,120],151:[120,120],152:[120,120]},con:{19:[81,81],20:[82,82],21:[84,84],23:[88,88],26:[92,92],27:[94,94],28:[95,95],30:[101,101],36:[112,112],38:[120,120],39:[120,120],40:[120,120],41:[120,120],42:[120,120],43:[120,120],44:[120,120],45:[120,120],46:[120,120],47:[120,120],48:[120,120],49:[120,120],50:[120,120],51:[120,120],52:[120,120],53:[120,120],54:[120,120],55:[120,120],56:[120,120],57:[120,120]},so:{12:[81,81],13:[84,84],15:[90,90],17:[95,95],19:[102,102],21:[107,107],23:[114,114],24:[120,120],25:[120,120],26:[120,120],27:[120,120],28:[120,120],29:[120,120],30:[120,120],31:[120,120],32:[120,120],33:[120,120],34:[120,120],35:[120,120],36:[120,120],37:[120,120],38:[120,120]},pr:{27:[81,81],28:[82,82],29:[83,83],30:[84,84],34:[88,88],35:[90,90],36:[92,92],38:[95,95],42:[102,102],43:[106,106],47:[120,120],48:[120,120],49:[120,120],50:[120,120],51:[120,120],52:[120,120],53:[120,120],54:[120,120],55:[120,120],56:[120,120],57:[120,120],58:[120,120],59:[120,120],60:[120,120],61:[120,120],62:[120,120],63:[120,120],64:[120,120],65:[120,120],66:[120,120],67:[120,120],68:[120,120],69:[120,120],70:[120,120],71:[120,120],72:[120,120],73:[120,120],74:[120,120],75:[120,120],76:[120,120]}};
         abasA6P[18] = abasA6P[17]; abasA6P[19] = abasA6P[17]; abasA6P[20] = abasA6P[17]; abasA6P[21] = abasA6P[17];
 
+        // ═══════════════════════════════════════════════════════════════════
+        // INFRAESTRUCTURA DE BAREMOS ABAS-II
+        // ═══════════════════════════════════════════════════════════════════
+        //
+        // ESTRUCTURA GENERAL:
+        //   • Tabla A.2 (abasA2T) = Formulario Escolar PROFESORES, edades 5-21
+        //   • Tabla A.6 (abasA6P) = Formulario Escolar PADRES,     edades 5-21
+        //
+        // DOMINIOS y claves JS:
+        //   gac = GAC (Índice de Conducta Adaptativa General) — suma de los 9 escalares
+        //   con = Dominio CONCEPTUAL  (Comunicación + Habilidades Académicas Funcionales + Autodirección)
+        //   so  = Dominio SOCIAL      (Ocio + Habilidades Sociales)
+        //   pr  = Dominio PRÁCTICO    (Cuidado en el Hogar/Escuela + Habilidades en la Comunidad + Cuidado de la Salud y Seguridad + Empleo*)
+        //         (* Empleo solo en ≥17 años)
+        //
+        // FORMATO DE CADA ENTRADA:
+        //   sumaEscalares: [PT_minimo, PT_maximo]
+        //   Cuando min === max → solo hay un PT posible para esa suma
+        //
+        // ESTADO DE COMPLETITUD (actualizar conforme se transcriban del PDF):
+        // ─────────────────────────────────────────────────────────────────
+        const _ABAS_TABLE_STATUS = {
+            // Tabla A.2 — Profesores
+            A2T: {
+                5:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                6:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                7:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                8:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                9:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                10: { gac: '⚠️', con: '⚠️', so: '⚠️', pr: '⚠️', fuente: 'aprox_edad9 — PENDIENTE PDF p.__ Tabla A.2' },
+                11: { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                12: { gac: '✅', con: '✅', so: '⚠️', pr: '✅', fuente: 'so[2-11] placeholder — PENDIENTE PDF p.__ Tabla A.2' },
+                13: { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                14: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'solo gac parcial — PENDIENTE PDF p.__ Tabla A.2' },
+                15: { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                16: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'solo gac parcial — PENDIENTE PDF p.__ Tabla A.2' },
+                17: { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                18: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'alias edad 17 — PENDIENTE PDF' },
+                19: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'alias edad 17 — PENDIENTE PDF' },
+                20: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'alias edad 17 — PENDIENTE PDF' },
+                21: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'alias edad 17 — PENDIENTE PDF' },
+            },
+            // Tabla A.6 — Padres
+            A6P: {
+                5:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                6:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                7:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                8:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                9:  { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                10: { gac: '✅', con: '⚠️', so: '✅', pr: '✅', fuente: 'con[] placeholder 40 — PENDIENTE PDF p.__ Tabla A.6' },
+                11: { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                12: { gac: '✅', con: '⚠️', so: '✅', pr: '✅', fuente: 'con[] placeholder 40 — PENDIENTE PDF p.__ Tabla A.6' },
+                13: { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                14: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'solo gac parcial — PENDIENTE PDF p.__ Tabla A.6' },
+                15: { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                16: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'solo gac parcial — PENDIENTE PDF p.__ Tabla A.6' },
+                17: { gac: '✅', con: '✅', so: '✅', pr: '✅', fuente: 'transcrito' },
+                18: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'alias edad 17 — PENDIENTE PDF' },
+                19: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'alias edad 17 — PENDIENTE PDF' },
+                20: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'alias edad 17 — PENDIENTE PDF' },
+                21: { gac: '⚠️', con: '❌', so: '❌', pr: '❌', fuente: 'alias edad 17 — PENDIENTE PDF' },
+            }
+        };
+
+        // ─────────────────────────────────────────────────────────────────
+        // FUNCIÓN PARA AÑADIR/ACTUALIZAR UNA EDAD COMPLETA EN LA TABLA
+        // Uso desde consola o al transcribir el PDF:
+        //
+        //   abasUpdateTable('A6P', 14, {
+        //     gac: { 59:[81,81], 60:[82,82], ... },   // suma → [PT_min, PT_max]
+        //     con: { 3:[47,48], 4:[49,50], ... },
+        //     so:  { 2:[55,56], 3:[57,58], ... },
+        //     pr:  { 4:[40,41], 5:[42,43], ... }
+        //   });
+        //
+        // TAMBIÉN puedes actualizar solo un dominio de una edad existente:
+        //   abasUpdateTable('A6P', 10, { con: { 3:[52,53], 4:[54,55], ... } });
+        //
+        // ─────────────────────────────────────────────────────────────────
+        function abasUpdateTable(tabla, edad, dominios) {
+            const tRef = tabla === 'A6P' ? abasA6P : abasA2T;
+            const statusRef = _ABAS_TABLE_STATUS[tabla];
+            if (!tRef[edad]) tRef[edad] = { gac: {}, con: {}, so: {}, pr: {} };
+            Object.assign(tRef[edad], dominios);
+            // Actualizar estado
+            if (statusRef[edad]) {
+                Object.keys(dominios).forEach(dom => {
+                    statusRef[edad][dom] = '✅';
+                });
+                const allOk = ['gac','con','so','pr'].every(d => statusRef[edad][d] === '✅');
+                if (allOk) statusRef[edad].fuente = 'transcrito';
+            }
+            console.log(`✅ abasUpdateTable: ${tabla} edad ${edad} actualizada →`, Object.keys(dominios));
+            // Persistir en localStorage para sobrevivir recargas (complementa el hardcode)
+            try {
+                const key = `abas_baremo_${tabla}_${edad}`;
+                localStorage.setItem(key, JSON.stringify(dominios));
+            } catch(e) {}
+        }
+
+        // Cargar overrides persistidos en localStorage (por si se actualizaron en sesiones anteriores)
+        function _loadAbasOverrides() {
+            ['A6P','A2T'].forEach(tabla => {
+                const tRef = tabla === 'A6P' ? abasA6P : abasA2T;
+                for (let edad = 5; edad <= 21; edad++) {
+                    try {
+                        const key = `abas_baremo_${tabla}_${edad}`;
+                        const stored = localStorage.getItem(key);
+                        if (stored) {
+                            const data = JSON.parse(stored);
+                            if (!tRef[edad]) tRef[edad] = {};
+                            Object.assign(tRef[edad], data);
+                        }
+                    } catch(e) {}
+                }
+            });
+        }
+        _loadAbasOverrides(); // llamada explícita tras declaraciones
+
+        // ─────────────────────────────────────────────────────────────────
+        // HELPER: Ver estado de completitud desde consola
+        //   abasTableStatus()          → tabla completa
+        //   abasTableStatus('A6P', 14) → estado de edad 14 en Padres
+        // ─────────────────────────────────────────────────────────────────
+        function abasTableStatus(tabla, edad) {
+            if (tabla && edad) {
+                const s = _ABAS_TABLE_STATUS[tabla]?.[edad];
+                if (!s) { console.log('No encontrado'); return; }
+                console.log(`${tabla} edad ${edad}:`, s);
+                return s;
+            }
+            ['A2T','A6P'].forEach(t => {
+                console.log(`\n=== ${t === 'A2T' ? 'Tabla A.2 (Profesores)' : 'Tabla A.6 (Padres)'} ===`);
+                console.log('Edad | GAC | CON | SO  | PR  | Nota');
+                console.log('-----|-----|-----|-----|-----|-----');
+                const st = _ABAS_TABLE_STATUS[t];
+                for (let e = 5; e <= 21; e++) {
+                    const r = st[e] || {};
+                    const pendiente = Object.values(r).some(v => v === '❌' || v === '⚠️') ? ' ⚠️' : '';
+                    console.log(`  ${String(e).padStart(2)} | ${r.gac||'?'} | ${r.con||'?'} | ${r.so||'?'} | ${r.pr||'?'} | ${(r.fuente||'').substring(0,40)}${pendiente}`);
+                }
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // HELPER MEJORADO: sumaEscalarToPT con fallback inteligente y log de advertencia
+        // ─────────────────────────────────────────────────────────────────
+        function _getTableQuality(tabla, edad, dominio) {
+            const tName = (tabla === abasA6P || tabla === 'A6P') ? 'A6P' : 'A2T';
+            const st = _ABAS_TABLE_STATUS[tName]?.[edad]?.[dominio];
+            return st || '?';
+        }
+
+        // Advertir en UI cuando se usa fallback o datos incompletos
+        window._abasLastWarnings = [];
+        function _warnAbasTable(msg) {
+            window._abasLastWarnings.push(msg);
+            if (window._abasDebug) console.warn('⚠️ ABAS:', msg);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // FIN INFRAESTRUCTURA — Tablas de datos a continuación
+        // ═══════════════════════════════════════════════════════════════════
+
         // Función principal: suma escalares → PT compuesto (exacta del manual)
         function sumaEscalarToPT(suma, dominio, age, isParent) {
             // DEBUG: Mostrar parámetros de entrada
@@ -7314,7 +7949,9 @@
             
             const tabla = isParent ? abasA6P : abasA2T;
             const ageInt = parseInt(age);
-            const tablaEdad = tabla[ageInt] || tabla[String(ageInt)] || tabla[Math.min(Math.max(ageInt,5),21)];
+            // ⚠️ Edades 10 (A2T) sin tabla propia: se usa edad 9 por aproximación hasta transcribir PDF
+    const _ageToUse = (ageInt === 10 && !isParent) ? 9 : ageInt;
+    const tablaEdad = tabla[_ageToUse] || tabla[String(_ageToUse)] || tabla[Math.min(Math.max(_ageToUse,5),21)];
             
             if (window._abasDebug) {
                 console.log(`Tabla usada: ${isParent ? 'abasA6P' : 'abasA2T'}`);
@@ -7350,7 +7987,11 @@
                 console.log(`Math.max(40, Math.min(160, ${pt})): ${Math.max(40, Math.min(160, pt))}`);
             }
             
-            return pt !== null ? Math.max(40, Math.min(160, pt)) : _fallbackPT(suma, dominio);
+            if (pt === null) {
+            _warnAbasTable(`PT no encontrado en tabla ${isParent?'A6P':'A2T'} edad ${ageInt}, dom ${dominio}, suma ${suma} → usando fallback`);
+            return _fallbackPT(suma, dominio);
+        }
+        return Math.max(40, Math.min(160, pt));
         }
 
         // Conversión suma escalares → PT usando normas ABAS-II (Apéndice A, Tabla A.6 Padres)
@@ -7528,15 +8169,11 @@
             console.log('!!! abasCalc() fue llamada !!!');
             console.log('window._abasDebug:', window._abasDebug);
             
-            // DEBUG: Verificar que la función se está llamando
             if (window._abasDebug) {
                 console.log('=== INICIANDO CÁLCULO ABAS-II ===');
             }
             
-            // DEBUG FORZADO: Siempre mostrar inicio
-            console.log('=== INICIO FORZADO DE CÁLCULO ===');
-            console.log('Respuestas disponibles:', abasResp);
-            
+                        
             let total=0, answered=0;
             abasAreaKeys.forEach(k=>{ total+=abasStructure[k].items; answered+=abasResp[k]?Object.keys(abasResp[k]).length:0; });
             // En modo manual no verificar preguntas sin responder
@@ -7921,10 +8558,26 @@
             populateSessionPatientSelect();
             initDarkMode();
             renderDashboard();
+            // Inicializar nuevas ventanas
+            tareasRender();
+            cambiosRender();
+            seguridadActualizarEstado();
+            seguridadRenderLog();
+            // Inicializar drag para ventanas flotantes
+            panelMakeDraggable('panelTareas', 'panelTareasHeader');
+            panelMakeDraggable('panelCambios', 'panelCambiosHeader');
+            // Actualizar badge inicial
+            const pendientes = tareas.filter(t => t.estado !== 'completada').length;
+            const badge = document.getElementById('fabBadgeTareas');
+            if (badge) { badge.textContent = pendientes; badge.style.display = pendientes > 0 ? 'flex' : 'none'; }
+            // Renderizar panel de estado ABAS (diferido para que las tablas estén cargadas)
+            setTimeout(abasStatusRender, 300);
             // El calendario se inicializa de forma lazy al abrir la pestaña
             setTimeout(ingAutoGenerar, 800);
             // Sincronización con GitHub (arranca en background)
             setTimeout(ghActivate, 1200);
+            // Auto-backup diario
+            setTimeout(seguridadAutoBackup, 2000);
         }
 
         function loadScales() {
@@ -8001,6 +8654,9 @@
                 setTimeout(function(){ _tryInitCalendar(10); }, 520);
             } else if (tabName === 'ingresos') {
                 ingInit();
+            } else if (tabName === 'tareas') {
+                tareasRender();
+                setTimeout(abasStatusRender, 100);
             }
         }
 
@@ -8941,10 +9597,10 @@
                         if (document.getElementById('nhptSexo'))   document.getElementById('nhptSexo').value = sexo;
                         if (document.getElementById('nhptEdad'))   document.getElementById('nhptEdad').value = edad;
                         if (document.getElementById('nhptLateralidad')) document.getElementById('nhptLateralidad').value = lat;
-                        if (document.getElementById('nhptD1'))    document.getElementById('nhptD1').value = tDomStr;
-                        if (document.getElementById('nhptD2'))    document.getElementById('nhptD2').value = tDomStr;
-                        if (document.getElementById('nhptND1'))   document.getElementById('nhptND1').value = tNDStr;
-                        if (document.getElementById('nhptND2'))   document.getElementById('nhptND2').value = tNDStr;
+                        if (document.getElementById('nhptDP'))    document.getElementById('nhptDP').value = tDomStr;
+                        if (document.getElementById('nhptDR'))    document.getElementById('nhptDR').value = tDomStr;
+                        if (document.getElementById('nhptIP'))    document.getElementById('nhptIP').value = tNDStr;
+                        if (document.getElementById('nhptIR'))    document.getElementById('nhptIR').value = tNDStr;
                         if (document.getElementById('nhptObs'))   document.getElementById('nhptObs').value = obs;
                         // Cambiar el botón guardar para que actualice en lugar de crear
                         window._nhptEditId = ev.id;
@@ -9093,10 +9749,10 @@
         function nhptGuardarEdicion(editId) {
             const sexo   = document.getElementById('nhptSexo')?.value;
             const edad   = parseInt(document.getElementById('nhptEdad')?.value);
-            const d1     = parseFloat(document.getElementById('nhptD1')?.value);
-            const d2     = parseFloat(document.getElementById('nhptD2')?.value);
-            const nd1    = parseFloat(document.getElementById('nhptND1')?.value);
-            const nd2    = parseFloat(document.getElementById('nhptND2')?.value);
+            const d1     = parseFloat(document.getElementById('nhptDP')?.value);
+            const d2     = parseFloat(document.getElementById('nhptDR')?.value);
+            const nd1    = parseFloat(document.getElementById('nhptIP')?.value);
+            const nd2    = parseFloat(document.getElementById('nhptIR')?.value);
             const lat    = document.getElementById('nhptLateralidad')?.value;
             const obs    = document.getElementById('nhptObs')?.value.trim() || '';
             if (!sexo || isNaN(edad) || isNaN(d1) || isNaN(d2) || isNaN(nd1) || isNaN(nd2)) {
@@ -14062,6 +14718,1399 @@
                 'style="background:#667eea;border:none;color:white;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:0.85em;white-space:nowrap">Ver →</button>';
             document.body.appendChild(banner);
             setTimeout(function(){ if (banner.parentNode) banner.remove(); }, 9000);
+        }
+
+        // ===== SISTEMA DE TAREAS =====
+        let tareas = JSON.parse(localStorage.getItem('tareas') || '[]');
+
+        function tareasShowAddModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;border-radius:16px;padding:30px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
+                    <h3 style="margin:0 0 20px 0;">➕ Nueva Tarea</h3>
+                    <div class="form-group">
+                        <label>Título *</label>
+                        <input type="text" id="tareaTitulo" placeholder="Ej: Completar tabla ABAS-II edad 14" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="tareaDescripcion" placeholder="Detalles de la tarea..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;min-height:80px;"></textarea>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;">
+                        <div class="form-group">
+                            <label>Categoría</label>
+                            <select id="tareaCategoria" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="abas">ABAS-II</option>
+                                <option value="tablas">Tablas Normativas</option>
+                                <option value="bug">Corrección de Bugs</option>
+                                <option value="feature">Nuevas Funciones</option>
+                                <option value="mejora">Mejoras</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Prioridad</label>
+                            <select id="tareaPrioridad" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="alta">🔴 Alta</option>
+                                <option value="media">🟡 Media</option>
+                                <option value="baja">🟢 Baja</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Estado</label>
+                            <select id="tareaEstado" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="pendiente">⏳ Pendiente</option>
+                                <option value="en-progreso">🔄 En progreso</option>
+                                <option value="completada">✅ Completada</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                        <button class="btn" style="background:#6c757d;" onclick="this.closest('[style*=position]').remove()">Cancelar</button>
+                        <button class="btn" onclick="tareasAdd()">Guardar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('tareaTitulo').focus();
+        }
+
+        function tareasAdd() {
+            const titulo = document.getElementById('tareaTitulo').value.trim();
+            const descripcion = document.getElementById('tareaDescripcion').value.trim();
+            const categoria = document.getElementById('tareaCategoria').value;
+            const prioridad = document.getElementById('tareaPrioridad').value;
+            const estado = document.getElementById('tareaEstado').value;
+
+            if (!titulo) {
+                alert('El título es obligatorio');
+                return;
+            }
+
+            const tarea = {
+                id: Date.now().toString(),
+                titulo,
+                descripcion,
+                categoria,
+                prioridad,
+                estado,
+                createdAt: new Date().toISOString(),
+                completedAt: estado === 'completada' ? new Date().toISOString() : null
+            };
+
+            tareas.push(tarea);
+            localStorage.setItem('tareas', JSON.stringify(tareas));
+            tareasRender();
+            document.querySelector('[style*=position]').remove();
+        }
+
+        function tareasRender() {
+            const container = document.getElementById('tareasLista');
+            const categoria = document.getElementById('tareasFiltroCategoria').value;
+            const prioridad = document.getElementById('tareasFiltroPrioridad').value;
+            const estado = document.getElementById('tareasFiltroEstado').value;
+
+            // Actualizar badge FAB
+            const pendientes = tareas.filter(t => t.estado !== 'completada').length;
+            const badge = document.getElementById('fabBadgeTareas');
+            if (badge) { badge.textContent = pendientes; badge.style.display = pendientes > 0 ? 'flex' : 'none'; }
+            // Sincronizar panel si está visible
+            if (document.getElementById('panelTareas') && document.getElementById('panelTareas').classList.contains('visible')) panelTareasRender();
+
+            let filtradas = tareas.filter(t => {
+                if (categoria && t.categoria !== categoria) return false;
+                if (prioridad && t.prioridad !== prioridad) return false;
+                if (estado && t.estado !== estado) return false;
+                return true;
+            });
+
+            // Ordenar por prioridad y estado
+            const ordenPrioridad = { alta: 1, media: 2, baja: 3 };
+            const ordenEstado = { 'en-progreso': 1, 'pendiente': 2, 'completada': 3 };
+            
+            filtradas.sort((a, b) => {
+                if (a.estado !== b.estado) {
+                    return ordenEstado[a.estado] - ordenEstado[b.estado];
+                }
+                return ordenPrioridad[a.prioridad] - ordenPrioridad[b.prioridad];
+            });
+
+            if (filtradas.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;padding:60px 20px;color:#999;">
+                        <div style="font-size:3em;margin-bottom:16px;">📋</div>
+                        <p>No hay tareas para mostrar</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = filtradas.map(tarea => {
+                const prioridadColor = {
+                    alta: '#e74c3c',
+                    media: '#f39c12', 
+                    baja: '#27ae60'
+                }[tarea.prioridad];
+
+                const estadoIcon = {
+                    'en-progreso': '🔄',
+                    'pendiente': '⏳',
+                    'completada': '✅'
+                }[tarea.estado];
+
+                const categoriaIcon = {
+                    'abas': '🧠',
+                    'tablas': '📊',
+                    'bug': '🐛',
+                    'feature': '✨',
+                    'mejora': '🔧'
+                }[tarea.categoria];
+
+                return `
+                    <div style="background:white;border:1px solid #e0e0e0;border-radius:12px;padding:20px;margin-bottom:12px;${tarea.estado === 'completada' ? 'opacity:0.7;' : ''}">
+                        <div style="display:flex;align-items:flex-start;gap:15px;">
+                            <input type="checkbox" ${tarea.estado === 'completada' ? 'checked' : ''} 
+                                   onchange="tareasToggleEstado('${tarea.id}')" 
+                                   style="margin-top:4px;transform:scale(1.2);">
+                            <div style="flex:1;">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                    <span style="font-size:1.2em;">${estadoIcon}</span>
+                                    <span style="font-size:1.2em;">${categoriaIcon}</span>
+                                    <strong>${tarea.titulo}</strong>
+                                    <span style="background:${prioridadColor};color:white;padding:2px 8px;border-radius:12px;font-size:0.75em;">${tarea.prioridad.toUpperCase()}</span>
+                                </div>
+                                ${tarea.descripcion ? `<p style="color:#666;margin:0 0 12px 0;">${tarea.descripcion}</p>` : ''}
+                                <div style="display:flex;gap:15px;font-size:0.85em;color:#999;">
+                                    <span>Creada: ${new Date(tarea.createdAt).toLocaleDateString()}</span>
+                                    ${tarea.completedAt ? `<span>Completada: ${new Date(tarea.completedAt).toLocaleDateString()}</span>` : ''}
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <button onclick="tareasEdit('${tarea.id}')" style="background:#3498db;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">✏️</button>
+                                <button onclick="tareasDelete('${tarea.id}')" style="background:#e74c3c;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function tareasToggleEstado(id) {
+            const tarea = tareas.find(t => t.id === id);
+            if (tarea) {
+                if (tarea.estado === 'completada') {
+                    tarea.estado = 'pendiente';
+                    tarea.completedAt = null;
+                } else {
+                    tarea.estado = 'completada';
+                    tarea.completedAt = new Date().toISOString();
+                }
+                localStorage.setItem('tareas', JSON.stringify(tareas));
+                tareasRender();
+            }
+        }
+
+        function tareasDelete(id) {
+            if (confirm('¿Eliminar esta tarea?')) {
+                tareas = tareas.filter(t => t.id !== id);
+                localStorage.setItem('tareas', JSON.stringify(tareas));
+                tareasRender();
+            }
+        }
+
+        function tareasEdit(id) {
+            const tarea = tareas.find(t => t.id === id);
+            if (!tarea) return;
+
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;border-radius:16px;padding:30px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
+                    <h3 style="margin:0 0 20px 0;">✏️ Editar Tarea</h3>
+                    <div class="form-group">
+                        <label>Título *</label>
+                        <input type="text" id="tareaTitulo" value="${tarea.titulo}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="tareaDescripcion" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;min-height:80px;">${tarea.descripcion}</textarea>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;">
+                        <div class="form-group">
+                            <label>Categoría</label>
+                            <select id="tareaCategoria" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="abas" ${tarea.categoria === 'abas' ? 'selected' : ''}>ABAS-II</option>
+                                <option value="tablas" ${tarea.categoria === 'tablas' ? 'selected' : ''}>Tablas Normativas</option>
+                                <option value="bug" ${tarea.categoria === 'bug' ? 'selected' : ''}>Corrección de Bugs</option>
+                                <option value="feature" ${tarea.categoria === 'feature' ? 'selected' : ''}>Nuevas Funciones</option>
+                                <option value="mejora" ${tarea.categoria === 'mejora' ? 'selected' : ''}>Mejoras</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Prioridad</label>
+                            <select id="tareaPrioridad" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="alta" ${tarea.prioridad === 'alta' ? 'selected' : ''}>🔴 Alta</option>
+                                <option value="media" ${tarea.prioridad === 'media' ? 'selected' : ''}>🟡 Media</option>
+                                <option value="baja" ${tarea.prioridad === 'baja' ? 'selected' : ''}>🟢 Baja</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Estado</label>
+                            <select id="tareaEstado" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="pendiente" ${tarea.estado === 'pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
+                                <option value="en-progreso" ${tarea.estado === 'en-progreso' ? 'selected' : ''}>🔄 En progreso</option>
+                                <option value="completada" ${tarea.estado === 'completada' ? 'selected' : ''}>✅ Completada</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                        <button class="btn" style="background:#6c757d;" onclick="this.closest('[style*=position]').remove()">Cancelar</button>
+                        <button class="btn" onclick="tareasUpdate('${tarea.id}')">Actualizar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function tareasUpdate(id) {
+            const tarea = tareas.find(t => t.id === id);
+            if (!tarea) return;
+
+            const titulo = document.getElementById('tareaTitulo').value.trim();
+            const descripcion = document.getElementById('tareaDescripcion').value.trim();
+            const categoria = document.getElementById('tareaCategoria').value;
+            const prioridad = document.getElementById('tareaPrioridad').value;
+            const estado = document.getElementById('tareaEstado').value;
+
+            if (!titulo) {
+                alert('El título es obligatorio');
+                return;
+            }
+
+            tarea.titulo = titulo;
+            tarea.descripcion = descripcion;
+            tarea.categoria = categoria;
+            tarea.prioridad = prioridad;
+            
+            if (tarea.estado !== estado) {
+                tarea.estado = estado;
+                tarea.completedAt = estado === 'completada' ? new Date().toISOString() : null;
+            }
+
+            localStorage.setItem('tareas', JSON.stringify(tareas));
+            tareasRender();
+            document.querySelector('[style*=position]').remove();
+        }
+
+        function tareasCompletarSeleccionadas() {
+            const pendientes = tareas.filter(t => t.estado !== 'completada');
+            if (pendientes.length === 0) {
+                alert('No hay tareas pendientes para completar');
+                return;
+            }
+            
+            if (confirm(`Completar ${pendientes.length} tarea(s) pendiente(s)?`)) {
+                pendientes.forEach(tarea => {
+                    tarea.estado = 'completada';
+                    tarea.completedAt = new Date().toISOString();
+                });
+                localStorage.setItem('tareas', JSON.stringify(tareas));
+                tareasRender();
+            }
+        }
+
+        // ===== SISTEMA DE CAMBIOS =====
+        let cambios = JSON.parse(localStorage.getItem('cambios') || '[]');
+
+        function cambiosShowAddModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;border-radius:16px;padding:30px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
+                    <h3 style="margin:0 0 20px 0;">➕ Nuevo Cambio</h3>
+                    <div class="form-group">
+                        <label>Título *</label>
+                        <input type="text" id="cambioTitulo" placeholder="Ej: Corregir cálculo de edad en ABAS-II" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="cambioDescripcion" placeholder="Detalles del cambio..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;min-height:80px;"></textarea>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div class="form-group">
+                            <label>Versión</label>
+                            <select id="cambioVersion" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="1.0.0">v1.0.0 - Actual</option>
+                                <option value="futuro">🚀 Futuras versiones</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="cambioTipo" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="nuevo">✨ Nuevo</option>
+                                <option value="mejora">🔧 Mejora</option>
+                                <option value="correccion">🐛 Corrección</option>
+                                <option value="eliminado">🗑️ Eliminado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                        <button class="btn" style="background:#6c757d;" onclick="this.closest('[style*=position]').remove()">Cancelar</button>
+                        <button class="btn" onclick="cambiosAdd()">Guardar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('cambioTitulo').focus();
+        }
+
+        function cambiosAdd() {
+            const titulo = document.getElementById('cambioTitulo').value.trim();
+            const descripcion = document.getElementById('cambioDescripcion').value.trim();
+            const version = document.getElementById('cambioVersion').value;
+            const tipo = document.getElementById('cambioTipo').value;
+
+            if (!titulo) {
+                alert('El título es obligatorio');
+                return;
+            }
+
+            const cambio = {
+                id: Date.now().toString(),
+                titulo,
+                descripcion,
+                version,
+                tipo,
+                createdAt: new Date().toISOString()
+            };
+
+            cambios.push(cambio);
+            localStorage.setItem('cambios', JSON.stringify(cambios));
+            cambiosRender();
+            document.querySelector('[style*=position]').remove();
+        }
+
+        function cambiosRender() {
+            const container = document.getElementById('cambiosLista');
+            const version = document.getElementById('cambiosFiltroVersion').value;
+            const tipo = document.getElementById('cambiosFiltroTipo').value;
+
+            let filtrados = cambios.filter(c => {
+                if (version && c.version !== version) return false;
+                if (tipo && c.tipo !== tipo) return false;
+                return true;
+            });
+
+            // Ordenar por fecha (más reciente primero)
+            filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            if (filtrados.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;padding:60px 20px;color:#999;">
+                        <div style="font-size:3em;margin-bottom:16px;">🔄</div>
+                        <p>No hay cambios para mostrar</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = filtrados.map(cambio => {
+                const tipoIcon = {
+                    'nuevo': '✨',
+                    'mejora': '🔧',
+                    'correccion': '🐛',
+                    'eliminado': '🗑️'
+                }[cambio.tipo];
+
+                const versionColor = cambio.version === 'futuro' ? '#9c27b0' : '#667eea';
+
+                return `
+                    <div style="background:white;border:1px solid #e0e0e0;border-radius:12px;padding:20px;margin-bottom:12px;">
+                        <div style="display:flex;align-items:flex-start;gap:15px;">
+                            <div style="flex:1;">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                    <span style="font-size:1.2em;">${tipoIcon}</span>
+                                    <strong>${cambio.titulo}</strong>
+                                    <span style="background:${versionColor};color:white;padding:2px 8px;border-radius:12px;font-size:0.75em;">${cambio.version}</span>
+                                </div>
+                                ${cambio.descripcion ? `<p style="color:#666;margin:0 0 12px 0;">${cambio.descripcion}</p>` : ''}
+                                <div style="font-size:0.85em;color:#999;">
+                                    <span>Creado: ${new Date(cambio.createdAt).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <button onclick="cambiosEdit('${cambio.id}')" style="background:#3498db;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">✏️</button>
+                                <button onclick="cambiosDelete('${cambio.id}')" style="background:#e74c3c;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function cambiosDelete(id) {
+            if (confirm('¿Eliminar este cambio?')) {
+                cambios = cambios.filter(c => c.id !== id);
+                localStorage.setItem('cambios', JSON.stringify(cambios));
+                cambiosRender();
+            }
+        }
+
+        function cambiosEdit(id) {
+            const cambio = cambios.find(c => c.id === id);
+            if (!cambio) return;
+
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;border-radius:16px;padding:30px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
+                    <h3 style="margin:0 0 20px 0;">✏️ Editar Cambio</h3>
+                    <div class="form-group">
+                        <label>Título *</label>
+                        <input type="text" id="cambioTitulo" value="${cambio.titulo}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="cambioDescripcion" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;min-height:80px;">${cambio.descripcion}</textarea>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div class="form-group">
+                            <label>Versión</label>
+                            <select id="cambioVersion" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="1.0.0" ${cambio.version === '1.0.0' ? 'selected' : ''}>v1.0.0 - Actual</option>
+                                <option value="futuro" ${cambio.version === 'futuro' ? 'selected' : ''}>🚀 Futuras versiones</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="cambioTipo" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                                <option value="nuevo" ${cambio.tipo === 'nuevo' ? 'selected' : ''}>✨ Nuevo</option>
+                                <option value="mejora" ${cambio.tipo === 'mejora' ? 'selected' : ''}>🔧 Mejora</option>
+                                <option value="correccion" ${cambio.tipo === 'correccion' ? 'selected' : ''}>🐛 Corrección</option>
+                                <option value="eliminado" ${cambio.tipo === 'eliminado' ? 'selected' : ''}>🗑️ Eliminado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                        <button class="btn" style="background:#6c757d;" onclick="this.closest('[style*=position]').remove()">Cancelar</button>
+                        <button class="btn" onclick="cambiosUpdate('${cambio.id}')">Actualizar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function cambiosUpdate(id) {
+            const cambio = cambios.find(c => c.id === id);
+            if (!cambio) return;
+
+            const titulo = document.getElementById('cambioTitulo').value.trim();
+            const descripcion = document.getElementById('cambioDescripcion').value.trim();
+            const version = document.getElementById('cambioVersion').value;
+            const tipo = document.getElementById('cambioTipo').value;
+
+            if (!titulo) {
+                alert('El título es obligatorio');
+                return;
+            }
+
+            cambio.titulo = titulo;
+            cambio.descripcion = descripcion;
+            cambio.version = version;
+            cambio.tipo = tipo;
+
+            localStorage.setItem('cambios', JSON.stringify(cambios));
+            cambiosRender();
+            document.querySelector('[style*=position]').remove();
+        }
+
+        function cambiosExportar() {
+            const dataStr = JSON.stringify(cambios, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `cambios_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // PANEL DE ESTADO DE BAREMOS ABAS-II
+        // ═══════════════════════════════════════════════════════════════
+        function abasStatusRender() {
+            const container = document.getElementById('abasStatusPanel');
+            if (!container || typeof _ABAS_TABLE_STATUS === 'undefined') return;
+
+            const tablas = [
+                { key: 'A6P', label: 'Tabla A.6 — Formulario PADRES', color: '#667eea' },
+                { key: 'A2T', label: 'Tabla A.2 — Formulario PROFESORES', color: '#f5576c' }
+            ];
+
+            let html = '';
+
+            tablas.forEach(({ key, label, color }) => {
+                const st = _ABAS_TABLE_STATUS[key];
+                const edades = Object.keys(st).map(Number).sort((a,b) => a-b);
+                const totalCeldas = edades.length * 4; // 4 dominios
+                const completadas = edades.reduce((acc, e) => {
+                    return acc + ['gac','con','so','pr'].filter(d => st[e][d] === '✅').length;
+                }, 0);
+                const pct = Math.round((completadas / totalCeldas) * 100);
+
+                html += `
+                <div style="background:white;border:1px solid #e0e0e0;border-radius:12px;padding:20px;margin-bottom:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:12px;height:12px;border-radius:50%;background:${color};"></div>
+                            <strong>${label}</strong>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="background:#f0f0f0;border-radius:20px;height:8px;width:160px;overflow:hidden;">
+                                <div style="background:${color};height:100%;width:${pct}%;border-radius:20px;transition:width 0.5s;"></div>
+                            </div>
+                            <span style="font-size:0.85em;color:#666;">${completadas}/${totalCeldas} (${pct}%)</span>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:0.82em;">
+                        <thead>
+                            <tr style="background:#f8f9fa;">
+                                <th style="padding:6px 10px;text-align:left;border:1px solid #e0e0e0;">Edad</th>
+                                <th style="padding:6px 10px;text-align:center;border:1px solid #e0e0e0;">GAC</th>
+                                <th style="padding:6px 10px;text-align:center;border:1px solid #e0e0e0;">CON</th>
+                                <th style="padding:6px 10px;text-align:center;border:1px solid #e0e0e0;">SO</th>
+                                <th style="padding:6px 10px;text-align:center;border:1px solid #e0e0e0;">PR</th>
+                                <th style="padding:6px 8px;text-align:left;border:1px solid #e0e0e0;min-width:180px;">Estado / Notas</th>
+                                <th style="padding:6px 8px;text-align:center;border:1px solid #e0e0e0;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${edades.map(e => {
+                                const r = st[e];
+                                const allOk = ['gac','con','so','pr'].every(d => r[d] === '✅');
+                                const rowBg = allOk ? '#f0fff4' : (r.gac === '❌' ? '#fff5f5' : 'white');
+                                const domCell = (d) => {
+                                    const v = r[d];
+                                    const bg = v === '✅' ? '#d4edda' : v === '⚠️' ? '#fff3cd' : '#f8d7da';
+                                    return `<td style="padding:5px 10px;text-align:center;border:1px solid #e0e0e0;background:${bg};">${v}</td>`;
+                                };
+                                const nota = (r.fuente||'').replace('transcrito','OK').substring(0,45);
+                                return `<tr style="background:${rowBg};">
+                                    <td style="padding:5px 10px;border:1px solid #e0e0e0;font-weight:600;">${e} años</td>
+                                    ${domCell('gac')}${domCell('con')}${domCell('so')}${domCell('pr')}
+                                    <td style="padding:5px 8px;border:1px solid #e0e0e0;color:#666;font-size:0.8em;">${nota}</td>
+                                    <td style="padding:5px 8px;border:1px solid #e0e0e0;text-align:center;">
+                                        ${!allOk ? `<button onclick="abasTranscribeHelper('${key}',${e})" style="background:${color};color:white;border:none;padding:3px 8px;border-radius:5px;cursor:pointer;font-size:0.8em;">✏️ Añadir</button>` : '<span style="color:#27ae60;font-size:0.8em;">✓</span>'}
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    </div>
+                    <div style="margin-top:10px;font-size:0.78em;color:#999;display:flex;gap:16px;flex-wrap:wrap;">
+                        <span>✅ Completo</span>
+                        <span>⚠️ Parcial/Placeholder</span>
+                        <span>❌ Pendiente</span>
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function abasTranscribeHelper(tabla, edad) {
+            const dominioLabels = { gac: 'GAC (Suma 9 escalares → PT)', con: 'Conceptual (3 subescalas → PT)', so: 'Social (2 subescalas → PT)', pr: 'Práctico (4 subescalas → PT)' };
+            const st = _ABAS_TABLE_STATUS[tabla]?.[edad] || {};
+            const pendientes = ['gac','con','so','pr'].filter(d => st[d] !== '✅');
+            const tablaLabel = tabla === 'A6P' ? 'A.6 (Padres)' : 'A.2 (Profesores)';
+
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:4000;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;border-radius:16px;padding:28px;max-width:680px;width:95%;max-height:88vh;overflow-y:auto;">
+                    <h3 style="margin:0 0 6px 0;">✏️ Transcribir baremos — Tabla ${tablaLabel}, Edad ${edad}</h3>
+                    <p style="color:#666;margin:0 0 20px 0;font-size:0.9em;">
+                        Introduce los datos de la tabla del PDF. Formato: <code>suma: [PT_min, PT_max]</code><br>
+                        Si una suma tiene un único PT, pon el mismo valor dos veces: <code>15: [72, 72]</code>
+                    </p>
+                    ${pendientes.map(dom => `
+                    <div style="background:#f8f9fa;border-radius:10px;padding:16px;margin-bottom:14px;">
+                        <label style="font-weight:600;display:block;margin-bottom:8px;">${dominioLabels[dom]}</label>
+                        <textarea id="transcribe_${dom}" placeholder='Ejemplo:\n3: [47, 48]\n4: [49, 50]\n5: [51, 52]\n...'
+                            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:monospace;font-size:0.85em;min-height:120px;resize:vertical;"></textarea>
+                    </div>`).join('')}
+                    <div style="background:#e8f4fd;border-radius:8px;padding:12px;margin-bottom:16px;font-size:0.82em;color:#1a6fa3;">
+                        <strong>💡 Tip:</strong> Puedes pegar directamente columnas del PDF. El parser acepta: <br>
+                        • <code>15   72   72</code> (separado por espacios/tabs) → suma=15, PT=[72,72]<br>
+                        • <code>15: [72, 72]</code> o <code>15:[72,72]</code> (formato JS)<br>
+                        • Filas sin datos o con guiones se ignoran automáticamente.
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                        <button class="btn" style="background:#6c757d;width:auto;" onclick="this.closest('[style*=position]').remove()">Cancelar</button>
+                        <button class="btn" style="width:auto;" onclick="abasTranscribeSave('${tabla}',${edad},[${pendientes.map(d=>`'${d}'`).join(',')}])">💾 Guardar baremos</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        function abasTranscribeSave(tabla, edad, dominios) {
+            const parsed = {};
+            let errores = [];
+            dominios.forEach(dom => {
+                const raw = (document.getElementById(`transcribe_${dom}`)?.value || '').trim();
+                if (!raw) return;
+                parsed[dom] = {};
+                raw.split('\n').forEach((line, idx) => {
+                    line = line.trim();
+                    if (!line || line.startsWith('//') || line.startsWith('#')) return;
+                    // Formato JS: 15: [72, 72] o 15:[72,72]
+                    let m = line.match(/^(\d+)\s*:\s*\[(\d+)\s*,\s*(\d+)\]/);
+                    if (m) {
+                        parsed[dom][parseInt(m[1])] = [parseInt(m[2]), parseInt(m[3])];
+                        return;
+                    }
+                    // Formato tabla: "15  72  72" o "15\t72\t72"
+                    m = line.match(/^(\d+)\s+(\d+)\s+(\d+)/);
+                    if (m) {
+                        parsed[dom][parseInt(m[1])] = [parseInt(m[2]), parseInt(m[3])];
+                        return;
+                    }
+                    // Formato "15  72" (PT único)
+                    m = line.match(/^(\d+)\s+(\d+)$/);
+                    if (m) {
+                        parsed[dom][parseInt(m[1])] = [parseInt(m[2]), parseInt(m[2])];
+                        return;
+                    }
+                    if (line.match(/\d/)) errores.push(`Dom ${dom}, línea ${idx+1}: "${line}" — no reconocida`);
+                });
+                if (Object.keys(parsed[dom]).length === 0) delete parsed[dom];
+            });
+
+            if (Object.keys(parsed).length === 0) {
+                alert('No se encontraron datos válidos. Revisa el formato.');
+                return;
+            }
+            if (errores.length > 0) {
+                if (!confirm(`Hay ${errores.length} líneas no reconocidas:\n${errores.slice(0,5).join('\n')}\n\n¿Guardar igualmente los datos válidos?`)) return;
+            }
+
+            abasUpdateTable(tabla, edad, parsed);
+            abasStatusRender();
+            tareasRender();
+            document.querySelector('[style*="z-index: 4000"], [style*="z-index:4000"]')?.remove();
+            
+            // Marcar tarea relacionada como completada si existe
+            const dominioNames = { gac:'GAC', con:'Conceptual', so:'Social', pr:'Práctico' };
+            const nombresCompletos = Object.keys(parsed).map(d => dominioNames[d]).join(', ');
+            alert(`✅ Baremos guardados:\nTabla ${tabla}, Edad ${edad}\nDominios: ${nombresCompletos}\nEntradas: ${Object.values(parsed).reduce((a,o) => a + Object.keys(o).length, 0)}`);
+        }
+
+        function abasStatusHelp() {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:4000;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;border-radius:16px;padding:28px;max-width:620px;width:95%;max-height:88vh;overflow-y:auto;">
+                    <h3 style="margin:0 0 16px 0;">📖 Cómo transcribir baremos del PDF</h3>
+                    <div style="font-size:0.9em;line-height:1.7;color:#333;">
+                        <p><strong>1. Localiza la tabla en el PDF del manual ABAS-II</strong><br>
+                        • Tabla A.2 = Formulario Profesores (páginas con "Teacher Form")<br>
+                        • Tabla A.6 = Formulario Padres (páginas con "Parent Form")<br>
+                        Cada tabla tiene una sección por edad.</p>
+
+                        <p><strong>2. Identifica las columnas</strong><br>
+                        Las tablas tienen: <em>Suma de puntuaciones escalares</em> → <em>PT</em> (Puntuación Total).<br>
+                        Hay dos columnas de PT: una para <em>percentil 25</em> y otra para <em>percentil 75</em> del intervalo de confianza.<br>
+                        Registra ambas como <code>[PT_min, PT_max]</code>. Si son iguales, repite el valor.</p>
+
+                        <p><strong>3. Haz clic en "✏️ Añadir"</strong> en la tabla de estado junto a la edad que quieres completar.</p>
+
+                        <p><strong>4. Pega o escribe los datos</strong><br>
+                        Puedes pegar directamente desde el PDF (si permite copiar texto):<br>
+                        <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;display:block;margin:6px 0;">9   64   65<br>10  66   67<br>11  68   69</code>
+                        O en formato JS:<br>
+                        <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;display:block;margin:6px 0;">9: [64, 65]<br>10: [66, 67]</code></p>
+
+                        <p><strong>5. Los datos se guardan automáticamente</strong> en localStorage y persisten entre sesiones.<br>
+                        También se guardan en el código JS de la app para uso permanente una vez que los añadas manualmente al archivo HTML.</p>
+
+                        <p style="background:#fff3cd;padding:10px;border-radius:8px;"><strong>⚠️ Importante:</strong> Los datos de localStorage se perderán si limpias el navegador. 
+                        Cuando tengas un grupo de edades completadas, añádelas directamente al HTML en las constantes <code>abasA2T</code> o <code>abasA6P</code> para que sean permanentes.</p>
+                    </div>
+                    <div style="text-align:right;margin-top:16px;">
+                        <button class="btn" style="width:auto;" onclick="this.closest('[style*=position]').remove()">Entendido</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        // Inicializar datos por defecto si no existen
+        if (tareas.length === 0) {
+            const now = new Date().toISOString();
+            tareas = [
+                // ── Baremos Tabla A.6 (Padres) ──
+                { id: 't_a6p_10con', titulo: 'A6P edad 10 — Dominio Conceptual', descripcion: 'Transcribir columna CON de Tabla A.6 (Padres) edad 10 años. Datos actuales son placeholder (todos PT=40).', categoria: 'tablas', prioridad: 'alta', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_a6p_12con', titulo: 'A6P edad 12 — Dominio Conceptual', descripcion: 'Transcribir columna CON de Tabla A.6 (Padres) edad 12 años. Datos actuales son placeholder (todos PT=40).', categoria: 'tablas', prioridad: 'alta', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_a6p_14',   titulo: 'A6P edad 14 — Dominios CON, SO, PR', descripcion: 'Tabla A.6 Padres edad 14: solo GAC parcialmente transcrito. Faltan dominios Conceptual, Social y Práctico.', categoria: 'tablas', prioridad: 'alta', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_a6p_16',   titulo: 'A6P edad 16 — Dominios CON, SO, PR', descripcion: 'Tabla A.6 Padres edad 16: solo GAC parcialmente transcrito. Faltan dominios Conceptual, Social y Práctico.', categoria: 'tablas', prioridad: 'alta', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_a6p_1821', titulo: 'A6P edades 18-21 — Tablas completas', descripcion: 'Actualmente usan alias de edad 17. Transcribir Tabla A.6 Padres para 18, 19, 20 y 21 años (si el manual las tiene como grupo separado).', categoria: 'tablas', prioridad: 'media', estado: 'pendiente', createdAt: now, completedAt: null },
+                // ── Baremos Tabla A.2 (Profesores) ──
+                { id: 't_a2t_10',   titulo: 'A2T edad 10 — Tabla completa', descripcion: 'Tabla A.2 Profesores edad 10 años: NO existe entrada propia, se usa aproximación edad 9. Transcribir si el manual la incluye.', categoria: 'tablas', prioridad: 'alta', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_a2t_12so', titulo: 'A2T edad 12 — Dominio Social (SO)', descripcion: 'Tabla A.2 Profesores edad 12: puntuaciones SO para sumas 2-11 tienen placeholder PT=40. Transcribir valores reales.', categoria: 'tablas', prioridad: 'alta', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_a2t_14',   titulo: 'A2T edad 14 — Dominios CON, SO, PR', descripcion: 'Tabla A.2 Profesores edad 14: solo GAC parcialmente transcrito. Faltan Conceptual, Social y Práctico.', categoria: 'tablas', prioridad: 'alta', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_a2t_16',   titulo: 'A2T edad 16 — Dominios CON, SO, PR', descripcion: 'Tabla A.2 Profesores edad 16: solo GAC parcialmente transcrito. Faltan Conceptual, Social y Práctico.', categoria: 'tablas', prioridad: 'alta', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_a2t_1821', titulo: 'A2T edades 18-21 — Tablas completas', descripcion: 'Actualmente usan alias de edad 17. Transcribir Tabla A.2 Profesores para 18-21 años.', categoria: 'tablas', prioridad: 'media', estado: 'pendiente', createdAt: now, completedAt: null },
+                // ── Verificaciones generales ──
+                { id: 't_verify_gac', titulo: 'Verificar GAC edades 14 y 16 (ambos formularios)', descripcion: 'Las entradas actuales de GAC para edades 14 y 16 son parciales. Contrastar con el PDF y completar el rango completo de sumas.', categoria: 'abas', prioridad: 'alta', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_verify_abasA1', titulo: 'Revisar tabla abasA1TeacherQ (Profesores, escalares)', descripcion: 'Verificar completitud y coherencia de la tabla de puntuaciones escalares por ítem para el formulario de Profesores.', categoria: 'abas', prioridad: 'media', estado: 'pendiente', createdAt: now, completedAt: null },
+                { id: 't_ci_table',  titulo: 'Verificar tabla abasCI (intervalos de confianza)', descripcion: 'La tabla abasCI tiene entradas para edades 5-21. Contrastar con Apéndice B del manual para confirmar valores.', categoria: 'abas', prioridad: 'baja', estado: 'pendiente', createdAt: now, completedAt: null },
+            ];
+            localStorage.setItem('tareas', JSON.stringify(tareas));
+        }
+
+        if (cambios.length === 0) {
+            cambios = [
+                {
+                    id: '1',
+                    titulo: 'Corrección del cálculo de edad',
+                    descripcion: 'Se corrigió el cálculo de edad al cargar evaluaciones guardadas, pasando de Math.floor() a cálculo preciso de años y meses',
+                    version: '1.0.0',
+                    tipo: 'correccion',
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: '2',
+                    titulo: 'Eliminación de fallback en dominios ABAS-II',
+                    descripcion: 'Se desactivó la verificación incorrecta que forzaba el uso de _fallbackPT en dominios Conceptual y Social',
+                    version: '1.0.0',
+                    tipo: 'correccion',
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: '3',
+                    titulo: 'Sistema de gestión de tareas y cambios',
+                    descripcion: 'Se añadió un sistema completo para gestionar tareas pendientes y registro de cambios del sistema',
+                    version: '1.0.0',
+                    tipo: 'nuevo',
+                    createdAt: new Date().toISOString()
+                }
+            ];
+            localStorage.setItem('cambios', JSON.stringify(cambios));
+        }
+
+        // ===== VENTANAS FLOTANTES PANEL =====
+
+        function panelToggle(id) {
+            const panel = document.getElementById(id);
+            if (!panel) return;
+            const isVisible = panel.classList.contains('visible');
+            panel.classList.toggle('visible', !isVisible);
+            if (!isVisible) {
+                if (id === 'panelTareas') panelTareasRender();
+                if (id === 'panelCambios') panelCambiosRender();
+            }
+        }
+
+        // Drag para ventanas flotantes
+        function panelMakeDraggable(panelId, headerId) {
+            const panel = document.getElementById(panelId);
+            const header = document.getElementById(headerId);
+            if (!panel || !header) return;
+            let isDragging = false, startX, startY, initLeft, initTop;
+
+            header.addEventListener('mousedown', function(e) {
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                const rect = panel.getBoundingClientRect();
+                initLeft = rect.left;
+                initTop = rect.top;
+                panel.style.transition = 'none';
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            function onMouseMove(e) {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                panel.style.left = Math.max(0, initLeft + dx) + 'px';
+                panel.style.top  = Math.max(0, initTop  + dy) + 'px';
+                panel.style.right = 'auto';
+                panel.style.bottom = 'auto';
+            }
+
+            function onMouseUp() {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+        }
+
+        // Render tareas en el panel flotante
+        function panelTareasRender() {
+            const container = document.getElementById('panelTareasBody');
+            if (!container) return;
+
+            const filtroEstado = (document.getElementById('panelTareasFiltroEstado') || {}).value || '';
+            const filtroCategoria = (document.getElementById('panelTareasFiltroCategoria') || {}).value || '';
+
+            let filtradas = tareas.filter(t => {
+                if (filtroEstado && t.estado !== filtroEstado) return false;
+                if (filtroCategoria && t.categoria !== filtroCategoria) return false;
+                return true;
+            });
+
+            // Ordenar: pendientes primero, luego prioridad
+            const prio = { alta: 0, media: 1, baja: 2 };
+            const est  = { pendiente: 0, 'en-progreso': 1, completada: 2 };
+            filtradas.sort((a, b) => (est[a.estado] - est[b.estado]) || (prio[a.prioridad] - prio[b.prioridad]));
+
+            // Actualizar badge
+            const pendientes = tareas.filter(t => t.estado !== 'completada').length;
+            const badge = document.getElementById('fabBadgeTareas');
+            if (badge) { badge.textContent = pendientes; badge.style.display = pendientes > 0 ? 'flex' : 'none'; }
+
+            if (filtradas.length === 0) {
+                container.innerHTML = `<div style="text-align:center;padding:40px 20px;color:#999;"><div style="font-size:2.5em;margin-bottom:12px;">✅</div><p>Sin tareas para mostrar</p></div>`;
+                return;
+            }
+
+            const prioColor = { alta: '#e74c3c', media: '#f39c12', baja: '#27ae60' };
+            const estIcon  = { pendiente: '⏳', 'en-progreso': '🔄', completada: '✅' };
+
+            container.innerHTML = filtradas.map(t => `
+                <div style="background:white;border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid ${prioColor[t.prioridad]};">
+                    <div style="display:flex;align-items:flex-start;gap:10px;">
+                        <input type="checkbox" ${t.estado === 'completada' ? 'checked' : ''} onchange="panelTareaToggle('${t.id}',this.checked)" style="margin-top:3px;cursor:pointer;width:16px;height:16px;">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+                                <span style="font-weight:600;font-size:0.95em;${t.estado==='completada'?'text-decoration:line-through;color:#999;':''}">${t.titulo}</span>
+                                <span style="background:${prioColor[t.prioridad]};color:white;padding:1px 7px;border-radius:10px;font-size:0.7em;">${t.prioridad}</span>
+                                <span style="font-size:0.8em;">${estIcon[t.estado]}</span>
+                            </div>
+                            ${t.descripcion ? `<p style="color:#666;font-size:0.83em;margin:0 0 6px 0;">${t.descripcion}</p>` : ''}
+                            <div style="font-size:0.75em;color:#aaa;">${new Date(t.createdAt).toLocaleDateString()}</div>
+                        </div>
+                        <div style="display:flex;gap:4px;flex-shrink:0;">
+                            <button onclick="tareasEdit('${t.id}')" style="background:#3498db;color:white;border:none;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:0.75em;">✏️</button>
+                            <button onclick="tareasDelete('${t.id}');panelTareasRender();" style="background:#e74c3c;color:white;border:none;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:0.75em;">🗑</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function panelTareaToggle(id, checked) {
+            const t = tareas.find(x => x.id === id);
+            if (!t) return;
+            t.estado = checked ? 'completada' : 'pendiente';
+            t.completedAt = checked ? new Date().toISOString() : null;
+            localStorage.setItem('tareas', JSON.stringify(tareas));
+            panelTareasRender();
+            tareasRender(); // sincronizar pestaña
+        }
+
+        // Render cambios en el panel flotante
+        function panelCambiosRender() {
+            const container = document.getElementById('panelCambiosBody');
+            if (!container) return;
+
+            const filtroVersion = (document.getElementById('panelCambiosFiltroVersion') || {}).value || '';
+            const filtroTipo    = (document.getElementById('panelCambiosFiltroTipo') || {}).value || '';
+
+            let filtrados = cambios.filter(c => {
+                if (filtroVersion && c.version !== filtroVersion) return false;
+                if (filtroTipo    && c.tipo    !== filtroTipo)    return false;
+                return true;
+            });
+
+            filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            if (filtrados.length === 0) {
+                container.innerHTML = `<div style="text-align:center;padding:40px 20px;color:#999;"><div style="font-size:2.5em;margin-bottom:12px;">🔄</div><p>Sin cambios para mostrar</p></div>`;
+                return;
+            }
+
+            const tipoIcon  = { nuevo: '✨', mejora: '🔧', correccion: '🐛', eliminado: '🗑️' };
+            const tipoColor = { nuevo: '#27ae60', mejora: '#3498db', correccion: '#e67e22', eliminado: '#e74c3c' };
+            const versionColor = v => v === 'futuro' ? '#9c27b0' : '#667eea';
+
+            container.innerHTML = filtrados.map(c => `
+                <div style="background:white;border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid ${tipoColor[c.tipo] || '#667eea'};">
+                    <div style="display:flex;align-items:flex-start;gap:8px;">
+                        <span style="font-size:1.1em;flex-shrink:0;">${tipoIcon[c.tipo] || '🔹'}</span>
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+                                <span style="font-weight:600;font-size:0.9em;">${c.titulo}</span>
+                                <span style="background:${versionColor(c.version)};color:white;padding:1px 7px;border-radius:10px;font-size:0.7em;">${c.version}</span>
+                            </div>
+                            ${c.descripcion ? `<p style="color:#666;font-size:0.82em;margin:0 0 6px 0;">${c.descripcion}</p>` : ''}
+                            <div style="font-size:0.75em;color:#aaa;">${new Date(c.createdAt).toLocaleDateString()}</div>
+                        </div>
+                        <div style="display:flex;gap:4px;flex-shrink:0;">
+                            <button onclick="cambiosEdit('${c.id}')" style="background:#3498db;color:white;border:none;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:0.75em;">✏️</button>
+                            <button onclick="cambiosDelete('${c.id}');panelCambiosRender();" style="background:#e74c3c;color:white;border:none;width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:0.75em;">🗑</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===== SISTEMA DE SEGURIDAD =====
+        let seguridadConfig = JSON.parse(localStorage.getItem('seguridadConfig') || '{}');
+        let seguridadLog = JSON.parse(localStorage.getItem('seguridadLog') || '[]');
+
+        // Inicializar configuración de seguridad por defecto
+        if (Object.keys(seguridadConfig).length === 0) {
+            seguridadConfig = {
+                autoBackup: true,
+                encriptarDatos: true,
+                sesionExpira: true,
+                logActividad: true,
+                ultimoBackup: null,
+                masterPasswordHash: null
+            };
+            localStorage.setItem('seguridadConfig', JSON.stringify(seguridadConfig));
+        }
+
+        function seguridadActualizarEstado() {
+            // Estado de acceso
+            const tienePassword = seguridadConfig.masterPasswordHash;
+            document.getElementById('seguridadEstadoAcceso').innerHTML = tienePassword ? 
+                '✅ Protegido con contraseña' : '⚠️ Sin protección';
+
+            // Estado de backup
+            const ultimoBackup = seguridadConfig.ultimoBackup;
+            if (ultimoBackup) {
+                const diasDesdeBackup = Math.floor((Date.now() - new Date(ultimoBackup)) / (1000 * 60 * 60 * 24));
+                const color = diasDesdeBackup > 7 ? '#e74c3c' : diasDesdeBackup > 3 ? '#f39c12' : '#27ae60';
+                document.getElementById('seguridadEstadoBackup').innerHTML = 
+                    `<span style="color:${color}">✅ Último: ${new Date(ultimoBackup).toLocaleDateString()} (${diasDesdeBackup} días)</span>`;
+            } else {
+                document.getElementById('seguridadEstadoBackup').innerHTML = '<span style="color:#e74c3c;">❌ Nunca se ha hecho backup</span>';
+            }
+
+            // Estado de encriptación
+            const encriptado = seguridadConfig.encriptarDatos;
+            document.getElementById('seguridadEstadoEncriptacion').innerHTML = encriptado ? 
+                '✅ Datos encriptados' : '⚠️ Sin encriptación';
+
+            // Estado de sincronización
+            const githubToken = localStorage.getItem('githubToken');
+            document.getElementById('seguridadEstadoSync').innerHTML = githubToken ? 
+                '✅ Conectado a GitHub' : '⚠️ Sin sincronización';
+
+            // Actualizar configuración en el formulario
+            document.getElementById('seguridadAutoBackup').checked = seguridadConfig.autoBackup;
+            document.getElementById('seguridadEncriptarDatos').checked = seguridadConfig.encriptarDatos;
+            document.getElementById('seguridadSesionExpira').checked = seguridadConfig.sesionExpira;
+            document.getElementById('seguridadLogActividad').checked = seguridadConfig.logActividad;
+        }
+
+        function seguridadLogActividad(mensaje, tipo = 'INFO') {
+            if (!seguridadConfig.logActividad) return;
+            
+            const entrada = {
+                timestamp: new Date().toISOString(),
+                tipo: tipo,
+                mensaje: mensaje,
+                userAgent: navigator.userAgent
+            };
+            
+            seguridadLog.unshift(entrada);
+            
+            // Mantener solo los últimos 1000 registros
+            if (seguridadLog.length > 1000) {
+                seguridadLog = seguridadLog.slice(0, 1000);
+            }
+            
+            localStorage.setItem('seguridadLog', JSON.stringify(seguridadLog));
+            seguridadRenderLog();
+        }
+
+        function seguridadRenderLog() {
+            const container = document.getElementById('seguridadLogActividad');
+            if (!container) return;
+            
+            if (seguridadLog.length === 0) {
+                container.innerHTML = '<div style="color:#999;text-align:center;">No hay actividad registrada</div>';
+                return;
+            }
+            
+            const html = seguridadLog.slice(0, 50).map(entry => {
+                const fecha = new Date(entry.timestamp);
+                const color = {
+                    'INFO': '#3498db',
+                    'WARNING': '#f39c12',
+                    'ERROR': '#e74c3c',
+                    'SUCCESS': '#27ae60'
+                }[entry.tipo] || '#666';
+                
+                return `<div style="margin-bottom:4px;">
+                    <span style="color:#999;">[${fecha.toLocaleString()}]</span> 
+                    <span style="color:${color};font-weight:bold;">[${entry.tipo}]</span> 
+                    ${entry.mensaje}
+                </div>`;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function seguridadCambiarPassword() {
+            const actual = document.getElementById('seguridadPassActual').value;
+            const nueva = document.getElementById('seguridadPassNueva').value;
+            const confirmar = document.getElementById('seguridadPassConfirmar').value;
+
+            // Validaciones
+            if (nueva.length < 8) {
+                alert('La contraseña debe tener al menos 8 caracteres');
+                return;
+            }
+
+            if (nueva !== confirmar) {
+                alert('Las contraseñas no coinciden');
+                return;
+            }
+
+            // Verificar contraseña actual si existe
+            if (seguridadConfig.masterPasswordHash) {
+                const hashActual = seguridadConfig.masterPasswordHash;
+                const hashInput = seguridadHashPassword(actual);
+                if (hashActual !== hashInput) {
+                    alert('La contraseña actual es incorrecta');
+                    return;
+                }
+            }
+
+            // Guardar nueva contraseña
+            seguridadConfig.masterPasswordHash = seguridadHashPassword(nueva);
+            localStorage.setItem('seguridadConfig', JSON.stringify(seguridadConfig));
+            
+            seguridadLogActividad('Contraseña maestra actualizada', 'SUCCESS');
+            seguridadActualizarEstado();
+            
+            // Limpiar campos
+            document.getElementById('seguridadPassActual').value = '';
+            document.getElementById('seguridadPassNueva').value = '';
+            document.getElementById('seguridadPassConfirmar').value = '';
+            
+            alert('Contraseña actualizada correctamente');
+        }
+
+        function seguridadHashPassword(password) {
+            // Simple hash para demostración (en producción usar algoritmos más seguros)
+            let hash = 0;
+            for (let i = 0; i < password.length; i++) {
+                const char = password.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            return btoa(hash.toString() + password);
+        }
+
+        function seguridadGuardarConfiguracion() {
+            seguridadConfig.autoBackup = document.getElementById('seguridadAutoBackup').checked;
+            seguridadConfig.encriptarDatos = document.getElementById('seguridadEncriptarDatos').checked;
+            seguridadConfig.sesionExpira = document.getElementById('seguridadSesionExpira').checked;
+            seguridadConfig.logActividad = document.getElementById('seguridadLogActividad').checked;
+            
+            localStorage.setItem('seguridadConfig', JSON.stringify(seguridadConfig));
+            seguridadLogActividad('Configuración de seguridad actualizada', 'SUCCESS');
+            seguridadActualizarEstado();
+            
+            alert('Configuración guardada correctamente');
+        }
+
+        function seguridadEjecutarBackup() {
+            try {
+                const backup = {
+                    timestamp: new Date().toISOString(),
+                    version: '1.0.0',
+                    datos: {
+                        pacientes: JSON.parse(localStorage.getItem('patients') || '[]'),
+                        sesiones: JSON.parse(localStorage.getItem('sessions') || '[]'),
+                        escalas: JSON.parse(localStorage.getItem('scales') || '[]'),
+                        objetivos: JSON.parse(localStorage.getItem('goals') || '[]'),
+                        tareas: JSON.parse(localStorage.getItem('tareas') || '[]'),
+                        cambios: JSON.parse(localStorage.getItem('cambios') || '[]'),
+                        ingresos: JSON.parse(localStorage.getItem('ingresos') || '[]'),
+                        programadas: JSON.parse(localStorage.getItem('ingProgramadas') || '[]'),
+                        tarifas: JSON.parse(localStorage.getItem('ingTarifas') || '{}'),
+                        contratos: JSON.parse(localStorage.getItem('ingContratos') || '[]')
+                    }
+                };
+
+                // Encriptar si está activado
+                if (seguridadConfig.encriptarDatos) {
+                    backup.datos = seguridadEncriptar(JSON.stringify(backup.datos));
+                    backup.encriptado = true;
+                }
+
+                // Guardar backup
+                const backupKey = `backup_${Date.now()}`;
+                localStorage.setItem(backupKey, JSON.stringify(backup));
+                
+                // Actualizar último backup
+                seguridadConfig.ultimoBackup = backup.timestamp;
+                localStorage.setItem('seguridadConfig', JSON.stringify(seguridadConfig));
+                
+                // Mantener solo los últimos 10 backups
+                const keys = Object.keys(localStorage).filter(k => k.startsWith('backup_')).sort();
+                if (keys.length > 10) {
+                    keys.slice(0, -10).forEach(k => localStorage.removeItem(k));
+                }
+
+                seguridadLogActividad('Backup ejecutado correctamente', 'SUCCESS');
+                seguridadActualizarEstado();
+                
+                alert('Backup completado exitosamente');
+            } catch (error) {
+                seguridadLogActividad(`Error en backup: ${error.message}`, 'ERROR');
+                alert('Error al ejecutar backup: ' + error.message);
+            }
+        }
+
+        function seguridadEncriptar(texto) {
+            // Simple encriptación para demostración (XOR con clave)
+            const clave = 'terapia-app-2024';
+            let resultado = '';
+            for (let i = 0; i < texto.length; i++) {
+                resultado += String.fromCharCode(texto.charCodeAt(i) ^ clave.charCodeAt(i % clave.length));
+            }
+            return btoa(resultado);
+        }
+
+        function seguridadDesencriptar(textoEncriptado) {
+            const clave = 'terapia-app-2024';
+            const texto = atob(textoEncriptado);
+            let resultado = '';
+            for (let i = 0; i < texto.length; i++) {
+                resultado += String.fromCharCode(texto.charCodeAt(i) ^ clave.charCodeAt(i % clave.length));
+            }
+            return resultado;
+        }
+
+        function seguridadVerificarIntegridad() {
+            const resultados = [];
+            
+            // Verificar estructura de datos
+            const clavesRequeridas = ['patients', 'sessions', 'scales', 'goals', 'tareas'];
+            clavesRequeridas.forEach(clave => {
+                try {
+                    const datos = localStorage.getItem(clave);
+                    if (datos) {
+                        JSON.parse(datos);
+                        resultados.push(`✅ ${clave}: OK`);
+                    } else {
+                        resultados.push(`⚠️ ${clave}: No existe`);
+                    }
+                } catch (e) {
+                    resultados.push(`❌ ${clave}: Corrupto - ${e.message}`);
+                }
+            });
+
+            // Verificar espacio disponible
+            const espacioUsado = JSON.stringify(localStorage).length;
+            const espacioDisponible = 5 * 1024 * 1024; // 5MB estimado
+            const porcentajeUso = ((espacioUsado / espacioDisponible) * 100).toFixed(2);
+            resultados.push(`💾 Espacio usado: ${porcentajeUso}%`);
+
+            // Verificar backups
+            const backups = Object.keys(localStorage).filter(k => k.startsWith('backup_')).length;
+            resultados.push(`💾 Backups disponibles: ${backups}`);
+
+            seguridadLogActividad('Verificación de integridad ejecutada', 'INFO');
+            
+            alert('Estado de Integridad:\n\n' + resultados.join('\n'));
+        }
+
+        function seguridadExportarDatos() {
+            try {
+                const datos = {
+                    timestamp: new Date().toISOString(),
+                    version: '1.0.0',
+                    datos: {
+                        pacientes: JSON.parse(localStorage.getItem('patients') || '[]'),
+                        sesiones: JSON.parse(localStorage.getItem('sessions') || '[]'),
+                        escalas: JSON.parse(localStorage.getItem('scales') || '[]'),
+                        objetivos: JSON.parse(localStorage.getItem('goals') || '[]'),
+                        tareas: JSON.parse(localStorage.getItem('tareas') || '[]'),
+                        cambios: JSON.parse(localStorage.getItem('cambios') || '[]'),
+                        ingresos: JSON.parse(localStorage.getItem('ingresos') || '[]'),
+                        seguridad: seguridadConfig
+                    }
+                };
+
+                const dataStr = JSON.stringify(datos, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = `terapia_app_backup_${new Date().toISOString().split('T')[0]}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                seguridadLogActividad('Datos exportados correctamente', 'SUCCESS');
+            } catch (error) {
+                seguridadLogActividad(`Error exportando datos: ${error.message}`, 'ERROR');
+                alert('Error al exportar datos: ' + error.message);
+            }
+        }
+
+        function seguridadImportarDatos() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const datos = JSON.parse(event.target.result);
+                        
+                        if (!datos.datos) {
+                            throw new Error('Formato de archivo inválido');
+                        }
+                        
+                        // Confirmar importación
+                        if (!confirm('¿Importar datos? Esto sobrescribirá los datos actuales.')) {
+                            return;
+                        }
+                        
+                        // Importar datos
+                        Object.keys(datos.datos).forEach(clave => {
+                            if (clave !== 'seguridad') {
+                                localStorage.setItem(clave, JSON.stringify(datos.datos[clave]));
+                            }
+                        });
+                        
+                        // Importar configuración de seguridad si existe
+                        if (datos.datos.seguridad) {
+                            seguridadConfig = { ...seguridadConfig, ...datos.datos.seguridad };
+                            localStorage.setItem('seguridadConfig', JSON.stringify(seguridadConfig));
+                        }
+                        
+                        seguridadLogActividad('Datos importados correctamente', 'SUCCESS');
+                        seguridadActualizarEstado();
+                        
+                        alert('Datos importados correctamente. Recarga la página para aplicar cambios.');
+                        location.reload();
+                    } catch (error) {
+                        seguridadLogActividad(`Error importando datos: ${error.message}`, 'ERROR');
+                        alert('Error al importar datos: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function seguridadRestaurarBackup() {
+            const backups = Object.keys(localStorage).filter(k => k.startsWith('backup_')).sort();
+            
+            if (backups.length === 0) {
+                alert('No hay backups disponibles');
+                return;
+            }
+            
+            // Mostrar lista de backups
+            const opciones = backups.map((key, index) => {
+                const backup = JSON.parse(localStorage.getItem(key));
+                const fecha = new Date(backup.timestamp).toLocaleString();
+                return `${index + 1}. ${fecha} ${backup.encriptado ? '(🔒)' : ''}`;
+            }).join('\n');
+            
+            const seleccion = prompt(`Selecciona un backup para restaurar:\n\n${opciones}\n\nNúmero (1-${backups.length}):`);
+            
+            if (!seleccion) return;
+            
+            const indice = parseInt(seleccion) - 1;
+            if (isNaN(indice) || indice < 0 || indice >= backups.length) {
+                alert('Selección inválida');
+                return;
+            }
+            
+            if (!confirm('¿Restaurar este backup? Se sobrescribirán todos los datos actuales.')) {
+                return;
+            }
+            
+            try {
+                const backup = JSON.parse(localStorage.getItem(backups[indice]));
+                let datos = backup.datos;
+                
+                // Desencriptar si es necesario
+                if (backup.encriptado) {
+                    datos = JSON.parse(seguridadDesencriptar(datos));
+                }
+                
+                // Restaurar datos
+                Object.keys(datos).forEach(clave => {
+                    localStorage.setItem(clave, JSON.stringify(datos[clave]));
+                });
+                
+                seguridadLogActividad('Backup restaurado correctamente', 'SUCCESS');
+                
+                alert('Backup restaurado correctamente. Recarga la página para aplicar cambios.');
+                location.reload();
+            } catch (error) {
+                seguridadLogActividad(`Error restaurando backup: ${error.message}`, 'ERROR');
+                alert('Error al restaurar backup: ' + error.message);
+            }
+        }
+
+        function seguridadLimpiarCache() {
+            if (!confirm('¿Limpiar caché? Esto eliminará datos temporales pero no tus datos principales.')) {
+                return;
+            }
+            
+            // Limpiar cache específico
+            const clavesCache = [
+                'ultimaGeneracionSesiones',
+                'dashboardCache',
+                'tempData',
+                'lastSync'
+            ];
+            
+            clavesCache.forEach(clave => {
+                localStorage.removeItem(clave);
+            });
+            
+            seguridadLogActividad('Caché limpiado', 'INFO');
+            alert('Caché limpiado correctamente');
+        }
+
+        function seguridadLimpiarLog() {
+            if (!confirm('¿Limpiar registro de actividad? Esta acción no se puede deshacer.')) {
+                return;
+            }
+            
+            seguridadLog = [];
+            localStorage.setItem('seguridadLog', JSON.stringify(seguridadLog));
+            seguridadRenderLog();
+            
+            seguridadLogActividad('Registro de actividad limpiado', 'INFO');
+        }
+
+        // Auto-backup diario
+        function seguridadAutoBackup() {
+            if (!seguridadConfig.autoBackup) return;
+            
+            const ahora = new Date();
+            const ultimaFecha = seguridadConfig.ultimoBackup;
+            
+            if (!ultimaFecha || new Date(ultimaFecha).toDateString() !== ahora.toDateString()) {
+                seguridadEjecutarBackup();
+            }
         }
 
         window.onload = init;
