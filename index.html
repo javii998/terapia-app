@@ -15737,12 +15737,16 @@
             const modal = document.getElementById('loginModal');
             const form = document.getElementById('loginForm');
             const setup = document.getElementById('loginSetup');
+            const mainContainer = document.querySelector('.container');
             
             console.log('Modal:', modal);
             console.log('Config:', seguridadConfig);
+            console.log('Main container:', mainContainer);
             
             // Ocultar contenido principal hasta que se inicie sesión
-            document.querySelector('.main-container').style.display = 'none';
+            if (mainContainer) {
+                mainContainer.style.display = 'none';
+            }
             
             if (!seguridadConfig.masterPasswordHash) {
                 console.log('🔐 Primera vez - mostrar configuración');
@@ -15814,7 +15818,10 @@
         function loginSuccess() {
             isLoggedIn = true;
             document.getElementById('loginModal').style.display = 'none';
-            document.querySelector('.main-container').style.display = 'block';
+            const mainContainer = document.querySelector('.container');
+            if (mainContainer) {
+                mainContainer.style.display = 'block';
+            }
             
             seguridadLogActividad('Login exitoso', 'SUCCESS');
             
@@ -15826,7 +15833,10 @@
             if (!confirm('¿Cerrar sesión actual?')) return;
             
             isLoggedIn = false;
-            document.querySelector('.main-container').style.display = 'none';
+            const mainContainer = document.querySelector('.container');
+            if (mainContainer) {
+                mainContainer.style.display = 'none';
+            }
             loginInit();
             
             seguridadLogActividad('Sesión cerrada', 'INFO');
