@@ -4669,6 +4669,236 @@
                     { min: 2, max: 4, interpretation: 'Reducción moderada. Limitación en AVD que requieren prensión o pinza con fuerza (apertura de botes, cargar objetos).' },
                     { min: 0, max: 1, interpretation: 'Reducción severa de fuerza. Alta dependencia en actividades manuales.' }
                 ]
+            },
+            // BOT-2 Short Form (Bruininks-Oseretsky Test of Motor Proficiency - 2nd Edition)
+            {
+                id: 'bot2-short-preloaded',
+                name: 'BOT-2 Short Form (Bruininks-Oseretsky)',
+                description: 'Evaluación de destreza motora gruesa y fina en niños (4-21 años). Versión corta con 8 subtests. Suma de Point Scores (máx. 88 puntos) con baremos por edad y género.',
+                category: 'ninos',
+                type: 'motor',
+                preloaded: true,
+                isBOT2: true,
+                items: [
+                    // SUBTEST 1: FINE MOTOR PRECISION
+                    {
+                        name: 'Ítem 3: Drawing Lines through Paths—Crooked (errores)',
+                        description: 'Número de errores en camino curvo. Tabla: ≥21 errores=0pts, 15-20=1pt, 10-14=2pts, 6-9=3pts, 4-5=4pts, 2-3=5pts, 1=6pts, 0=7pts',
+                        subtest: 'Fine Motor Precision',
+                        options: [
+                            { text: '0 errores → 7 pts', points: 7 },
+                            { text: '1 error → 6 pts', points: 6 },
+                            { text: '2-3 errores → 5 pts', points: 5 },
+                            { text: '4-5 errores → 4 pts', points: 4 },
+                            { text: '6-9 errores → 3 pts', points: 3 },
+                            { text: '10-14 errores → 2 pts', points: 2 },
+                            { text: '15-20 errores → 1 pt', points: 1 },
+                            { text: '≥21 errores → 0 pts', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'Ítem 6: Folding Paper (0-12 pts)',
+                        description: 'Suma de 4 pliegues (0-3 cada uno). Tabla: 12pts=7pts, 11=6, 9-10=5, 7-8=4, 5-6=3, 3-4=2, 1-2=1, 0=0',
+                        subtest: 'Fine Motor Precision',
+                        options: [
+                            { text: '12 puntos → 7 pts', points: 7 },
+                            { text: '11 puntos → 6 pts', points: 6 },
+                            { text: '9-10 puntos → 5 pts', points: 5 },
+                            { text: '7-8 puntos → 4 pts', points: 4 },
+                            { text: '5-6 puntos → 3 pts', points: 3 },
+                            { text: '3-4 puntos → 2 pts', points: 2 },
+                            { text: '1-2 puntos → 1 pt', points: 1 },
+                            { text: '0 puntos → 0 pts', points: 0 }
+                        ]
+                    },
+                    // SUBTEST 2: FINE MOTOR INTEGRATION
+                    {
+                        name: 'Ítem 2: Copying a Square (facet suma = Point Score)',
+                        description: 'Facetas: Basic Shape, Closure, Edges, Orientation, Overall Size. Sumar facetas (0-5) = Point Score directo',
+                        subtest: 'Fine Motor Integration',
+                        options: [
+                            { text: '5 pts (todas facetas)', points: 5 },
+                            { text: '4 pts', points: 4 },
+                            { text: '3 pts', points: 3 },
+                            { text: '2 pts', points: 2 },
+                            { text: '1 pt', points: 1 },
+                            { text: '0 pts (forma básica=0)', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'Ítem 7: Copying a Star (facet suma = Point Score)',
+                        description: 'Facetas: Basic Shape (5 puntas), Closure, Points/Edges, Orientation, Overall Size. Sumar facetas (0-5) = Point Score directo',
+                        subtest: 'Fine Motor Integration',
+                        options: [
+                            { text: '5 pts (todas facetas)', points: 5 },
+                            { text: '4 pts', points: 4 },
+                            { text: '3 pts', points: 3 },
+                            { text: '2 pts', points: 2 },
+                            { text: '1 pt', points: 1 },
+                            { text: '0 pts (forma básica=0)', points: 0 }
+                        ]
+                    },
+                    // SUBTEST 3: MANUAL DEXTERITY
+                    {
+                        name: 'Ítem 2: Transferring Pennies (mejor trial, 0-20 monedas)',
+                        description: 'Tabla: 19-20 monedas=9pts, 17-18=8, 15-16=7, 13-14=6, 11-12=5, 9-10=4, 7-8=3, 5-6=2, 3-4=1, 0-2=0',
+                        subtest: 'Manual Dexterity',
+                        options: [
+                            { text: '19-20 monedas → 9 pts', points: 9 },
+                            { text: '17-18 monedas → 8 pts', points: 8 },
+                            { text: '15-16 monedas → 7 pts', points: 7 },
+                            { text: '13-14 monedas → 6 pts', points: 6 },
+                            { text: '11-12 monedas → 5 pts', points: 5 },
+                            { text: '9-10 monedas → 4 pts', points: 4 },
+                            { text: '7-8 monedas → 3 pts', points: 3 },
+                            { text: '5-6 monedas → 2 pts', points: 2 },
+                            { text: '3-4 monedas → 1 pt', points: 1 },
+                            { text: '0-2 monedas → 0 pts', points: 0 }
+                        ]
+                    },
+                    // SUBTEST 4: BILATERAL COORDINATION
+                    {
+                        name: 'Ítem 3: Jumping in Place—Same Sides (mejor trial, 0-5 saltos)',
+                        description: 'Tabla: 5 saltos=3pts, 2-4=2pts, 1=1pt, 0=0pts',
+                        subtest: 'Bilateral Coordination',
+                        options: [
+                            { text: '5 saltos → 3 pts', points: 3 },
+                            { text: '2-4 saltos → 2 pts', points: 2 },
+                            { text: '1 salto → 1 pt', points: 1 },
+                            { text: '0 saltos → 0 pts', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'Ítem 6: Tapping Feet and Fingers (mejor trial, 0-20 taps)',
+                        description: 'Tabla: ≥18 taps=4pts, 10-17=3pts (nota: tabla muestra hasta 10=4pts, revisar manual), 5-9=3pts, 2-4=2pts, 1=1pt, 0=0pts',
+                        subtest: 'Bilateral Coordination',
+                        options: [
+                            { text: '≥18 taps → 4 pts', points: 4 },
+                            { text: '10-17 taps → 3 pts', points: 3 },
+                            { text: '5-9 taps → 2 pts', points: 2 },
+                            { text: '2-4 taps → 1 pt', points: 1 },
+                            { text: '0-1 taps → 0 pts', points: 0 }
+                        ]
+                    },
+                    // SUBTEST 5: BALANCE
+                    {
+                        name: 'Ítem 2: Walking Forward on a Line (mejor trial, 0-6 pasos)',
+                        description: 'Tabla: 6 pasos=4pts, 5=3pts, 3-4=2pts, 1-2=1pt, 0=0pts',
+                        subtest: 'Balance',
+                        options: [
+                            { text: '6 pasos → 4 pts', points: 4 },
+                            { text: '5 pasos → 3 pts', points: 3 },
+                            { text: '3-4 pasos → 2 pts', points: 2 },
+                            { text: '1-2 pasos → 1 pt', points: 1 },
+                            { text: '0 pasos → 0 pts', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'Ítem 7: Standing on One Leg—Eyes Open (mejor trial, 0-10 seg)',
+                        description: 'Tabla: 10 seg=4pts, 6.0-9.9=3pts, 3.0-5.9=2pts, 1.0-2.9=1pt, 0-0.9=0pts',
+                        subtest: 'Balance',
+                        options: [
+                            { text: '10 seg → 4 pts', points: 4 },
+                            { text: '6.0-9.9 seg → 3 pts', points: 3 },
+                            { text: '3.0-5.9 seg → 2 pts', points: 2 },
+                            { text: '1.0-2.9 seg → 1 pt', points: 1 },
+                            { text: '0-0.9 seg → 0 pts', points: 0 }
+                        ]
+                    },
+                    // SUBTEST 6: RUNNING SPEED AND AGILITY
+                    {
+                        name: 'Ítem 3: One-Legged Stationary Hop (mejor trial, 0-50+ hops)',
+                        description: 'Tabla: ≥50 hops=10pts, 40-49=9, 30-39=8, 25-29=7, 20-24=6, 15-19=5, 10-14=4, 6-9=3, 3-5=2, 1-2=1, 0=0',
+                        subtest: 'Running Speed and Agility',
+                        options: [
+                            { text: '≥50 hops → 10 pts', points: 10 },
+                            { text: '40-49 hops → 9 pts', points: 9 },
+                            { text: '30-39 hops → 8 pts', points: 8 },
+                            { text: '25-29 hops → 7 pts', points: 7 },
+                            { text: '20-24 hops → 6 pts', points: 6 },
+                            { text: '15-19 hops → 5 pts', points: 5 },
+                            { text: '10-14 hops → 4 pts', points: 4 },
+                            { text: '6-9 hops → 3 pts', points: 3 },
+                            { text: '3-5 hops → 2 pts', points: 2 },
+                            { text: '1-2 hops → 1 pt', points: 1 },
+                            { text: '0 hops → 0 pts', points: 0 }
+                        ]
+                    },
+                    // SUBTEST 7: UPPER-LIMB COORDINATION
+                    {
+                        name: 'Ítem 1: Dropping and Catching a Ball—Both Hands (0-5 catches)',
+                        description: 'Tabla directa: 5 catches=5pts, 4=4pts, 3=3pts, 2=2pts, 1=1pt, 0=0pts',
+                        subtest: 'Upper-Limb Coordination',
+                        options: [
+                            { text: '5 catches → 5 pts', points: 5 },
+                            { text: '4 catches → 4 pts', points: 4 },
+                            { text: '3 catches → 3 pts', points: 3 },
+                            { text: '2 catches → 2 pts', points: 2 },
+                            { text: '1 catch → 1 pt', points: 1 },
+                            { text: '0 catches → 0 pts', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'Ítem 6: Dribbling a Ball—Alternating Hands (mejor trial, 0-10 dribbles)',
+                        description: 'Tabla: 10 dribbles=7pts, 8-9=6pts, 6-7=5pts, 4-5=4pts, 3=3pts, 2=2pts, 1=1pt, 0=0pts',
+                        subtest: 'Upper-Limb Coordination',
+                        options: [
+                            { text: '10 dribbles → 7 pts', points: 7 },
+                            { text: '8-9 dribbles → 6 pts', points: 6 },
+                            { text: '6-7 dribbles → 5 pts', points: 5 },
+                            { text: '4-5 dribbles → 4 pts', points: 4 },
+                            { text: '3 dribbles → 3 pts', points: 3 },
+                            { text: '2 dribbles → 2 pts', points: 2 },
+                            { text: '1 dribble → 1 pt', points: 1 },
+                            { text: '0 dribbles → 0 pts', points: 0 }
+                        ]
+                    },
+                    // SUBTEST 8: STRENGTH
+                    {
+                        name: 'Ítem 2a/2b: Knee Push-ups OR Full Push-ups (0-36+ reps)',
+                        description: 'Tabla: ≥36 push-ups=9pts, 31-35=8, 26-30=7, 21-25=6, 16-20=5, 11-15=4, 6-10=3, 3-5=2, 1-2=1, 0=0',
+                        subtest: 'Strength',
+                        options: [
+                            { text: '≥36 push-ups → 9 pts', points: 9 },
+                            { text: '31-35 push-ups → 8 pts', points: 8 },
+                            { text: '26-30 push-ups → 7 pts', points: 7 },
+                            { text: '21-25 push-ups → 6 pts', points: 6 },
+                            { text: '16-20 push-ups → 5 pts', points: 5 },
+                            { text: '11-15 push-ups → 4 pts', points: 4 },
+                            { text: '6-10 push-ups → 3 pts', points: 3 },
+                            { text: '3-5 push-ups → 2 pts', points: 2 },
+                            { text: '1-2 push-ups → 1 pt', points: 1 },
+                            { text: '0 push-ups → 0 pts', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'Ítem 3: Sit-ups (0-36+ reps)',
+                        description: 'Tabla: ≥36 sit-ups=9pts, 31-35=8, 26-30=7, 21-25=6, 16-20=5, 11-15=4, 6-10=3, 3-5=2, 1-2=1, 0=0',
+                        subtest: 'Strength',
+                        options: [
+                            { text: '≥36 sit-ups → 9 pts', points: 9 },
+                            { text: '31-35 sit-ups → 8 pts', points: 8 },
+                            { text: '26-30 sit-ups → 7 pts', points: 7 },
+                            { text: '21-25 sit-ups → 6 pts', points: 6 },
+                            { text: '16-20 sit-ups → 5 pts', points: 5 },
+                            { text: '11-15 sit-ups → 4 pts', points: 4 },
+                            { text: '6-10 sit-ups → 3 pts', points: 3 },
+                            { text: '3-5 sit-ups → 2 pts', points: 2 },
+                            { text: '1-2 sit-ups → 1 pt', points: 1 },
+                            { text: '0 sit-ups → 0 pts', points: 0 }
+                        ]
+                    }
+                ],
+                baremos: [
+                    { min: 0, max: 24, interpretation: 'TOTAL POINT SCORE 0-24: Desempeño motor significativamente por debajo del promedio. Se recomienda evaluación completa BOT-2 y considerar intervención terapéutica.', category: 'Muy Bajo' },
+                    { min: 25, max: 34, interpretation: 'TOTAL POINT SCORE 25-34: Desempeño motor por debajo del promedio. Considerar evaluación completa y seguimiento profesional.', category: 'Bajo' },
+                    { min: 35, max: 44, interpretation: 'TOTAL POINT SCORE 35-44: Desempeño motor en el límite inferior del promedio. Posible beneficio de actividades de refuerzo motor.', category: 'Límite Inferior' },
+                    { min: 45, max: 59, interpretation: 'TOTAL POINT SCORE 45-59: Desempeño motor promedio (dentro de límites normales).', category: 'Promedio' },
+                    { min: 60, max: 69, interpretation: 'TOTAL POINT SCORE 60-69: Desempeño motor promedio-alto. Habilidades motoras adecuadas.', category: 'Promedio-Alto' },
+                    { min: 70, max: 79, interpretation: 'TOTAL POINT SCORE 70-79: Desempeño motor por encima del promedio. Buenas habilidades motoras.', category: 'Alto' },
+                    { min: 80, max: 88, interpretation: 'TOTAL POINT SCORE 80-88: Desempeño motor muy por encima del promedio. Habilidades motoras superiores.', category: 'Muy Alto' }
+                ],
+                notas: 'PARA INTERPRETACIÓN COMPLETA: La Suma Total de Point Scores (máx. 88) debe consultarse en las tablas del manual BOT-2 según EDAD y GÉNERO para obtener: Puntuación Compuesta, Percentil y Desviación Típica. Subtests 2: los Point Scores son la suma directa de facetas (1:1).'
             }
         ]; // fin PRELOADED_SCALES
 
@@ -9448,6 +9678,12 @@
                 startNHPTEvaluation(selectedPatient);
                 return;
             }
+
+            // Ruta dedicada para BOT-2 Short Form
+            if (selectedScale.isBOT2) {
+                startBOT2Evaluation(selectedPatient, selectedScale);
+                return;
+            }
             
             currentEvaluation = {
                 patient: selectedPatient,
@@ -9847,6 +10083,588 @@
                 renderEvaluationForm();
             }
         }
+
+        // ===== BOT-2 SHORT FORM =====
+        let bot2PatObj = null;
+        let bot2ScaleObj = null;
+
+        function startBOT2Evaluation(patient, scale) {
+            bot2PatObj = patient;
+            bot2ScaleObj = scale;
+            const container = document.getElementById('evaluationProgress');
+            
+            const html = `
+            <style>
+            .bot2-form { font-family: Arial, sans-serif; font-size: 12px; max-width: 900px; margin: 0 auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .bot2-header { background: #1a1a1a; color: white; padding: 8px 12px; font-size: 14px; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px; border-radius: 4px; }
+            .bot2-subtest-header { background: #2a2a2a; color: white; padding: 6px 10px; font-size: 11px; font-weight: bold; margin-top: 10px; margin-bottom: 2px; border-radius: 3px; }
+            .bot2-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 10px; }
+            .bot2-table td, .bot2-table th { border: 0.5px solid #999; padding: 3px 4px; text-align: center; vertical-align: middle; }
+            .bot2-label { text-align: left; background: #f5f5f5; font-weight: bold; font-size: 10px; width: 28%; }
+            .bot2-raw-header { background: #555; color: white; font-size: 9px; }
+            .bot2-point-cell { background: #e8e8e8; font-weight: bold; }
+            .bot2-input { width: 36px; height: 20px; border: 1px solid #555; text-align: center; font-size: 11px; }
+            .bot2-input-small { width: 28px; height: 18px; }
+            .bot2-facet-box { display: inline-flex; align-items: center; gap: 2px; }
+            .bot2-radio { width: 14px; height: 14px; cursor: pointer; }
+            .bot2-oval { width: 32px; height: 22px; border: 1.5px solid #333; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #f0f0f0; font-weight: bold; font-size: 11px; }
+            .bot2-total-row { background: #d0d0d0; font-weight: bold; }
+            .bot2-notes { background: #f9f9f9; font-style: italic; color: #666; font-size: 9px; padding: 4px; }
+            .bot2-total-box { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 8px; border-top: 2px solid #333; margin-top: 8px; }
+            .bot2-conversion-row { font-size: 9px; }
+            .bot2-conversion-row td { padding: 1px 2px; }
+            .bot2-gray { background: #bbb; }
+            </style>
+            
+            <div class="bot2-form">
+              <div class="bot2-header">SHORT<i style="font-style:italic;font-weight:normal">Form</i> — BOT-2</div>
+              
+              <!-- SUBTEST 1: Fine Motor Precision -->
+              <div class="bot2-subtest-header">Subtest 1: Fine Motor Precision</div>
+              <table class="bot2-table">
+                <tr>
+                  <td class="bot2-label"></td>
+                  <td class="bot2-raw-header" style="width:12%">Raw Score</td>
+                  <td colspan="8" style="background:#ddd; font-size:9px; font-weight:bold;">Conversion</td>
+                  <td class="bot2-point-cell" style="width:12%">Point Score</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>3</b> Drawing Lines through Paths—Crooked</td>
+                  <td rowspan="2"><input type="number" id="bot2_s1i3_raw" class="bot2-input" min="0" max="50" onchange="bot2CalcS1I3()"><div style="font-size:8px;color:#666">errors</div></td>
+                  <td style="font-size:8px">Raw</td><td>≥21</td><td>15–20</td><td>10–14</td><td>6–9</td><td>4–5</td><td>2–3</td><td>1</td><td>0</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s1i3_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>6</b> Folding Paper</td>
+                  <td rowspan="2"><input type="number" id="bot2_s1i6_raw" class="bot2-input" min="0" max="12" onchange="bot2CalcS1I6()"><div style="font-size:8px;color:#666">points</div></td>
+                  <td style="font-size:8px">Raw</td><td>0</td><td>1–2</td><td>3–4</td><td>5–6</td><td>7–8</td><td>9–10</td><td>11</td><td>12</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s1i6_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td>
+                </tr>
+              </table>
+
+              <!-- SUBTEST 2: Fine Motor Integration -->
+              <div class="bot2-subtest-header">Subtest 2: Fine Motor Integration</div>
+              <table class="bot2-table">
+                <tr>
+                  <td class="bot2-label"></td>
+                  <td style="background:#ddd; font-size:9px;">Basic Shape</td>
+                  <td style="background:#ddd; font-size:9px;">Closure</td>
+                  <td style="background:#ddd; font-size:9px;">Edges</td>
+                  <td style="background:#ddd; font-size:9px;">Orientation</td>
+                  <td class="bot2-gray"></td>
+                  <td style="background:#ddd; font-size:9px;">Overall Size</td>
+                  <td style="background:#ddd; font-size:9px; width:12%">Raw Score*</td>
+                  <td class="bot2-point-cell" style="width:12%">Point Score</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>2</b> Copying a Square</td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i2_bs" class="bot2-radio" value="0" checked onclick="bot2CalcS2I2()">0<input type="radio" name="s2i2_bs" class="bot2-radio" value="1" onclick="bot2CalcS2I2()">1</div></td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i2_cl" class="bot2-radio" value="0" checked onclick="bot2CalcS2I2()">0<input type="radio" name="s2i2_cl" class="bot2-radio" value="1" onclick="bot2CalcS2I2()">1</div></td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i2_ed" class="bot2-radio" value="0" checked onclick="bot2CalcS2I2()">0<input type="radio" name="s2i2_ed" class="bot2-radio" value="1" onclick="bot2CalcS2I2()">1</div></td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i2_or" class="bot2-radio" value="0" checked onclick="bot2CalcS2I2()">0<input type="radio" name="s2i2_or" class="bot2-radio" value="1" onclick="bot2CalcS2I2()">1</div></td>
+                  <td class="bot2-gray"></td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i2_sz" class="bot2-radio" value="0" checked onclick="bot2CalcS2I2()">0<input type="radio" name="s2i2_sz" class="bot2-radio" value="1" onclick="bot2CalcS2I2()">1</div></td>
+                  <td><input type="number" id="bot2_s2i2_raw" class="bot2-input" min="0" max="5" readonly><div style="font-size:8px;color:#666">points</div></td>
+                  <td class="bot2-point-cell"><div id="bot2_s2i2_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>7</b> Copying a Star</td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i7_bs" class="bot2-radio" value="0" checked onclick="bot2CalcS2I7()">0<input type="radio" name="s2i7_bs" class="bot2-radio" value="1" onclick="bot2CalcS2I7()">1</div></td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i7_cl" class="bot2-radio" value="0" checked onclick="bot2CalcS2I7()">0<input type="radio" name="s2i7_cl" class="bot2-radio" value="1" onclick="bot2CalcS2I7()">1</div></td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i7_ed" class="bot2-radio" value="0" checked onclick="bot2CalcS2I7()">0<input type="radio" name="s2i7_ed" class="bot2-radio" value="1" onclick="bot2CalcS2I7()">1</div></td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i7_or" class="bot2-radio" value="0" checked onclick="bot2CalcS2I7()">0<input type="radio" name="s2i7_or" class="bot2-radio" value="1" onclick="bot2CalcS2I7()">1</div></td>
+                  <td class="bot2-gray"></td>
+                  <td><div class="bot2-facet-box"><input type="radio" name="s2i7_sz" class="bot2-radio" value="0" checked onclick="bot2CalcS2I7()">0<input type="radio" name="s2i7_sz" class="bot2-radio" value="1" onclick="bot2CalcS2I7()">1</div></td>
+                  <td><input type="number" id="bot2_s2i7_raw" class="bot2-input" min="0" max="5" readonly><div style="font-size:8px;color:#666">points</div></td>
+                  <td class="bot2-point-cell"><div id="bot2_s2i7_point" class="bot2-oval">-</div></td>
+                </tr>
+              </table>
+
+              <!-- SUBTEST 3: Manual Dexterity -->
+              <div class="bot2-subtest-header">Subtest 3: Manual Dexterity</div>
+              <table class="bot2-table">
+                <tr>
+                  <td class="bot2-label"></td>
+                  <td colspan="2" class="bot2-raw-header">Raw Score</td>
+                  <td colspan="10" style="background:#ddd;font-size:9px;font-weight:bold;">Conversion (mejor trial)</td>
+                  <td class="bot2-point-cell">Point Score</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label"></td>
+                  <td class="bot2-raw-header" style="width:10%">Trial 1</td>
+                  <td class="bot2-raw-header" style="width:10%">Trial 2</td>
+                  <td colspan="10"></td>
+                  <td class="bot2-point-cell"></td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>2</b> Transferring Pennies</td>
+                  <td><input type="number" id="bot2_s3i2_t1" class="bot2-input" min="0" max="20" onchange="bot2CalcS3I2()"></td>
+                  <td><input type="number" id="bot2_s3i2_t2" class="bot2-input" min="0" max="20" onchange="bot2CalcS3I2()"></td>
+                  <td style="font-size:8px">Raw</td><td>0–2</td><td>3–4</td><td>5–6</td><td>7–8</td><td>9–10</td><td>11–12</td><td>13–14</td><td>15–16</td><td>17–18</td><td>19–20</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s3i2_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td>
+                </tr>
+              </table>
+
+              <!-- SUBTEST 4: Bilateral Coordination -->
+              <div class="bot2-subtest-header">Subtest 4: Bilateral Coordination</div>
+              <table class="bot2-table">
+                <tr>
+                  <td class="bot2-label"></td>
+                  <td colspan="2" class="bot2-raw-header">Raw Score</td>
+                  <td colspan="5" style="background:#ddd;font-size:9px;font-weight:bold;">Conversion (mejor trial)</td>
+                  <td class="bot2-point-cell">Point Score</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>3</b> Jumping in Place—Same Sides</td>
+                  <td><input type="number" id="bot2_s4i3_t1" class="bot2-input" min="0" max="5" onchange="bot2CalcS4I3()"></td>
+                  <td><input type="number" id="bot2_s4i3_t2" class="bot2-input" min="0" max="5" onchange="bot2CalcS4I3()"></td>
+                  <td style="font-size:8px">Raw</td><td>0</td><td>1</td><td>2–4</td><td>5</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s4i3_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>6</b> Tapping Feet and Fingers</td>
+                  <td><input type="number" id="bot2_s4i6_t1" class="bot2-input" min="0" max="50" onchange="bot2CalcS4I6()"></td>
+                  <td><input type="number" id="bot2_s4i6_t2" class="bot2-input" min="0" max="50" onchange="bot2CalcS4I6()"></td>
+                  <td style="font-size:8px">Raw</td><td>0</td><td>1</td><td>2–4</td><td>5–9</td><td>≥10</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s4i6_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td>
+                </tr>
+              </table>
+
+              <!-- SUBTEST 5: Balance -->
+              <div class="bot2-subtest-header">Subtest 5: Balance</div>
+              <table class="bot2-table">
+                <tr>
+                  <td class="bot2-label"></td>
+                  <td colspan="2" class="bot2-raw-header">Raw Score</td>
+                  <td colspan="5" style="background:#ddd;font-size:9px;font-weight:bold;">Conversion (mejor trial)</td>
+                  <td class="bot2-point-cell">Point Score</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>2</b> Walking Forward on a Line</td>
+                  <td><input type="number" id="bot2_s5i2_t1" class="bot2-input" min="0" max="6" onchange="bot2CalcS5I2()"></td>
+                  <td><input type="number" id="bot2_s5i2_t2" class="bot2-input" min="0" max="6" onchange="bot2CalcS5I2()"></td>
+                  <td style="font-size:8px">Raw</td><td>0</td><td>1–2</td><td>3–4</td><td>5</td><td>6</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s5i2_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>7</b> Standing on One Leg—Eyes Open</td>
+                  <td><input type="number" id="bot2_s5i7_t1" class="bot2-input" min="0" max="10" step="0.1" onchange="bot2CalcS5I7()"></td>
+                  <td><input type="number" id="bot2_s5i7_t2" class="bot2-input" min="0" max="10" step="0.1" onchange="bot2CalcS5I7()"></td>
+                  <td style="font-size:8px">Raw</td><td>0–0.9</td><td>1.0–2.9</td><td>3.0–5.9</td><td>6.0–9.9</td><td>10</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s5i7_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td>
+                </tr>
+              </table>
+
+              <!-- SUBTEST 6: Running Speed and Agility -->
+              <div class="bot2-subtest-header">Subtest 6: Running Speed and Agility</div>
+              <table class="bot2-table">
+                <tr>
+                  <td class="bot2-label"></td>
+                  <td colspan="2" class="bot2-raw-header">Raw Score</td>
+                  <td colspan="11" style="background:#ddd;font-size:9px;font-weight:bold;">Conversion (mejor trial)</td>
+                  <td class="bot2-point-cell">Point Score</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>3</b> One-Legged Stationary Hop</td>
+                  <td><input type="number" id="bot2_s6i3_t1" class="bot2-input" min="0" max="100" onchange="bot2CalcS6I3()"></td>
+                  <td><input type="number" id="bot2_s6i3_t2" class="bot2-input" min="0" max="100" onchange="bot2CalcS6I3()"></td>
+                  <td style="font-size:8px">Raw</td><td>0</td><td>1–2</td><td>3–5</td><td>6–9</td><td>10–14</td><td>15–19</td><td>20–24</td><td>25–29</td><td>30–39</td><td>40–49</td><td>≥50</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s6i3_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td>
+                </tr>
+              </table>
+
+              <!-- SUBTEST 7: Upper-Limb Coordination -->
+              <div class="bot2-subtest-header">Subtest 7: Upper-Limb Coordination</div>
+              <table class="bot2-table">
+                <tr>
+                  <td class="bot2-label"></td>
+                  <td colspan="2" class="bot2-raw-header">Raw Score</td>
+                  <td colspan="6" style="background:#ddd;font-size:9px;font-weight:bold;">Conversion</td>
+                  <td class="bot2-point-cell">Point Score</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>1</b> Dropping and Catching a Ball</td>
+                  <td><input type="number" id="bot2_s7i1_t1" class="bot2-input" min="0" max="5" onchange="bot2CalcS7I1()"></td>
+                  <td class="bot2-gray"></td>
+                  <td style="font-size:8px">Raw</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s7i1_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>6</b> Dribbling a Ball—Alternating</td>
+                  <td><input type="number" id="bot2_s7i6_t1" class="bot2-input" min="0" max="10" onchange="bot2CalcS7I6()"></td>
+                  <td><input type="number" id="bot2_s7i6_t2" class="bot2-input" min="0" max="10" onchange="bot2CalcS7I6()"></td>
+                  <td style="font-size:8px">Raw</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4–5</td><td>6–7</td><td>8–9</td><td>10</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s7i6_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td>
+                </tr>
+              </table>
+
+              <!-- SUBTEST 8: Strength -->
+              <div class="bot2-subtest-header">Subtest 8: Strength</div>
+              <table class="bot2-table">
+                <tr>
+                  <td class="bot2-label"></td>
+                  <td class="bot2-raw-header" style="width:14%">Raw Score</td>
+                  <td colspan="10" style="background:#ddd;font-size:9px;font-weight:bold;">Conversion</td>
+                  <td class="bot2-point-cell">Point Score</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>2a</b> Knee Push-ups OR <b>2b</b> Full</td>
+                  <td><input type="number" id="bot2_s8i2_raw" class="bot2-input" min="0" max="100" onchange="bot2CalcS8I2()"></td>
+                  <td style="font-size:8px">Raw</td><td>0</td><td>1–2</td><td>3–5</td><td>6–10</td><td>11–15</td><td>16–20</td><td>21–25</td><td>26–30</td><td>31–35</td><td>≥36</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s8i2_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td>
+                </tr>
+                <tr>
+                  <td class="bot2-label" style="font-weight:normal"><b>3</b> Sit-ups</td>
+                  <td><input type="number" id="bot2_s8i3_raw" class="bot2-input" min="0" max="100" onchange="bot2CalcS8I3()"></td>
+                  <td style="font-size:8px">Raw</td><td>0</td><td>1–2</td><td>3–5</td><td>6–10</td><td>11–15</td><td>16–20</td><td>21–25</td><td>26–30</td><td>31–35</td><td>≥36</td>
+                  <td rowspan="2" class="bot2-point-cell"><div id="bot2_s8i3_point" class="bot2-oval">-</div></td>
+                </tr>
+                <tr class="bot2-conversion-row">
+                  <td class="bot2-label"></td><td></td>
+                  <td style="font-size:8px">Point</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td>
+                </tr>
+              </table>
+
+              <!-- Notes & Total -->
+              <table class="bot2-table" style="margin-bottom:8px">
+                <tr class="bot2-notes"><td style="text-align:left;padding:6px;">Notes & Observations</td></tr>
+                <tr><td style="height:40px;background:white;"><textarea id="bot2_notes" style="width:100%;height:36px;border:none;font-size:10px;padding:4px;resize:none;" placeholder="Escribe observaciones aquí..."></textarea></td></tr>
+              </table>
+
+              <div class="bot2-total-box">
+                <div style="font-size:12px;font-weight:bold;">Total Point Score Short Form</div>
+                <div id="bot2_total" class="bot2-oval" style="width:44px;height:30px;font-size:14px;">0</div>
+                <div style="font-size:10px;color:#555;">(max = 88)</div>
+              </div>
+              
+              <div style="font-size:9px;color:#555;margin-top:8px;border-top:1px solid #ccc;padding-top:6px;">
+                * Para Subtest 2 (Fine Motor Integration): sumar las facetas, el resultado es el Point Score directo. Los baremos finales requieren consultar el manual según EDAD y GÉNERO.
+              </div>
+
+              <div style="margin-top:15px;display:flex;gap:10px;justify-content:center;">
+                <button class="btn btn-secondary" onclick="renderEvaluationForm()">❌ Cancelar</button>
+                <button class="btn" onclick="bot2Guardar()">💾 Guardar Evaluación</button>
+              </div>
+            </div>
+            `;
+            
+            container.innerHTML = html;
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Funciones de cálculo BOT-2
+        function bot2SetPoint(id, val) { document.getElementById(id).textContent = val; }
+        function bot2GetVal(id) { return parseFloat(document.getElementById(id)?.value) || 0; }
+        function bot2Max(t1, t2) { return Math.max(t1 || 0, t2 || 0); }
+
+        function bot2CalcS1I3() {
+            const raw = bot2GetVal('bot2_s1i3_raw');
+            let point = 0;
+            if (raw === 0) point = 7;
+            else if (raw === 1) point = 6;
+            else if (raw >= 2 && raw <= 3) point = 5;
+            else if (raw >= 4 && raw <= 5) point = 4;
+            else if (raw >= 6 && raw <= 9) point = 3;
+            else if (raw >= 10 && raw <= 14) point = 2;
+            else if (raw >= 15 && raw <= 20) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s1i3_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS1I6() {
+            const raw = bot2GetVal('bot2_s1i6_raw');
+            let point = 0;
+            if (raw === 12) point = 7;
+            else if (raw === 11) point = 6;
+            else if (raw >= 9 && raw <= 10) point = 5;
+            else if (raw >= 7 && raw <= 8) point = 4;
+            else if (raw >= 5 && raw <= 6) point = 3;
+            else if (raw >= 3 && raw <= 4) point = 2;
+            else if (raw >= 1 && raw <= 2) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s1i6_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS2I2() {
+            const bs = parseInt(document.querySelector('input[name="s2i2_bs"]:checked')?.value || 0);
+            const cl = parseInt(document.querySelector('input[name="s2i2_cl"]:checked')?.value || 0);
+            const ed = parseInt(document.querySelector('input[name="s2i2_ed"]:checked')?.value || 0);
+            const or = parseInt(document.querySelector('input[name="s2i2_or"]:checked')?.value || 0);
+            const sz = parseInt(document.querySelector('input[name="s2i2_sz"]:checked')?.value || 0);
+            const raw = bs + cl + ed + or + sz;
+            if (bs === 0) { document.getElementById('bot2_s2i2_raw').value = 0; bot2SetPoint('bot2_s2i2_point', 0); }
+            else { document.getElementById('bot2_s2i2_raw').value = raw; bot2SetPoint('bot2_s2i2_point', raw); }
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS2I7() {
+            const bs = parseInt(document.querySelector('input[name="s2i7_bs"]:checked')?.value || 0);
+            const cl = parseInt(document.querySelector('input[name="s2i7_cl"]:checked')?.value || 0);
+            const ed = parseInt(document.querySelector('input[name="s2i7_ed"]:checked')?.value || 0);
+            const or = parseInt(document.querySelector('input[name="s2i7_or"]:checked')?.value || 0);
+            const sz = parseInt(document.querySelector('input[name="s2i7_sz"]:checked')?.value || 0);
+            const raw = bs + cl + ed + or + sz;
+            if (bs === 0) { document.getElementById('bot2_s2i7_raw').value = 0; bot2SetPoint('bot2_s2i7_point', 0); }
+            else { document.getElementById('bot2_s2i7_raw').value = raw; bot2SetPoint('bot2_s2i7_point', raw); }
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS3I2() {
+            const best = bot2Max(bot2GetVal('bot2_s3i2_t1'), bot2GetVal('bot2_s3i2_t2'));
+            let point = 0;
+            if (best >= 19 && best <= 20) point = 9;
+            else if (best >= 17 && best <= 18) point = 8;
+            else if (best >= 15 && best <= 16) point = 7;
+            else if (best >= 13 && best <= 14) point = 6;
+            else if (best >= 11 && best <= 12) point = 5;
+            else if (best >= 9 && best <= 10) point = 4;
+            else if (best >= 7 && best <= 8) point = 3;
+            else if (best >= 5 && best <= 6) point = 2;
+            else if (best >= 3 && best <= 4) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s3i2_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS4I3() {
+            const best = bot2Max(bot2GetVal('bot2_s4i3_t1'), bot2GetVal('bot2_s4i3_t2'));
+            let point = 0;
+            if (best === 5) point = 3;
+            else if (best >= 2 && best <= 4) point = 2;
+            else if (best === 1) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s4i3_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS4I6() {
+            const best = bot2Max(bot2GetVal('bot2_s4i6_t1'), bot2GetVal('bot2_s4i6_t2'));
+            let point = 0;
+            if (best >= 10) point = 4;
+            else if (best >= 5 && best <= 9) point = 3;
+            else if (best >= 2 && best <= 4) point = 2;
+            else if (best === 1) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s4i6_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS5I2() {
+            const best = bot2Max(bot2GetVal('bot2_s5i2_t1'), bot2GetVal('bot2_s5i2_t2'));
+            let point = 0;
+            if (best === 6) point = 4;
+            else if (best === 5) point = 3;
+            else if (best >= 3 && best <= 4) point = 2;
+            else if (best >= 1 && best <= 2) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s5i2_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS5I7() {
+            const best = bot2Max(bot2GetVal('bot2_s5i7_t1'), bot2GetVal('bot2_s5i7_t2'));
+            let point = 0;
+            if (best >= 10) point = 4;
+            else if (best >= 6.0 && best <= 9.9) point = 3;
+            else if (best >= 3.0 && best <= 5.9) point = 2;
+            else if (best >= 1.0 && best <= 2.9) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s5i7_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS6I3() {
+            const best = bot2Max(bot2GetVal('bot2_s6i3_t1'), bot2GetVal('bot2_s6i3_t2'));
+            let point = 0;
+            if (best >= 50) point = 10;
+            else if (best >= 40 && best <= 49) point = 9;
+            else if (best >= 30 && best <= 39) point = 8;
+            else if (best >= 25 && best <= 29) point = 7;
+            else if (best >= 20 && best <= 24) point = 6;
+            else if (best >= 15 && best <= 19) point = 5;
+            else if (best >= 10 && best <= 14) point = 4;
+            else if (best >= 6 && best <= 9) point = 3;
+            else if (best >= 3 && best <= 5) point = 2;
+            else if (best >= 1 && best <= 2) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s6i3_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS7I1() {
+            const raw = bot2GetVal('bot2_s7i1_t1');
+            bot2SetPoint('bot2_s7i1_point', raw);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS7I6() {
+            const best = bot2Max(bot2GetVal('bot2_s7i6_t1'), bot2GetVal('bot2_s7i6_t2'));
+            let point = 0;
+            if (best === 10) point = 7;
+            else if (best >= 8 && best <= 9) point = 6;
+            else if (best >= 6 && best <= 7) point = 5;
+            else if (best >= 4 && best <= 5) point = 4;
+            else if (best === 3) point = 3;
+            else if (best === 2) point = 2;
+            else if (best === 1) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s7i6_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS8I2() {
+            const raw = bot2GetVal('bot2_s8i2_raw');
+            let point = 0;
+            if (raw >= 36) point = 9;
+            else if (raw >= 31 && raw <= 35) point = 8;
+            else if (raw >= 26 && raw <= 30) point = 7;
+            else if (raw >= 21 && raw <= 25) point = 6;
+            else if (raw >= 16 && raw <= 20) point = 5;
+            else if (raw >= 11 && raw <= 15) point = 4;
+            else if (raw >= 6 && raw <= 10) point = 3;
+            else if (raw >= 3 && raw <= 5) point = 2;
+            else if (raw >= 1 && raw <= 2) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s8i2_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2CalcS8I3() {
+            const raw = bot2GetVal('bot2_s8i3_raw');
+            let point = 0;
+            if (raw >= 36) point = 9;
+            else if (raw >= 31 && raw <= 35) point = 8;
+            else if (raw >= 26 && raw <= 30) point = 7;
+            else if (raw >= 21 && raw <= 25) point = 6;
+            else if (raw >= 16 && raw <= 20) point = 5;
+            else if (raw >= 11 && raw <= 15) point = 4;
+            else if (raw >= 6 && raw <= 10) point = 3;
+            else if (raw >= 3 && raw <= 5) point = 2;
+            else if (raw >= 1 && raw <= 2) point = 1;
+            else point = 0;
+            bot2SetPoint('bot2_s8i3_point', point);
+            bot2UpdateTotal();
+        }
+
+        function bot2UpdateTotal() {
+            const total = 
+                (parseInt(document.getElementById('bot2_s1i3_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s1i6_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s2i2_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s2i7_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s3i2_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s4i3_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s4i6_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s5i2_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s5i7_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s6i3_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s7i1_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s7i6_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s8i2_point')?.textContent) || 0) +
+                (parseInt(document.getElementById('bot2_s8i3_point')?.textContent) || 0);
+            document.getElementById('bot2_total').textContent = total;
+        }
+
+        function bot2Guardar() {
+            const total = parseInt(document.getElementById('bot2_total').textContent) || 0;
+            const notes = document.getElementById('bot2_notes')?.value || '';
+            
+            // Recopilar todos los datos
+            const answers = [
+                { itemName: 'S1I3: Drawing Lines (errores)', selectedOption: bot2GetVal('bot2_s1i3_raw') + ' errores', points: parseInt(document.getElementById('bot2_s1i3_point')?.textContent) || 0 },
+                { itemName: 'S1I6: Folding Paper (pts)', selectedOption: bot2GetVal('bot2_s1i6_raw') + ' puntos', points: parseInt(document.getElementById('bot2_s1i6_point')?.textContent) || 0 },
+                { itemName: 'S2I2: Copying Square (raw)', selectedOption: bot2GetVal('bot2_s2i2_raw') + ' puntos', points: parseInt(document.getElementById('bot2_s2i2_point')?.textContent) || 0 },
+                { itemName: 'S2I7: Copying Star (raw)', selectedOption: bot2GetVal('bot2_s2i7_raw') + ' puntos', points: parseInt(document.getElementById('bot2_s2i7_point')?.textContent) || 0 },
+                { itemName: 'S3I2: Transferring Pennies (mejor)', selectedOption: 'T1:'+bot2GetVal('bot2_s3i2_t1')+', T2:'+bot2GetVal('bot2_s3i2_t2'), points: parseInt(document.getElementById('bot2_s3i2_point')?.textContent) || 0 },
+                { itemName: 'S4I3: Jumping Same Sides (mejor)', selectedOption: 'T1:'+bot2GetVal('bot2_s4i3_t1')+', T2:'+bot2GetVal('bot2_s4i3_t2'), points: parseInt(document.getElementById('bot2_s4i3_point')?.textContent) || 0 },
+                { itemName: 'S4I6: Tapping Feet/Fingers (mejor)', selectedOption: 'T1:'+bot2GetVal('bot2_s4i6_t1')+', T2:'+bot2GetVal('bot2_s4i6_t2'), points: parseInt(document.getElementById('bot2_s4i6_point')?.textContent) || 0 },
+                { itemName: 'S5I2: Walking on Line (mejor)', selectedOption: 'T1:'+bot2GetVal('bot2_s5i2_t1')+', T2:'+bot2GetVal('bot2_s5i2_t2'), points: parseInt(document.getElementById('bot2_s5i2_point')?.textContent) || 0 },
+                { itemName: 'S5I7: Standing One Leg (mejor)', selectedOption: 'T1:'+bot2GetVal('bot2_s5i7_t1')+'s, T2:'+bot2GetVal('bot2_s5i7_t2')+'s', points: parseInt(document.getElementById('bot2_s5i7_point')?.textContent) || 0 },
+                { itemName: 'S6I3: One-Legged Hop (mejor)', selectedOption: 'T1:'+bot2GetVal('bot2_s6i3_t1')+', T2:'+bot2GetVal('bot2_s6i3_t2'), points: parseInt(document.getElementById('bot2_s6i3_point')?.textContent) || 0 },
+                { itemName: 'S7I1: Dropping/Catching Ball', selectedOption: bot2GetVal('bot2_s7i1_t1') + ' catches', points: parseInt(document.getElementById('bot2_s7i1_point')?.textContent) || 0 },
+                { itemName: 'S7I6: Dribbling Ball (mejor)', selectedOption: 'T1:'+bot2GetVal('bot2_s7i6_t1')+', T2:'+bot2GetVal('bot2_s7i6_t2'), points: parseInt(document.getElementById('bot2_s7i6_point')?.textContent) || 0 },
+                { itemName: 'S8I2: Push-ups', selectedOption: bot2GetVal('bot2_s8i2_raw') + ' reps', points: parseInt(document.getElementById('bot2_s8i2_point')?.textContent) || 0 },
+                { itemName: 'S8I3: Sit-ups', selectedOption: bot2GetVal('bot2_s8i3_raw') + ' reps', points: parseInt(document.getElementById('bot2_s8i3_point')?.textContent) || 0 },
+                { itemName: 'Observaciones', selectedOption: notes || '—', points: 0 }
+            ];
+
+            // Baremo interpretación
+            let interpretation = '';
+            if (total >= 80) interpretation = 'Desempeño motor muy por encima del promedio (≥80 pts)';
+            else if (total >= 70) interpretation = 'Desempeño motor por encima del promedio (70-79 pts)';
+            else if (total >= 60) interpretation = 'Desempeño motor promedio-alto (60-69 pts)';
+            else if (total >= 45) interpretation = 'Desempeño motor promedio (45-59 pts)';
+            else if (total >= 35) interpretation = 'Desempeño motor límite inferior (35-44 pts)';
+            else if (total >= 25) interpretation = 'Desempeño motor bajo (25-34 pts)';
+            else interpretation = 'Desempeño motor muy bajo (<25 pts). Requiere evaluación completa.';
+
+            const evaluation = {
+                id: Date.now(),
+                patient: bot2PatObj,
+                scale: bot2ScaleObj,
+                patientIndex: patients.indexOf(bot2PatObj),
+                scaleIndex: scales.indexOf(bot2ScaleObj),
+                startedAt: new Date().toISOString(),
+                answers: answers,
+                totalPoints: total,
+                interpretation: interpretation,
+                notes: notes
+            };
+
+            evaluations.push(evaluation);
+            localStorage.setItem('evaluations', JSON.stringify(evaluations));
+            ghScheduleSync();
+            DB.save('evaluations', evaluation);
+            alert('✅ Evaluación BOT-2 Short Form guardada correctamente. Total: ' + total + ' puntos. ' + interpretation);
+            renderEvaluationForm();
+        }
+        // ===== FIN BOT-2 SHORT FORM =====
 
         function _patchScimSave(editId) {
             // Observar hasta que aparezca el botón guardar del SCIM y reemplazar su onclick
