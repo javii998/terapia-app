@@ -14,50 +14,116 @@
     <link rel="manifest" href="manifest.json?v=2">
     <title>Sistema Profesional de Terapia Ocupacional - Premium</title>
     <script>
-        // CACHE BUSTER v3 - Auto-recarga al detectar nueva versión
+        // FORCE UPDATE v4 - Detecta si hay versión nueva en el servidor
         (function() {
-            const BUILD_VERSION = '2026-05-04-v3';
+            // Si ya verificamos en esta sesión, no repetir
+            if (sessionStorage.getItem('version_checked')) return;
+            
+            // Marcar que ya verificamos
+            sessionStorage.setItem('version_checked', 'true');
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const nocache = urlParams.get('nocache');
+            
+            // Si ya estamos en modo nocache, no hacer nada
+            if (nocache) {
+                console.log('[FORCE UPDATE] Modo nocache activo');
+                return;
+            }
+            
+            // Verificar si hay Service Worker viejo interceptando
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    if (registration.active) {
+                        // Hay un SW activo - verificar si es viejo
+                        console.log('[FORCE UPDATE] SW activo detectado, verificando versión...');
+                        
+                        // Hacer fetch al servidor para obtener la versión real
+                        fetch(window.location.href, { 
+                            method: 'HEAD', 
+                            cache: 'no-store',
+                            headers: { 'Accept': 'text/html' }
+                        }).then(function(response) {
+                            // Si el ETag o Last-Modified es diferente, forzar recarga
+                            const serverEtag = response.headers.get('etag') || response.headers.get('last-modified');
+                            const localEtag = localStorage.getItem('page_etag');
+                            
+                            console.log('[FORCE UPDATE] Server ETag:', serverEtag);
+                            console.log('[FORCE UPDATE] Local ETag:', localEtag);
+                            
+                            if (localEtag && localEtag !== serverEtag) {
+                                console.log('[FORCE UPDATE] ¡Nueva versión detectada! Recargando sin caché...');
+                                
+                                // Desregistrar todos los SW
+                                navigator.serviceWorker.getRegistrations().then(function(regs) {
+                                    regs.forEach(r => r.unregister());
+                                    
+                                    // Guardar nuevo ETag
+                                    localStorage.setItem('page_etag', serverEtag);
+                                    
+                                    // Recargar sin caché
+                                    window.location.href = window.location.pathname + '?nocache=' + Date.now();
+                                });
+                            } else {
+                                // Primera vez o misma versión
+                                localStorage.setItem('page_etag', serverEtag);
+                            }
+                        }).catch(function(err) {
+                            console.log('[FORCE UPDATE] Error verificando:', err);
+                        });
+                    }
+                });
+            }
+        })();
+    </script>
+    <script>
+        // Limpieza inicial al cargar - v4
+        (function() {
+            const BUILD_VERSION = '2026-05-04-v4';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
-            const hasReloaded = urlParams.get('reloaded');
+            const nocache = urlParams.get('nocache');
             
-            if (storedVersion !== BUILD_VERSION && !hasReloaded) {
-                console.log('[CACHE BUSTER] Nueva versión:', BUILD_VERSION, '- Limpiando y recargando...');
+            console.log('[INIT] Versión build:', BUILD_VERSION, 'Stored:', storedVersion, 'Nocache:', nocache);
+            
+            if (storedVersion !== BUILD_VERSION || nocache) {
                 localStorage.setItem('app_version', BUILD_VERSION);
                 
-                // Marcar que ya limpiamos para esta versión
-                sessionStorage.setItem('cache_cleaned', 'true');
-                
-                // Unregister Service Workers
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                        let unregPromises = registrations.map(r => r.unregister());
-                        Promise.all(unregPromises).then(function() {
-                            console.log('[CACHE BUSTER] SWs eliminados, recargando...');
-                            // Recargar con flag para evitar loop
-                            window.location.href = window.location.pathname + '?reloaded=1&v=' + Date.now();
-                        });
-                    });
-                } else {
-                    // No hay SW, recargar directo
-                    window.location.href = window.location.pathname + '?reloaded=1&v=' + Date.now();
-                }
-                
-                // Limpiar cachés también
+                // Limpiar todo
                 if ('caches' in window) {
-                    caches.keys().then(function(cacheNames) {
-                        cacheNames.forEach(function(cacheName) {
-                            caches.delete(cacheName);
+                    caches.keys().then(function(names) {
+                        names.forEach(function(name) {
+                            caches.delete(name);
+                            console.log('[INIT] Cache eliminada:', name);
                         });
                     });
                 }
                 
-                // Detener carga actual
-                throw new Error('Recargando con nueva versión...');
-            } else {
-                console.log('[CACHE BUSTER] Versión actual:', BUILD_VERSION);
-                // Limpiar URL params
-                if (hasReloaded && window.history.replaceState) {
+                // Limpiar localStorage excepto datos importantes
+                const keepKeys = ['pacientes', 'evaluaciones', 'sesiones', 'pacienteActual', 'config'];
+                const allKeys = Object.keys(localStorage);
+                allKeys.forEach(function(key) {
+                    if (!keepKeys.some(k => key.startsWith(k))) {
+                        // No borrar datos de pacientes
+                        if (!key.match(/^(paciente_|eval_|sesion_)/)) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                });
+                
+                // Limpiar sessionStorage excepto version_checked
+                const keepSession = ['version_checked'];
+                const allSession = Object.keys(sessionStorage);
+                allSession.forEach(function(key) {
+                    if (!keepSession.includes(key)) {
+                        sessionStorage.removeItem(key);
+                    }
+                });
+                
+                console.log('[INIT] Limpieza completada, versión:', BUILD_VERSION);
+                
+                // Limpiar URL si venía con nocache
+                if (nocache && window.history.replaceState) {
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
