@@ -14,33 +14,51 @@
     <link rel="manifest" href="manifest.json?v=2">
     <title>Sistema Profesional de Terapia Ocupacional - Premium</title>
     <script>
-        // CACHE BUSTER v2 - Fuerza actualización del Service Worker
+        // CACHE BUSTER v3 - Auto-recarga al detectar nueva versión
         (function() {
-            const BUILD_VERSION = '2026-05-04-v2';
+            const BUILD_VERSION = '2026-05-04-v3';
             const storedVersion = localStorage.getItem('app_version');
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasReloaded = urlParams.get('reloaded');
             
-            if (storedVersion !== BUILD_VERSION) {
-                console.log('[CACHE BUSTER] Nueva versión detectada:', BUILD_VERSION);
+            if (storedVersion !== BUILD_VERSION && !hasReloaded) {
+                console.log('[CACHE BUSTER] Nueva versión:', BUILD_VERSION, '- Limpiando y recargando...');
                 localStorage.setItem('app_version', BUILD_VERSION);
                 
-                // Unregister todos los Service Workers
+                // Marcar que ya limpiamos para esta versión
+                sessionStorage.setItem('cache_cleaned', 'true');
+                
+                // Unregister Service Workers
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                        for (let registration of registrations) {
-                            registration.unregister();
-                            console.log('[CACHE BUSTER] Service Worker eliminado');
-                        }
+                        let unregPromises = registrations.map(r => r.unregister());
+                        Promise.all(unregPromises).then(function() {
+                            console.log('[CACHE BUSTER] SWs eliminados, recargando...');
+                            // Recargar con flag para evitar loop
+                            window.location.href = window.location.pathname + '?reloaded=1&v=' + Date.now();
+                        });
                     });
+                } else {
+                    // No hay SW, recargar directo
+                    window.location.href = window.location.pathname + '?reloaded=1&v=' + Date.now();
                 }
                 
-                // Limpiar cachés
+                // Limpiar cachés también
                 if ('caches' in window) {
                     caches.keys().then(function(cacheNames) {
                         cacheNames.forEach(function(cacheName) {
                             caches.delete(cacheName);
-                            console.log('[CACHE BUSTER] Caché eliminada:', cacheName);
                         });
                     });
+                }
+                
+                // Detener carga actual
+                throw new Error('Recargando con nueva versión...');
+            } else {
+                console.log('[CACHE BUSTER] Versión actual:', BUILD_VERSION);
+                // Limpiar URL params
+                if (hasReloaded && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
         })();
