@@ -8,8 +8,43 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="TO App">
     <meta name="theme-color" content="#667eea">
-    <link rel="manifest" href="manifest.json">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="manifest" href="manifest.json?v=2">
     <title>Sistema Profesional de Terapia Ocupacional - Premium</title>
+    <script>
+        // CACHE BUSTER v2 - Fuerza actualización del Service Worker
+        (function() {
+            const BUILD_VERSION = '2026-05-04-v2';
+            const storedVersion = localStorage.getItem('app_version');
+            
+            if (storedVersion !== BUILD_VERSION) {
+                console.log('[CACHE BUSTER] Nueva versión detectada:', BUILD_VERSION);
+                localStorage.setItem('app_version', BUILD_VERSION);
+                
+                // Unregister todos los Service Workers
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                        for (let registration of registrations) {
+                            registration.unregister();
+                            console.log('[CACHE BUSTER] Service Worker eliminado');
+                        }
+                    });
+                }
+                
+                // Limpiar cachés
+                if ('caches' in window) {
+                    caches.keys().then(function(cacheNames) {
+                        cacheNames.forEach(function(cacheName) {
+                            caches.delete(cacheName);
+                            console.log('[CACHE BUSTER] Caché eliminada:', cacheName);
+                        });
+                    });
+                }
+            }
+        })();
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
