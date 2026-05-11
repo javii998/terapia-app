@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v4
         (function() {
-            const BUILD_VERSION = '2026-05-04-v4';
+            const BUILD_VERSION = '2026-05-11-v5';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -4090,6 +4090,18 @@
                 items: [{ name: 'Motor SCIM-III interno', options: [] }],
                 baremos: [{ min: 0, max: 100, interpretation: 'Ver resultados detallados SCIM-III' }]
             },
+            // ABAS-II Infantil-Padres (0-5 años) — motor dedicado
+            {
+    id: 'abas-infantil-padres-preloaded',
+    name: 'ABAS-II Infantil-Padres (0-5 años)',
+    description: 'Sistema de Evaluación de la Conducta Adaptativa - Segunda Edición. Formulario Infantil-Padres para niños de 0 a 5 años. 10 áreas (Comunicación, Recursos Comunitarios, Habilidades Preacadémicas, Vida en el Hogar, Salud y Seguridad, Ocio, Autocuidado, Autodirección, Social y Motora). Dominios Conceptual, Social, Práctico y CAG.',
+    category: 'ninos',
+    type: 'avd',
+    preloaded: true,
+    isABASInfantil: true,
+    items: [{ name: 'Motor ABAS-II Infantil interno', options: [] }],
+    baremos: [{ min: 0, max: 999, interpretation: 'Ver resultados detallados ABAS-II Infantil' }]
+},
             // ABAS-II Completo — motor dedicado
             {
     id: 'abas-ii-preloaded',
@@ -9183,8 +9195,9 @@
             const hasOldAbas = savedScales.some(s => s.id === 'abas-ii-preloaded' && !s.isABAS);
             const hasFIMFAM = savedScales.some(s => s.id === 'fimfam-preloaded');
             const hasSCIM = savedScales.some(s => s.id === 'scimiii-preloaded');
+            const hasABASInfantil = savedScales.some(s => s.id === 'abas-infantil-padres-preloaded');
             
-            if (savedScales.length === 0 || hasOldAbas || !hasFIMFAM || !hasSCIM) {
+            if (savedScales.length === 0 || hasOldAbas || !hasFIMFAM || !hasSCIM || !hasABASInfantil) {
                 scales = PRELOADED_SCALES.map(s => ({...s, createdAt: new Date().toISOString()}));
                 localStorage.setItem('scales', JSON.stringify(scales));
                 document.getElementById('welcomeAlert').style.display = 'block';
@@ -9336,8 +9349,8 @@
                     <p>${scale.description || 'Sin descripción'}</p>
                     <div class="scale-meta">
                         👥 ${categoryLabel} | ${typeInfo.icon} ${typeInfo.label}<br>
-                        📝 ${scale.isABAS ? '210' : scale.isFIMFAM ? '36' : scale.isSCIM ? '17' : scale.isNHPT ? '4 tiempos' : scale.items.length} ítem(s)<br>
-                        📊 ${scale.isABAS ? '9 áreas + 3 dominios + CAG' : scale.isFIMFAM ? '3 subescalas (Motora + Cognitiva + AEVD)' : scale.isSCIM ? '3 dominios (Autocuidado + Respiración/Esfínteres + Movilidad)' : scale.isNHPT ? 'Baremos Mathiowetz 1985 · 12 grupos edad × sexo' : scale.baremos.length + ' baremo(s)'}
+                        📝 ${scale.isABAS ? '210' : scale.isABASInfantil ? '213 (10 áreas)' : scale.isFIMFAM ? '36' : scale.isSCIM ? '17' : scale.isNHPT ? '4 tiempos' : scale.items.length} ítem(s)<br>
+                        📊 ${scale.isABAS ? '9 áreas + 3 dominios + CAG' : scale.isABASInfantil ? '10 áreas + 3 dominios + CAG (0–5 años)' : scale.isFIMFAM ? '3 subescalas (Motora + Cognitiva + AEVD)' : scale.isSCIM ? '3 dominios (Autocuidado + Respiración/Esfínteres + Movilidad)' : scale.isNHPT ? 'Baremos Mathiowetz 1985 · 12 grupos edad × sexo' : scale.baremos.length + ' baremo(s)'}
                     </div>
                     <div class="btn-group" onclick="event.stopPropagation();">
                         <button class="btn btn-small btn-secondary" onclick="editScale(${index})">✏️ Editar</button>
@@ -9641,6 +9654,49 @@
                 return;
             }
             
+            // Vista especial para ABAS-II Infantil-Padres (0-5 años)
+            if (scale.isABASInfantil) {
+                const html = `
+                    <h2>${scale.name}</h2>
+                    <p style="color:#e8a000;font-weight:600;">✨ Escala pre-cargada con motor dedicado ABAS-II Infantil-Padres</p>
+                    <p><strong>Descripción:</strong> ${scale.description}</p>
+                    <p><strong>Categoría:</strong> Niños (0–5 años) · Informador: Padres/Cuidadores</p>
+                    <div style="background:#fff8e1;border-radius:10px;padding:20px;margin-top:20px;">
+                        <h3 style="color:#e8a000;margin-bottom:15px;">📋 Estructura del ABAS-II Infantil-Padres</h3>
+                        <p><strong>Total:</strong> 10 áreas adaptativas · Escala de respuesta 0–3</p>
+                        <p style="font-size:0.88em;color:#666;margin-top:4px;">Nota: Recursos Comunitarios y Habilidades Preacadémicas solo se aplican si el niño tiene ≥1 año.</p>
+                        <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:0.93em;">
+                            <thead><tr style="background:#e8a000;color:white;">
+                                <th style="padding:8px 10px;text-align:left;">Área</th>
+                                <th style="padding:8px;text-align:center;">Cód.</th>
+                                <th style="padding:8px;text-align:center;">Ítems</th>
+                                <th style="padding:8px;text-align:center;">Dominio</th>
+                                <th style="padding:8px;text-align:center;">Edad mín.</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr style="border-bottom:1px solid #eee;"><td style="padding:7px 10px;">Comunicación</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">COM</td><td style="padding:7px;text-align:center;">23</td><td style="padding:7px;text-align:center;"><span style="background:#4a90d9;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Conceptual</span></td><td style="padding:7px;text-align:center;">0</td></tr>
+                                <tr style="border-bottom:1px solid #eee;"><td style="padding:7px 10px;">Habilidades Preacadémicas</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">HPF</td><td style="padding:7px;text-align:center;">23</td><td style="padding:7px;text-align:center;"><span style="background:#4a90d9;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Conceptual</span></td><td style="padding:7px;text-align:center;">1 año</td></tr>
+                                <tr style="border-bottom:1px solid #eee;"><td style="padding:7px 10px;">Autodirección</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">AUD</td><td style="padding:7px;text-align:center;">25</td><td style="padding:7px;text-align:center;"><span style="background:#4a90d9;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Conceptual</span></td><td style="padding:7px;text-align:center;">0</td></tr>
+                                <tr style="border-bottom:1px solid #eee;"><td style="padding:7px 10px;">Social</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">SOC</td><td style="padding:7px;text-align:center;">24</td><td style="padding:7px;text-align:center;"><span style="background:#27ae60;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Social</span></td><td style="padding:7px;text-align:center;">0</td></tr>
+                                <tr style="border-bottom:1px solid #eee;"><td style="padding:7px 10px;">Ocio</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">OCI</td><td style="padding:7px;text-align:center;">22</td><td style="padding:7px;text-align:center;"><span style="background:#27ae60;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Social</span></td><td style="padding:7px;text-align:center;">0</td></tr>
+                                <tr style="border-bottom:1px solid #eee;"><td style="padding:7px 10px;">Recursos Comunitarios</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">URC</td><td style="padding:7px;text-align:center;">22</td><td style="padding:7px;text-align:center;"><span style="background:#e67e22;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Práctico</span></td><td style="padding:7px;text-align:center;">1 año</td></tr>
+                                <tr style="border-bottom:1px solid #eee;"><td style="padding:7px 10px;">Vida en el Hogar</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">VEH</td><td style="padding:7px;text-align:center;">25</td><td style="padding:7px;text-align:center;"><span style="background:#e67e22;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Práctico</span></td><td style="padding:7px;text-align:center;">1 año</td></tr>
+                                <tr style="border-bottom:1px solid #eee;"><td style="padding:7px 10px;">Salud y Seguridad</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">SYS</td><td style="padding:7px;text-align:center;">24</td><td style="padding:7px;text-align:center;"><span style="background:#e67e22;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Práctico</span></td><td style="padding:7px;text-align:center;">0</td></tr>
+                                <tr style="border-bottom:1px solid #eee;"><td style="padding:7px 10px;">Autocuidado</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">AUT</td><td style="padding:7px;text-align:center;">24</td><td style="padding:7px;text-align:center;"><span style="background:#e67e22;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Práctico</span></td><td style="padding:7px;text-align:center;">0</td></tr>
+                                <tr><td style="padding:7px 10px;">Motora</td><td style="padding:7px;text-align:center;color:#e8a000;font-weight:600;">MOT</td><td style="padding:7px;text-align:center;">27</td><td style="padding:7px;text-align:center;"><span style="background:#e67e22;color:white;border-radius:12px;padding:2px 9px;font-size:0.82em;">Práctico</span></td><td style="padding:7px;text-align:center;">0</td></tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top:14px;font-size:0.88em;color:#666;">
+                            <strong>Escala de respuesta:</strong> 0 = No es capaz · 1 = Nunca o casi nunca · 2 = A veces · 3 = Siempre o casi siempre<br>
+                            <strong>Baremos:</strong> Tablas normativas PPC por grupos de edad (cada 4–6 meses, de 0 a 5 años 11 meses)
+                        </div>
+                    </div>
+                `;
+                document.getElementById('modalContent').innerHTML = html;
+                document.getElementById('modal').classList.add('active');
+                return;
+            }
+
             // Vista especial para ABAS-II
             if (scale.isABAS) {
                 const html = `
@@ -10186,7 +10242,7 @@
                     <label>Seleccionar Escala *</label>
                     <select id="evalScale">
                         <option value="">Seleccionar...</option>
-                        ${scales.map((s, i) => `<option value="${i}">${s.name} (${s.isABAS ? '210' : s.isFIMFAM ? '36' : s.isSCIM ? '17' : s.isNHPT ? '4 tiempos' : s.items.length} ítems)</option>`).join('')}
+                        ${scales.map((s, i) => `<option value="${i}">${s.name} (${s.isABAS ? '210' : s.isABASInfantil ? '213' : s.isFIMFAM ? '36' : s.isSCIM ? '17' : s.isNHPT ? '4 tiempos' : s.items.length} ítems)</option>`).join('')}
                     </select>
                 </div>
 
@@ -10260,6 +10316,12 @@
             // Ruta dedicada para Reflejos Primitivos
             if (selectedScale.isReflejosPrimitivos) {
                 startReflejosPrimitivosEvaluation(selectedPatient);
+                return;
+            }
+
+            // Ruta dedicada para ABAS-II Infantil-Padres (0-5 años)
+            if (selectedScale.isABASInfantil) {
+                startAbasInfantilEvaluation(selectedPatient);
                 return;
             }
 
@@ -23663,6 +23725,700 @@ Edad 12 - Conceptual
             saved.unshift(evaluacion);
             localStorage.setItem('evaluaciones', JSON.stringify(saved));
             alert('✅ Evaluación de Reflejos Primitivos guardada correctamente.');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // MOTOR ABAS-II INFANTIL-PADRES (0–5 años)
+        // Formulario: Padres/Cuidadores. 10 áreas adaptativas.
+        // ═══════════════════════════════════════════════════════════════════
+
+        const abasInfantilStructure = {
+            comunicacion: {
+                name: 'Comunicación', code: 'COM', domain: 'conceptual',
+                items: 23,
+                questions: [
+                    'Se ríe cuando ve reírse a uno de sus padres o a otra persona.',
+                    'Mira a los demás a la cara cuando están hablando.',
+                    'Levanta o baja la voz para expresar distintos sentimientos o necesidades.',
+                    'Levanta la voz para llamar la atención.',
+                    'Dice «Mamá», «Papá» o los nombres de sus amigos.',
+                    'Mueve la cabeza o dice «sí» o «no» para responder a preguntas sencillas como, por ejemplo, «¿Quieres beber algo?».',
+                    'Señala los objetos de una habitación cuando se le pide (por ejemplo, «Señala la mesa»).',
+                    'Escucha atentamente durante al menos un minuto cuando otras personas hablan.',
+                    'Obedece órdenes sencillas como, por ejemplo, «No» o «Ven aquí».',
+                    'Repite las palabras que dicen los demás (por ejemplo, dice «bebé» cuando un adulto dice «bebé»).',
+                    'Dice el nombre de un objeto de forma suficientemente clara como para que los demás puedan reconocerlo (por ejemplo, «sol», «perro» y «niño»).',
+                    'Sigue instrucciones sencillas que incluyen «encima» o «debajo» (por ejemplo, «Pon tus manos encima de tu cabeza»).',
+                    'Nombra al menos 20 objetos conocidos.',
+                    'Canta al menos parte de la letra de las canciones.',
+                    'Utiliza frases sencillas con un sustantivo (o nombre) y un verbo.',
+                    'Hace preguntas como «¿Juegas conmigo?».',
+                    'Construye los plurales de las palabras añadiendo una «s» al final (por ejemplo, «zapatos», «ruedas» y «perros»).',
+                    'Habla empleando frases de seis palabras o más.',
+                    'Habla a sus padres, a sus amigos o a otras personas sobre sus actividades favoritas.',
+                    'Mantiene una conversación sobre un tema durante más de tres minutos.',
+                    'Termina las conversaciones de forma apropiada.',
+                    'Utiliza el tiempo verbal pasado para referirse a sucesos que ya han ocurrido como, por ejemplo, «Me quedé dentro».',
+                    'Evita interrumpir a los demás cuando están hablando.'
+                ]
+            },
+            recursos_comunitarios: {
+                name: 'Utilización de los Recursos Comunitarios', code: 'URC', domain: 'practico',
+                minAge: 1,
+                items: 22,
+                questions: [
+                    'Reconoce su propia casa cuando está cerca de ella en su barrio.',
+                    'Camina por la acera (vereda) en lugar de hacerlo por el medio de la calle.',
+                    'Pide que le lleven al parque o a otro lugar público que le guste.',
+                    'Avisa a sus padres cuando alguien se presenta en la puerta.',
+                    'Llama a la puerta o al timbre antes de entrar en la casa de otra persona.',
+                    'Identifica los lugares del barrio donde su familia compra los artículos que necesita como, por ejemplo, dónde se compra la comida.',
+                    'Muestra respeto por los espacios públicos (por ejemplo, tira los desperdicios a la basura y no estropea las cosas).',
+                    'Reconoce y dice los nombres de los edificios (por ejemplo, hospital, gasolinera o parque de bomberos).',
+                    'Permanece sentado durante una celebración religiosa o una película.',
+                    'Dice qué objetos se pueden comprar en las distintas tiendas (por ejemplo, la comida en las tiendas de alimentación).',
+                    'Guarda silencio en lugares públicos como el teatro, el cine o la iglesia.',
+                    'Sabe que hay que pagar un artículo antes de irse de una tienda.',
+                    'Pide que le lleven a comer a su restaurante favorito.',
+                    'Describe las obligaciones de los trabajadores según su ocupación (por ejemplo, dice que los bomberos apagan incendios y que los médicos curan enfermos).',
+                    'Evita tocar los objetos en una tienda.',
+                    'Pide su propia comida cuando come fuera de casa.',
+                    'Mira a ambos lados antes de cruzar la calle.',
+                    'Encuentra los baños en los lugares públicos.',
+                    'Pide ir a la biblioteca.',
+                    'Hace pequeñas compras en la tienda de alimentación.',
+                    'Va solo a las casas de sus amigos del mismo barrio.',
+                    'Lleva suficiente dinero para hacer compras pequeñas como, por ejemplo, una bebida.'
+                ]
+            },
+            habilidades_preacademicas: {
+                name: 'Habilidades Preacadémicas Funcionales', code: 'HPF', domain: 'conceptual',
+                minAge: 1,
+                items: 23,
+                questions: [
+                    'Señala los dibujos de los libros cuando se le pide (por ejemplo, señala un caballo o una vaca).',
+                    'Agarra las pinturas o los lápices con la punta hacia abajo cuando quiere pintar en un papel.',
+                    'Dice cuántos años tiene cuando se le pregunta.',
+                    'Cuenta tres objetos o más.',
+                    'Intenta copiar dibujos simples (por ejemplo, una línea o un círculo).',
+                    'Dice los nombres de seis colores o más, incluyendo el rojo, el azul y el amarillo.',
+                    'Identifica al menos dos números entre varios números escritos.',
+                    'Dice los nombres de al menos cuatro formas, como círculo, cuadrado, rectángulo o triángulo.',
+                    'Recita de memoria poesías que ha aprendido en la escuela infantil.',
+                    'Lee su propio nombre cuando lo ve escrito.',
+                    'Dibuja una cara reconocible con dos ojos, una nariz, una boca y pelo.',
+                    'Dice los nombres de al menos dos letras cuando se le enseña su propio nombre.',
+                    'Cuenta 10 objetos o más sin utilizar los dedos.',
+                    'Escribe al menos dos letras de su propio nombre.',
+                    'Dice los nombres de los días de la semana en orden.',
+                    'Cuenta del 1 al 20.',
+                    'Recita el abecedario, por ejemplo, en una canción.',
+                    'Dice los nombres de la mayoría de las letras cuando se le muestra el abecedario.',
+                    'Escribe los números del 1 al 10.',
+                    'Lee y obedece señales comunes como, por ejemplo, «No entrar» o «Salida».',
+                    'Dice qué día va antes que otro cuando se le pregunta (por ejemplo, «El miércoles va antes del jueves»).',
+                    'Escribe su nombre y sus apellidos.',
+                    'Dice la hora y el día de sus programas de televisión favoritos.'
+                ]
+            },
+            vida_hogar: {
+                name: 'Vida en el Hogar', code: 'VEH', domain: 'practico',
+                minAge: 1,
+                items: 25,
+                questions: [
+                    'Saca las galletas, las patatas fritas u otra comida de su caja o bolsa.',
+                    'Utiliza el interruptor para encender y apagar las luces, incluso si para ello necesita una silla o un taburete.',
+                    'Enciende y apaga la televisión.',
+                    'Señala el lugar donde está guardada su ropa.',
+                    'Muestra su preocupación cuando derrama algo (por ejemplo, dice «¡Oh, no!» o avisa a un adulto).',
+                    'Hace recados sencillos cuando se le pide (por ejemplo, va a buscar una toalla cuando se derrama algo).',
+                    'Ayuda a otras personas a guardar juguetes, juegos u otros objetos.',
+                    'Recoge y tira a la basura los desperdicios o papeles cuando está en casa.',
+                    'Intenta secar el líquido cuando se derrama algo, aunque necesite la ayuda de un adulto.',
+                    'No da patadas ni golpea los muebles.',
+                    'Se ofrece a ayudar a sus padres u otros adultos con las tareas domésticas.',
+                    'No tira comida ni papeles al suelo.',
+                    'Saca su propia merienda del armario o la despensa.',
+                    'Deja la ropa sucia en el sitio que le corresponde, por ejemplo, en la cesta para la ropa sucia.',
+                    'Ayuda a los adultos a preparar la merienda o comidas sencillas como, por ejemplo, pasar las rebanadas de pan al adulto para hacer sándwiches.',
+                    'Limpia los líquidos que se derraman en casa.',
+                    'No pone los zapatos o los pies sucios sobre los muebles.',
+                    'Deja las cosas en su sitio cuando termina de utilizarlas.',
+                    'Mantiene los juguetes, los juegos y otros objetos limpios y ordenados.',
+                    'Saca su ropa de los cajones o del armario para vestirse.',
+                    'Deja sus platos o vasos sucios en la pila o en el lavavajillas.',
+                    'Se limpia los zapatos mojados o sucios antes de entrar en casa o en el edificio.',
+                    'Tira la comida sobrante a la basura.',
+                    'Dobla la ropa limpia.',
+                    'Hace su propia cama.'
+                ]
+            },
+            salud_seguridad: {
+                name: 'Salud y Seguridad', code: 'SYS', domain: 'practico',
+                items: 24,
+                questions: [
+                    'Llora o se queja cuando no se siente bien o se hace daño.',
+                    'Se toma los medicamentos que necesita cuando está enfermo.',
+                    'Esquiva las paredes u otros objetos cuando gatea o camina.',
+                    'Deja que le tomen la temperatura sin protestar.',
+                    'Enseña, señala o comunica a otra persona que se ha hecho un corte, una herida pequeña o se ha dado un golpe.',
+                    'Obedece cuando un adulto le dice que pare ante un peligro como, por ejemplo, si se acerca a una estufa caliente.',
+                    'Señala la parte del cuerpo que le duele cuando está enfermo o se ha hecho daño.',
+                    'Permanece bastante quieto cuando un adulto le está curando un corte o un rasguño.',
+                    'Evita acercarse demasiado al fuego o a una estufa caliente.',
+                    'Avisa a un adulto si le duele el estómago o se encuentra enfermo.',
+                    'Antes de comer, prueba con cuidado la comida para saber si quema.',
+                    'Permanece sin alejarse y a la vista de sus padres u otros familiares adultos cuando está en lugares públicos.',
+                    'No se lleva los juguetes a la boca.',
+                    'Evita tocar o jugar con objetos peligrosos como, por ejemplo, insecticidas o cuchillos afilados.',
+                    'Evita subirse a lugares altos o gatear hacia ellos.',
+                    'Transporta con cuidado los objetos que se pueden romper.',
+                    'Se pone un abrigo o un jersey cuando tiene frío.',
+                    'Transporta las tijeras con cuidado.',
+                    'Pregunta a un adulto antes de acercarse a algo que pueda ser peligroso como, por ejemplo, animales o columpios.',
+                    'Se abrocha el cinturón de seguridad en un coche.',
+                    'Transporta recipientes calientes con cuidado.',
+                    'Sigue las normas de seguridad cuando hay un incendio o suena una alarma en casa.',
+                    'Utiliza los enchufes eléctricos con cuidado.',
+                    'Se cura cuando tiene heridas pequeñas como, por ejemplo, cortes hechos con un papel, rasguños o si le sangra la nariz.'
+                ]
+            },
+            ocio: {
+                name: 'Ocio', code: 'OCI', domain: 'social',
+                items: 22,
+                questions: [
+                    'Juega con el mismo juguete o juego durante al menos un minuto.',
+                    'Participa en juegos sencillos como el «cucu-trás» («aquí está») o pasar la pelota a otras personas.',
+                    'Se entretiene él solo con juguetes, juegos o haciendo otras cosas divertidas.',
+                    'Mira durante algunos minutos cómo otras personas juegan con juguetes o juegos.',
+                    'Escoge él solo el juguete con el que quiere jugar.',
+                    'Mira los dibujos o fotografías de libros o revistas con un adulto.',
+                    'Juega con juguetes, juegos u otros objetos divertidos junto a otras personas.',
+                    'Juega en los columpios con un adulto.',
+                    'Juega con el mismo juguete o juego durante más de cinco minutos.',
+                    'Juega él solo en los columpios.',
+                    'Juega con otros niños cuando se lo piden.',
+                    'Va a casa de sus amigos a jugar y a hacer cosas divertidas.',
+                    'Pide que le lean su libro favorito.',
+                    'Juega a juegos sencillos con compañeros sin la supervisión de un adulto.',
+                    'Propone a otras personas jugar a juegos o hacer cosas divertidas.',
+                    'Guarda objetos que le resultan interesantes como, por ejemplo, piedras, plumas o dibujos.',
+                    'Participa en actividades de ocio específicas de forma habitual como, por ejemplo, escuchar un cierto tipo de música o jugar a su videojuego favorito.',
+                    'Espera a que llegue su turno en los juegos u otras actividades divertidas.',
+                    'Invita a otros a su casa para jugar y hacer cosas divertidas.',
+                    'Juega a juegos de mesa sencillos.',
+                    'Respeta las reglas en los juegos.',
+                    'Asiste a clases para aprender algún deporte, a tocar algún instrumento o alguna otra afición.'
+                ]
+            },
+            autocuidado: {
+                name: 'Autocuidado', code: 'AUT', domain: 'practico',
+                items: 24,
+                questions: [
+                    'Traga líquidos sin dificultad.',
+                    'Duerme durante casi toda la noche y no se despierta más de una o dos veces.',
+                    'Toma el pecho, bebe o come con ganas, sin necesidad de insistirle.',
+                    'Abre la boca cuando se le ofrece comida con una cuchara.',
+                    'Toma alimentos blandos o triturados como puré o papilla de frutas.',
+                    'Come por sí solo galletas, cereales sin leche u otros alimentos que se comen con los dedos.',
+                    'Señala o pide la comida cuando tiene hambre.',
+                    'Bebe de una taza o vaso, aunque necesite que otra persona se lo sujete.',
+                    'Levanta los brazos para ayudar a otra persona que lo está vistiendo o desvistiendo.',
+                    'Se quita los zapatos.',
+                    'Duerme sin despertarse durante toda la noche.',
+                    'Sostiene y bebe de un tazón.',
+                    'Se limpia la cara cuando un adulto le da un paño o una servilleta.',
+                    'Se lava las manos con jabón.',
+                    'Se va a la cama sin protestar o protestando muy poco.',
+                    'Se sienta en la taza del váter (retrete) o en el orinal sin que lo sostengan.',
+                    'Se cepilla los dientes sin protestar mucho cuando se lo dice un adulto.',
+                    'Avisa a sus padres u otros adultos cuando necesita ir al baño.',
+                    'Utiliza el baño sin ayuda.',
+                    'Se viste sin ayuda.',
+                    'Se abrocha los botones de la ropa.',
+                    'Se baña o se ducha sin ayuda.',
+                    'Corta la carne u otra comida en trozos para metérselos en la boca.',
+                    'Se lava el pelo sin ayuda.'
+                ]
+            },
+            autodireccion: {
+                name: 'Autodirección', code: 'AUD', domain: 'conceptual',
+                items: 25,
+                questions: [
+                    'Muestra su interés por un juguete u otro objeto mirándolo durante algunos segundos.',
+                    'Deja de protestar o llorar cuando lo toman en brazos o hablan con él.',
+                    'Se entretiene él solo en la cuna o en la cama durante al menos un minuto después de despertarse.',
+                    'Muestra su interés hacia un juguete u otro objeto señalándolo.',
+                    'Se sienta en silencio él solo durante al menos un minuto sin reclamar atención.',
+                    'Encuentra algo que hacer él solo durante al menos cinco minutos sin reclamar atención.',
+                    'Explora una habitación desconocida u otra situación nueva, incluso aunque el padre deba animarle a hacerlo (por ejemplo, en una sala de espera).',
+                    'Escoge la comida o la merienda que quiere cuando se le da a elegir.',
+                    'Se aleja algunos metros de sus padres en una situación nueva y cuando los tenga a la vista (por ejemplo, cuando visita una casa desconocida).',
+                    'Obedece a un adulto cuando le dice «Quédate quieto» o «Pórtate bien».',
+                    'Intenta hacer la mayoría de las cosas sin la ayuda de un adulto como, por ejemplo, vestirse o comer solo.',
+                    'Obedece las normas básicas del hogar como, por ejemplo, «No corras dentro de casa».',
+                    'Cuando se le pide algo lo hace casi enseguida (por ejemplo, ir a bañarse).',
+                    'No empuja ni golpea a otro niño cuando está enfadado o disgustado.',
+                    'Trabaja de forma independiente y pide ayuda solo cuando lo necesita.',
+                    'Trabaja en una actividad escolar o del hogar durante al menos 15 minutos.',
+                    'Pide permiso a un adulto cuando es necesario (por ejemplo, «¿Puedo jugar fuera?»).',
+                    'Persiste trabajando en tareas difíciles sin desanimarse o abandonar.',
+                    'Finaliza una actividad divertida, sin protestar, cuando se le dice que se ha terminado el tiempo.',
+                    'Controla su genio cuando su padre u otro adulto le quitan un juguete u otro objeto.',
+                    'Pide permiso antes de jugar con el juguete o el juego de otro niño.',
+                    'Controla su genio cuando no está de acuerdo con sus amigos.',
+                    'Sigue una rutina sin que se lo recuerden (por ejemplo, se lava los dientes antes de irse a dormir o da de comer a su mascota con regularidad).',
+                    'Trata de buscar formas de resolver los conflictos con los demás (por ejemplo, «Te dejo esto ahora si tú me lo dejas más tarde»).',
+                    'Escoge su propia ropa casi todos los días.'
+                ]
+            },
+            social: {
+                name: 'Social', code: 'SOC', domain: 'social',
+                items: 24,
+                questions: [
+                    'Grita o se ríe cuando está contento o alegre.',
+                    'Sonríe cuando ve a alguno de sus padres.',
+                    'Muestra una relación o cercanía especial con sus padres (por ejemplo, se alegra cuando vuelven).',
+                    'Relaja el cuerpo cuando lo toman en brazos (por ejemplo, se acurruca).',
+                    'Muestra sentido del humor (por ejemplo, se ríe cuando alguien hace tonterías).',
+                    'Levanta los brazos para expresar que quiere que lo tomen en brazos.',
+                    'Responde de forma distinta ante personas conocidas y desconocidas (por ejemplo, se muestra menos cálido o afectuoso con una persona que no conoce).',
+                    'Da besos y abrazos a sus padres o a otras personas.',
+                    'Corre a saludar a miembros especiales de la familia y a sus amigos.',
+                    'Imita las acciones de los adultos (por ejemplo, finge que está limpiando la casa o conduciendo un coche).',
+                    'Saluda a los otros niños (por ejemplo, dice «Hola»).',
+                    'Trata de entablar amistad con otros niños de su misma edad.',
+                    'Muestra compasión por los demás cuando están tristes o disgustados.',
+                    'Responde de forma apropiada cuando le presentan a otras personas (por ejemplo, dice «Hola»).',
+                    'Comparte sus juguetes con los demás por voluntad propia.',
+                    'Dice «Gracias» cuando le dan un regalo.',
+                    'Dice cuándo se siente alegre, triste, asustado o enfadado.',
+                    'Se aparta del camino de otra persona sin que se le pida.',
+                    'Dice cuándo otros parecen estar alegres, tristes, asustados o enfadados (por ejemplo, «Mamá está triste»).',
+                    'Ofrece su ayuda a los demás (por ejemplo, se ofrece a llevar bolsas o a recoger la comida).',
+                    'Se disculpa cuando ha herido los sentimientos de otra persona.',
+                    'Hace peticiones razonables a sus amigos (por ejemplo, no se enfada si un amigo juega con otro niño).',
+                    'Evita decir cosas que puedan resultar vergonzosas o hirientes para otras personas.',
+                    'Hace o compra regalos personalmente para los miembros de su familia en las celebraciones importantes.'
+                ]
+            },
+            motora: {
+                name: 'Motora', code: 'MOT', domain: 'practico',
+                items: 27,
+                questions: [
+                    'Sigue el movimiento de un objeto girando la cabeza.',
+                    'Levanta la cabeza para mirar a su alrededor.',
+                    'Cuando está boca abajo se gira para ponerse de lado.',
+                    'Agita el sonajero u otros juguetes.',
+                    'Intenta alcanzar objetos como, por ejemplo, un biberón o un juguete.',
+                    'Se sienta en equilibrio durante 30 segundos o más sin que lo sujeten.',
+                    'Cambia de posición para sentarse, incluso aunque su equilibrio sea inestable.',
+                    'Se incorpora hasta ponerse de pie, por ejemplo, en una cuna.',
+                    'Se levanta cuando está sentado.',
+                    'Gatea durante al menos 3 metros sin caerse.',
+                    'Toma de la mesa objetos pequeños y planos como, por ejemplo, monedas o botones.',
+                    'Lanza pelotas a otras personas.',
+                    'Camina sin ayuda.',
+                    'Se pone de puntillas para alcanzar objetos.',
+                    'Corre varios metros, incluso aunque sus pasos sean inseguros.',
+                    'Lanza una pelota pequeña por encima de su cabeza.',
+                    'Corre sin caerse.',
+                    'Da patadas a una pelota sin caerse.',
+                    'Sopla velas, por ejemplo, en una tarta de cumpleaños.',
+                    'Sube y baja escaleras sin la ayuda de otras personas (puede agarrarse a la barandilla).',
+                    'Dibuja líneas rectas de un lado a otro de una hoja de papel.',
+                    'Hace botar una pelota durante varios segundos.',
+                    'Atrapa una pelota que le hayan lanzado desde una distancia de entre dos y tres metros.',
+                    'Colorea sin salirse de las líneas de un dibujo o en un libro para colorear.',
+                    'Utiliza tijeras para cortar papel sin ayuda, aunque sea con supervisión.',
+                    'Utiliza las tijeras para cortar a lo largo de una línea recta.',
+                    'Utiliza las tijeras para cortar formas con líneas curvas.'
+                ]
+            }
+        };
+
+        const abasInfantilAreaKeys = Object.keys(abasInfantilStructure);
+
+        // Dominios: Conceptual (COM + HPF + AUD), Social (SOC + OCI), Práctico (URC + VEH + SYS + AUT + MOT)
+        const abasInfantilDomains = {
+            conceptual: { name: 'Conceptual', areas: ['comunicacion','habilidades_preacademicas','autodireccion'] },
+            social:     { name: 'Social',      areas: ['social','ocio'] },
+            practico:   { name: 'Práctico',    areas: ['recursos_comunitarios','vida_hogar','salud_seguridad','autocuidado','motora'] }
+        };
+
+        // ── Baremos: usamos abasA6PPC (ya definidas en el fichero, grupos por meses 0–0_3, 0_4–0_7 … 4_0–4_11, 5_0–5_11)
+        // Helper para obtener clave de grupo por edad en meses
+        function _getAbasInfantilPPCKey(ageYears, ageMonths) {
+            const totalMonths = ageYears * 12 + ageMonths;
+            if (totalMonths <= 3) return '0_0_0_3';
+            if (totalMonths <= 7) return '0_4_0_7';
+            if (totalMonths <= 11) return '0_8_0_11';
+            if (totalMonths <= 15) return '1_0_1_3';
+            if (totalMonths <= 19) return '1_4_1_7';
+            if (totalMonths <= 23) return '1_8_1_11';
+            if (totalMonths <= 29) return '2_0_2_5';
+            if (totalMonths <= 35) return '2_6_2_11';
+            if (totalMonths <= 41) return '3_0_3_5';
+            if (totalMonths <= 47) return '3_6_3_11';
+            if (totalMonths <= 53) return '4_0_4_5';
+            if (totalMonths <= 59) return '4_6_4_11';
+            return '5_0_5_11';
+        }
+
+        function _lookupAbasInfantilPT(suma, dominio, ageYears, ageMonths) {
+            const key = _getAbasInfantilPPCKey(ageYears, ageMonths);
+            let tabla = null;
+            if (typeof abasA6PPC !== 'undefined' && abasA6PPC[key]) {
+                tabla = abasA6PPC[key];
+            }
+            if (!tabla || !tabla[dominio]) return null;
+            const s = String(parseInt(suma));
+            if (tabla[dominio][s]) {
+                const rng = tabla[dominio][s];
+                return Array.isArray(rng) ? Math.round((rng[0]+rng[1])/2) : rng;
+            }
+            const keys = Object.keys(tabla[dominio]).map(Number).sort((a,b)=>a-b);
+            if (!keys.length) return null;
+            let closest = keys[0];
+            for (const k of keys) { if (Math.abs(k-parseInt(suma)) < Math.abs(closest-parseInt(suma))) closest=k; }
+            const rng = tabla[dominio][String(closest)];
+            return Array.isArray(rng) ? Math.round((rng[0]+rng[1])/2) : rng;
+        }
+
+        // ── Escalares individuales por área: PD → escalar (PT área, aprox. media 10 ± 3)
+        // Para Infantil-Padres usamos tablas de escalares que convierten la PD de cada área
+        // a una puntuación escalar (1-20, media 10, DT 3). Como no tenemos tablas área-a-escalar
+        // separadas en el fichero, usamos la conversión lineal estándar:
+        // escalar = 10 + 3 * (PD - mediaEsperada) / dtEsperada
+        // Las medias y DT esperadas para cada grupo de edad se aproximan de los baremos del manual.
+        // Dado que el usuario ya ha indicado que los baremos ESTÁN en el fichero (abasA6PPC),
+        // implementamos el cálculo de dominios directamente sobre las PDs brutas sumadas,
+        // usando abasA6PPC para convertir la suma de escalares (≈ suma de PDs normalizadas) a PT.
+
+        let abasInfantilResp = {}, abasInfantilAreaIdx = 0, abasInfantilPatObj = null, abasInfantilPatData = {};
+
+        function startAbasInfantilEvaluation(patient) {
+            abasInfantilResp = {}; abasInfantilAreaIdx = 0; abasInfantilPatObj = patient;
+            const tab = document.getElementById('evaluationArea');
+            if (!tab) return;
+
+            // Calcular edad del paciente
+            let age = 0, ageMonths = 0;
+            if (patient.birthDate) {
+                const today = new Date();
+                const birth = new Date(patient.birthDate);
+                let y = today.getFullYear() - birth.getFullYear();
+                let m = today.getMonth() - birth.getMonth();
+                if (today.getDate() < birth.getDate()) m--;
+                if (m < 0) { y--; m += 12; }
+                age = y; ageMonths = m;
+            }
+            abasInfantilPatData = { age, ageMonths };
+
+            tab.innerHTML = `
+                <div style="background:linear-gradient(135deg,#e8a000,#f5c842);color:white;padding:20px 24px;border-radius:12px;margin-bottom:20px;">
+                    <h2 style="margin:0 0 6px 0;font-size:1.4em;">📋 ABAS-II Infantil-Padres (0–5 años)</h2>
+                    <p style="margin:0;opacity:0.92;">Evaluado: <strong>${patient.name}</strong> · ${age} años ${ageMonths} meses</p>
+                </div>
+                <div style="background:#fff8e1;border-radius:10px;padding:16px;margin-bottom:20px;font-size:0.9em;color:#555;border-left:4px solid #f5c842;">
+                    <strong>Instrucciones:</strong> Para cada conducta, indique con qué frecuencia el niño la realiza
+                    <em>cuando es necesario</em>. Si el niño aún no tiene la edad o la oportunidad de realizar la
+                    conducta, marque <strong>No es capaz</strong>.
+                </div>
+                <div id="abasInfantilProgress"></div>`;
+
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const evalTab = document.getElementById('evaluaciones');
+            if (evalTab) evalTab.classList.add('active');
+            switchTab('evaluaciones', document.querySelector('[data-tab="evaluaciones"]'));
+
+            abasInfantilRenderArea(0);
+        }
+
+        function abasInfantilRenderArea(idx) {
+            const key = abasInfantilAreaKeys[idx];
+            const area = abasInfantilStructure[key];
+            const { age } = abasInfantilPatData;
+
+            // Calcular progreso
+            const totalAreas = abasInfantilAreaKeys.length;
+            const prog = Math.round((idx / totalAreas) * 100);
+
+            // Indicación de si el área aplica según edad
+            const minAge = area.minAge || 0;
+            const skippable = minAge > 0 && age < minAge;
+
+            let html = `
+                <div style="font-size:0.88em;color:#666;margin-bottom:6px;">Área ${idx+1}/${totalAreas} · Progreso general</div>
+                <div style="background:#eee;border-radius:20px;height:8px;margin-bottom:18px;overflow:hidden;">
+                    <div style="background:linear-gradient(90deg,#e8a000,#f5c842);width:${prog}%;height:100%;border-radius:20px;transition:width 0.4s;"></div>
+                </div>
+                <div style="background:linear-gradient(135deg,#e8a000,#f5c842);color:white;padding:14px 20px;border-radius:10px;margin-bottom:12px;">
+                    <span style="font-size:1.1em;font-weight:700;">${area.name}</span>
+                    <span style="margin-left:12px;background:rgba(255,255,255,0.25);padding:2px 10px;border-radius:20px;font-size:0.85em;">${area.code} · ${area.items} ítems</span>
+                    ${skippable ? `<span style="margin-left:8px;background:rgba(255,100,0,0.5);padding:2px 10px;border-radius:20px;font-size:0.82em;">⚠️ Solo si ≥${minAge} año(s)</span>` : ''}
+                </div>
+                <div style="background:#fef9e7;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.85em;color:#666;">
+                    <strong>0 = No es capaz</strong> &nbsp;|&nbsp; <strong>1 = Nunca o casi nunca</strong> &nbsp;|&nbsp; <strong>2 = A veces</strong> &nbsp;|&nbsp; <strong>3 = Siempre o casi siempre</strong>
+                </div>`;
+
+            if (skippable) {
+                html += `<div style="background:#fff3cd;border:1px solid #f0ad4e;border-radius:8px;padding:14px;margin-bottom:14px;">
+                    <strong>⚠️ Nota:</strong> Esta área (${area.name}) solo debe completarse si el niño tiene <strong>${minAge} año(s) o más</strong>.
+                    El niño evaluado tiene ${abasInfantilPatData.age} años. Puede omitir esta sección o completarla igualmente.
+                </div>`;
+            }
+
+            area.questions.forEach((q, qi) => {
+                const saved = abasInfantilResp[key] ? abasInfantilResp[key][qi] : undefined;
+                const opts = [
+                    { v: 0, label: '0', desc: 'No es capaz', color: '#e74c3c' },
+                    { v: 1, label: '1', desc: 'Nunca/casi nunca', color: '#e67e22' },
+                    { v: 2, label: '2', desc: 'A veces', color: '#3498db' },
+                    { v: 3, label: '3', desc: 'Siempre/casi siempre', color: '#27ae60' }
+                ];
+                html += `<div data-qi="${qi}" class="abas-infantil-block" style="background:white;padding:14px 16px;border-radius:10px;margin-bottom:8px;border-left:4px solid #f5c842;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                    <div style="font-size:0.95em;color:#333;margin-bottom:10px;"><strong>${qi+1}.</strong> ${q}</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">`;
+                opts.forEach(o => {
+                    const sel = saved === o.v;
+                    html += `<button onclick="abasInfantilSel('${key}',${qi},${o.v},this)"
+                        style="flex:1;min-width:90px;padding:8px 6px;border:2px solid ${sel?o.color:'#ddd'};border-radius:8px;background:${sel?o.color:'white'};color:${sel?'white':'#333'};cursor:pointer;font-size:0.85em;text-align:center;transition:all 0.15s;">
+                        <div style="font-weight:700;font-size:1.1em;">${o.label}</div>
+                        <div style="font-size:0.78em;opacity:0.85;">${o.desc}</div>
+                    </button>`;
+                });
+                html += `</div></div>`;
+            });
+
+            const isLast = idx === abasInfantilAreaKeys.length - 1;
+            html += `<div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+                ${idx > 0 ? `<button onclick="abasInfantilPrev()" style="flex:1;min-width:110px;background:#95a5a6;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:600;">⬅ Anterior</button>` : ''}
+                ${!isLast ? `<button onclick="abasInfantilNext()" style="flex:2;min-width:140px;background:linear-gradient(135deg,#e8a000,#f5c842);color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:700;">Siguiente ➡</button>` : ''}
+                ${isLast ? `<button onclick="abasInfantilCalc()" style="flex:2;min-width:140px;background:#27ae60;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:700;">✅ Calcular Resultados</button>` : ''}
+            </div>
+            <div id="abasInfantilResults" style="margin-top:20px;"></div>`;
+
+            document.getElementById('abasInfantilProgress').innerHTML = html;
+            window.scrollTo(0, 0);
+        }
+
+        function abasInfantilSel(key, qi, val, btn) {
+            if (!abasInfantilResp[key]) abasInfantilResp[key] = {};
+            abasInfantilResp[key][qi] = val;
+            // Actualizar colores de los botones del ítem
+            const colors = { 0:'#e74c3c', 1:'#e67e22', 2:'#3498db', 3:'#27ae60' };
+            btn.closest('.abas-infantil-block').querySelectorAll('button').forEach((b, i) => {
+                const v = [0,1,2,3][i];
+                const c = colors[v];
+                if (v === val) {
+                    b.style.background = c; b.style.color = 'white'; b.style.borderColor = c;
+                } else {
+                    b.style.background = 'white'; b.style.color = '#333'; b.style.borderColor = '#ddd';
+                }
+            });
+            // Avanzar al siguiente sin responder
+            const allBlocks = document.querySelectorAll('.abas-infantil-block');
+            for (let i = 0; i < allBlocks.length; i++) {
+                const blockQi = parseInt(allBlocks[i].getAttribute('data-qi'));
+                if (!(abasInfantilResp[key] && abasInfantilResp[key][blockQi] !== undefined)) {
+                    setTimeout(() => allBlocks[i].scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+                    break;
+                }
+            }
+        }
+
+        function abasInfantilPrev() {
+            if (abasInfantilAreaIdx > 0) { abasInfantilAreaIdx--; abasInfantilRenderArea(abasInfantilAreaIdx); }
+        }
+
+        function abasInfantilNext() {
+            const key = abasInfantilAreaKeys[abasInfantilAreaIdx];
+            const area = abasInfantilStructure[key];
+            const ans = abasInfantilResp[key] ? Object.keys(abasInfantilResp[key]).length : 0;
+            if (ans < area.items && !confirm(`Faltan ${area.items - ans} preguntas sin responder en esta área. ¿Continuar de todas formas?`)) return;
+            abasInfantilAreaIdx++;
+            abasInfantilRenderArea(abasInfantilAreaIdx);
+        }
+
+        function abasInfantilCalc() {
+            const { age, ageMonths } = abasInfantilPatData;
+
+            // Calcular PD por área
+            const pdPorArea = {};
+            abasInfantilAreaKeys.forEach(key => {
+                const area = abasInfantilStructure[key];
+                let pd = 0;
+                for (let i = 0; i < area.items; i++) {
+                    const v = abasInfantilResp[key] ? abasInfantilResp[key][i] : undefined;
+                    pd += (v !== undefined) ? v : 0;
+                }
+                pdPorArea[key] = pd;
+            });
+
+            // Calcular PD por dominio (suma de PDs de sus áreas)
+            const pdDominio = {};
+            Object.entries(abasInfantilDomains).forEach(([dk, dv]) => {
+                pdDominio[dk] = dv.areas.reduce((s, a) => s + (pdPorArea[a] || 0), 0);
+            });
+
+            // Convertir PDs a PT usando abasA6PPC
+            const ptDominio = {};
+            const domMap = { conceptual: 'con', social: 'so', practico: 'pr' };
+            Object.entries(pdDominio).forEach(([dk, pd]) => {
+                const lookupKey = domMap[dk] || dk;
+                const pt = _lookupAbasInfantilPT(pd, lookupKey, age, ageMonths);
+                ptDominio[dk] = pt;
+            });
+
+            // GAC = suma de todos los escalares → lookup 'gac'
+            const pdTotal = Object.values(pdPorArea).reduce((s, v) => s + v, 0);
+            const ptGAC = _lookupAbasInfantilPT(pdTotal, 'gac', age, ageMonths);
+
+            // Percentil aproximado (reutilizamos abasPtPc si existe)
+            function ptToPerc(pt) {
+                if (typeof abasPtPc !== 'undefined' && pt) {
+                    return abasPtPc[pt] !== undefined ? abasPtPc[pt] : '—';
+                }
+                return '—';
+            }
+
+            // Interpretación del PT
+            function interpretPT(pt) {
+                if (!pt) return '—';
+                if (pt >= 130) return 'Muy superior';
+                if (pt >= 120) return 'Superior';
+                if (pt >= 110) return 'Medio-alto';
+                if (pt >= 90)  return 'Medio';
+                if (pt >= 80)  return 'Medio-bajo';
+                if (pt >= 70)  return 'Límite';
+                return 'Extremadamente bajo';
+            }
+
+            // Renderizar resultados
+            const domainColors = { conceptual: '#4a90d9', social: '#27ae60', practico: '#e67e22' };
+            const domainNames = { conceptual: 'Conceptual', social: 'Social', practico: 'Práctico' };
+            const areaColors = { comunicacion:'#3498db', recursos_comunitarios:'#e67e22', habilidades_preacademicas:'#9b59b6', vida_hogar:'#e74c3c', salud_seguridad:'#1abc9c', ocio:'#f39c12', autocuidado:'#27ae60', autodireccion:'#2980b9', social:'#e91e63', motora:'#795548' };
+
+            let html = `<div style="background:white;border-radius:12px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.1);border-top:5px solid #e8a000;">
+                <h3 style="color:#e8a000;margin:0 0 16px 0;font-size:1.2em;">📊 Resultados ABAS-II Infantil-Padres</h3>
+                <p style="color:#666;margin:0 0 16px 0;font-size:0.9em;">Evaluado: <strong>${abasInfantilPatObj?.name || '—'}</strong> · ${age} años ${ageMonths} meses</p>
+
+                <!-- GAC -->
+                <div style="background:linear-gradient(135deg,#e8a000,#f5c842);color:white;border-radius:10px;padding:16px;text-align:center;margin-bottom:16px;">
+                    <div style="font-size:0.9em;opacity:0.9;">CAG — Conducta Adaptativa General</div>
+                    <div style="font-size:2.5em;font-weight:800;">${ptGAC || '—'}</div>
+                    <div style="font-size:0.85em;opacity:0.9;">${interpretPT(ptGAC)} · Percentil ${ptToPerc(ptGAC)}</div>
+                    <div style="font-size:0.8em;opacity:0.8;margin-top:4px;">PD total: ${pdTotal}</div>
+                </div>
+
+                <!-- Dominios -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:18px;">
+                    ${Object.entries(ptDominio).map(([dk, pt]) => `
+                        <div style="background:${domainColors[dk]}18;border:2px solid ${domainColors[dk]};border-radius:10px;padding:14px;text-align:center;">
+                            <div style="font-size:0.82em;color:${domainColors[dk]};font-weight:700;">${domainNames[dk]}</div>
+                            <div style="font-size:2em;font-weight:800;color:${domainColors[dk]};">${pt || '—'}</div>
+                            <div style="font-size:0.78em;color:#666;">${interpretPT(pt)}</div>
+                            <div style="font-size:0.75em;color:#888;">P${ptToPerc(pt)}</div>
+                            <div style="font-size:0.75em;color:#aaa;">PD: ${pdDominio[dk]}</div>
+                        </div>`).join('')}
+                </div>
+
+                <!-- Áreas detalle -->
+                <h4 style="color:#555;margin:0 0 10px 0;font-size:1em;">📋 Puntuaciones Directas por Área</h4>
+                <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.88em;">
+                    <thead><tr style="background:#f5f5f5;">
+                        <th style="padding:8px 10px;text-align:left;">Área</th>
+                        <th style="padding:8px;text-align:center;">Cód.</th>
+                        <th style="padding:8px;text-align:center;">Dominio</th>
+                        <th style="padding:8px;text-align:center;">PD</th>
+                        <th style="padding:8px;text-align:center;">PD máx.</th>
+                        <th style="padding:8px;text-align:center;">% logro</th>
+                    </tr></thead>
+                    <tbody>
+                        ${abasInfantilAreaKeys.map(key => {
+                            const a = abasInfantilStructure[key];
+                            const pd = pdPorArea[key];
+                            const pdMax = a.items * 3;
+                            const pct = Math.round((pd / pdMax) * 100);
+                            const c = areaColors[key] || '#667eea';
+                            return `<tr style="border-bottom:1px solid #eee;">
+                                <td style="padding:7px 10px;font-weight:600;color:${c};">${a.name}</td>
+                                <td style="padding:7px;text-align:center;font-size:0.85em;color:#888;">${a.code}</td>
+                                <td style="padding:7px;text-align:center;"><span style="background:${domainColors[a.domain]}22;color:${domainColors[a.domain]};padding:2px 8px;border-radius:10px;font-size:0.8em;font-weight:600;">${domainNames[a.domain]}</span></td>
+                                <td style="padding:7px;text-align:center;font-weight:700;">${pd}</td>
+                                <td style="padding:7px;text-align:center;color:#aaa;">${pdMax}</td>
+                                <td style="padding:7px;text-align:center;">
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <div style="flex:1;background:#eee;border-radius:10px;height:8px;overflow:hidden;min-width:60px;">
+                                            <div style="width:${pct}%;height:100%;background:${c};border-radius:10px;"></div>
+                                        </div>
+                                        <span style="font-size:0.82em;color:#666;">${pct}%</span>
+                                    </div>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+                </div>
+
+                <!-- Botón guardar -->
+                <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
+                    <button onclick="abasInfantilGuardar(${ptGAC||0},${JSON.stringify(ptDominio).replace(/"/g,"'")},'${Object.values(pdPorArea).join(',')}')"
+                        style="flex:2;background:#27ae60;color:white;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:700;font-size:15px;">
+                        💾 Guardar Evaluación
+                    </button>
+                    <button onclick="cancelEvaluation()"
+                        style="flex:1;background:#95a5a6;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-size:14px;">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>`;
+
+            document.getElementById('abasInfantilResults').innerHTML = html;
+            document.getElementById('abasInfantilResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Guardar datos de resultado para el botón de guardar
+            window._abasInfantilLastResult = {
+                ptGAC, ptDominio, pdDominio, pdPorArea,
+                age: abasInfantilPatData.age, ageMonths: abasInfantilPatData.ageMonths
+            };
+        }
+
+        function abasInfantilGuardar() {
+            if (!abasInfantilPatObj) { alert('No hay paciente seleccionado.'); return; }
+            const r = window._abasInfantilLastResult;
+            if (!r) { alert('Primero pulsa "Calcular Resultados".'); return; }
+
+            const answers = abasInfantilAreaKeys.map(key => {
+                const a = abasInfantilStructure[key];
+                const pd = r.pdPorArea[key];
+                return { itemName: a.name, points: pd, selectedOption: `PD: ${pd}/${a.items*3}` };
+            });
+
+            const domainNames = { conceptual: 'Conceptual', social: 'Social', practico: 'Práctico' };
+            const interpretation = `CAG PT=${r.ptGAC||'—'} | Conceptual PT=${r.ptDominio.conceptual||'—'} | Social PT=${r.ptDominio.social||'—'} | Práctico PT=${r.ptDominio.practico||'—'}`;
+
+            const evaluacion = {
+                id: Date.now(),
+                patientId: abasInfantilPatObj.id,
+                patientName: abasInfantilPatObj.name,
+                scaleId: 'abas-infantil-padres-preloaded',
+                scaleName: 'ABAS-II Infantil-Padres (0–5 años)',
+                date: new Date().toISOString(),
+                answers,
+                totalPoints: Object.values(r.pdPorArea).reduce((s,v)=>s+v,0),
+                interpretation,
+                isABASInfantil: true,
+                details: JSON.stringify({ ptGAC: r.ptGAC, ptDominio: r.ptDominio, pdDominio: r.pdDominio, pdPorArea: r.pdPorArea, age: r.age, ageMonths: r.ageMonths })
+            };
+
+            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            saved.unshift(evaluacion);
+            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            alert('✅ Evaluación ABAS-II Infantil-Padres guardada correctamente.');
         }
 
         </script>
