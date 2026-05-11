@@ -100,7 +100,7 @@
                 }
                 
                 // Limpiar localStorage excepto datos importantes
-                const keepKeys = ['pacientes', 'evaluaciones', 'sesiones', 'pacienteActual', 'config'];
+                const keepKeys = ['pacientes', 'patients', 'evaluaciones', 'evaluations', 'sesiones', 'sessions', 'pacienteActual', 'goals', 'scales', 'config', 'seguridadConfig', 'seguridadLog', 'ingTarifas', 'ingProgramadas', 'ics_eventos', 'ics_nombre', 'confirmacionesAsistencia', 'darkMode', 'tareas'];
                 const allKeys = Object.keys(localStorage);
                 allKeys.forEach(function(key) {
                     if (!keepKeys.some(k => key.startsWith(k))) {
@@ -9095,6 +9095,22 @@
 
         let patients    = _seedMerge('patients',    _DB_SEED.patients);
         let evaluations = _seedMerge('evaluations', _DB_SEED.evaluations);
+
+        // Fusionar evaluaciones guardadas con clave 'evaluaciones' (español) en 'evaluations'
+        (function() {
+            try {
+                const evEs = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+                if (evEs.length > 0) {
+                    const existingIds = new Set(evaluations.map(e => String(e.id)));
+                    const nuevas = evEs.filter(e => !existingIds.has(String(e.id)));
+                    if (nuevas.length > 0) {
+                        evaluations = [...evaluations, ...nuevas];
+                        localStorage.setItem('evaluations', JSON.stringify(evaluations));
+                        console.log('[MERGE] Fusionadas', nuevas.length, 'evaluaciones desde clave "evaluaciones"');
+                    }
+                }
+            } catch(e) { console.warn('[MERGE] Error al fusionar evaluaciones:', e); }
+        })();
         let goals       = JSON.parse(localStorage.getItem('goals'))    || [];
         let sessions    = _seedMerge('sessions',    _DB_SEED.sessions);
         let darkMode = localStorage.getItem('darkMode') === 'true';
@@ -19643,6 +19659,17 @@
 
         function loginInit() {
             console.log('🔐 Inicializando login...');
+
+            // Si ya había sesión activa en esta pestaña/recarga, restaurarla sin pedir contraseña
+            if (sessionStorage.getItem('isLoggedIn') === 'true' && localStorage.getItem('seguridadConfig') && JSON.parse(localStorage.getItem('seguridadConfig')).masterPasswordHash) {
+                console.log('🔐 Sesión activa detectada, restaurando...');
+                isLoggedIn = true;
+                const mainContainer = document.querySelector('.container');
+                if (mainContainer) mainContainer.style.display = 'block';
+                init();
+                return;
+            }
+
             const modal = document.getElementById('loginModal');
             const form = document.getElementById('loginForm');
             const setup = document.getElementById('loginSetup');
@@ -19726,6 +19753,7 @@
 
         function loginSuccess() {
             isLoggedIn = true;
+            sessionStorage.setItem('isLoggedIn', 'true');
             document.getElementById('loginModal').style.display = 'none';
             const mainContainer = document.querySelector('.container');
             if (mainContainer) {
@@ -19742,6 +19770,7 @@
             if (!confirm('¿Cerrar sesión actual?')) return;
             
             isLoggedIn = false;
+            sessionStorage.removeItem('isLoggedIn');
             const mainContainer = document.querySelector('.container');
             if (mainContainer) {
                 mainContainer.style.display = 'none';
@@ -22243,9 +22272,10 @@ Edad 12 - Conceptual
                 notes: document.getElementById('batExaminador')?.value || ''
             };
 
-            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            const saved = JSON.parse(localStorage.getItem('evaluations') || '[]');
             saved.unshift(evaluacion);
-            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            localStorage.setItem('evaluations', JSON.stringify(saved));
+            evaluations.unshift(evaluacion); // sync in-memory array
             alert('✅ Evaluación Battelle guardada correctamente.');
         }
 
@@ -22709,9 +22739,10 @@ Edad 12 - Conceptual
                 notes: obs
             };
 
-            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            const saved = JSON.parse(localStorage.getItem('evaluations') || '[]');
             saved.unshift(evaluacion);
-            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            localStorage.setItem('evaluations', JSON.stringify(saved));
+            evaluations.unshift(evaluacion); // sync in-memory array
             alert('✅ Resultado Beery VMI guardado correctamente.');
         }
 
@@ -23219,9 +23250,10 @@ Edad 12 - Conceptual
                 notes: obs
             };
 
-            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            const saved = JSON.parse(localStorage.getItem('evaluations') || '[]');
             saved.unshift(evaluacion);
-            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            localStorage.setItem('evaluations', JSON.stringify(saved));
+            evaluations.unshift(evaluacion); // sync in-memory array
             alert('✅ Evaluación Knox guardada correctamente.');
         }
 
@@ -23468,9 +23500,10 @@ Edad 12 - Conceptual
                 evalDate: fecha
             };
 
-            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            const saved = JSON.parse(localStorage.getItem('evaluations') || '[]');
             saved.unshift(evaluacion);
-            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            localStorage.setItem('evaluations', JSON.stringify(saved));
+            evaluations.unshift(evaluacion); // sync in-memory array
             alert('✅ Exploración de Pares Craneales guardada correctamente.');
         }
 
@@ -23721,9 +23754,10 @@ Edad 12 - Conceptual
                 evalDate: fecha
             };
 
-            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            const saved = JSON.parse(localStorage.getItem('evaluations') || '[]');
             saved.unshift(evaluacion);
-            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            localStorage.setItem('evaluations', JSON.stringify(saved));
+            evaluations.unshift(evaluacion); // sync in-memory array
             alert('✅ Evaluación de Reflejos Primitivos guardada correctamente.');
         }
 
@@ -24415,9 +24449,10 @@ Edad 12 - Conceptual
                 details: JSON.stringify({ ptGAC: r.ptGAC, ptDominio: r.ptDominio, pdDominio: r.pdDominio, pdPorArea: r.pdPorArea, age: r.age, ageMonths: r.ageMonths })
             };
 
-            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            const saved = JSON.parse(localStorage.getItem('evaluations') || '[]');
             saved.unshift(evaluacion);
-            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            localStorage.setItem('evaluations', JSON.stringify(saved));
+            evaluations.unshift(evaluacion); // sync in-memory array
             alert('✅ Evaluación ABAS-II Infantil-Padres guardada correctamente.');
         }
 
