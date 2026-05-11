@@ -21864,10 +21864,16 @@ Edad 12 - Conceptual
                 <div id="batResultado" style="margin-top:20px;"></div>
             `;
 
-            document.getElementById('evaluationContent').innerHTML = html;
-            document.getElementById('evaluationPanel').classList.add('active');
+            // Asegurar que la pestaña de evaluaciones está activa y el contenedor existe
+            if (typeof switchTab === 'function') switchTab('evaluaciones');
+            const evalContainer = document.getElementById('evaluationProgress');
+            if (!evalContainer) {
+                console.error('[Battelle] evaluationProgress no encontrado tras switchTab');
+                return;
+            }
+            evalContainer.innerHTML = html;
             // Scroll to top
-            document.getElementById('evaluationPanel').scrollTop = 0;
+            evalContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function batActualizarEdad() {
