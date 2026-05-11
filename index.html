@@ -5065,6 +5065,39 @@
                 isVMI: true,
                 items: [],
                 baremos: []
+            },
+            {
+                id: 'knox-juego-preloaded',
+                name: 'Escala de Juego de Knox (Revisada)',
+                description: 'Escala de observación del comportamiento de juego en niños de 0 a 6 años. Evalúa 4 dimensiones: Manejo del espacio (motricidad gruesa e intereses), Manejo del material (manipulación, construcción, propósito, atención), Simbolismo pretendido (imitación, dramatización) y Participación (tipo, cooperación, humor, lenguaje). Knox, 1997.',
+                category: 'ninos',
+                type: 'desarrollo',
+                preloaded: true,
+                isKnox: true,
+                items: [],
+                baremos: []
+            },
+            {
+                id: 'pares-craneales-preloaded',
+                name: 'Exploración de Pares Craneales',
+                description: 'Evaluación sistemática de los 12 pares craneales: exploración clínica y registro de alteraciones. Incluye nervio olfatorio, óptico, oculomotores (III, IV, VI), trigémino, facial, estatoacústico, glosofaríngeo, vago, espinal e hipogloso.',
+                category: 'general',
+                type: 'motor',
+                preloaded: true,
+                isParesCreaneales: true,
+                items: [],
+                baremos: []
+            },
+            {
+                id: 'reflejos-primitivos-preloaded',
+                name: 'Reflejos Primitivos (Evaluación Neonatal)',
+                description: 'Evaluación de reflejos primitivos en neonatos y lactantes: búsqueda, succión, Moro, marcha automática, Galant, prensión palmar y plantar, reflejo acústico facial (RAF), reflejo óptico facial (ROF), paracaídas, suprapúbico y cruzado extensor. Incluye fechas de aparición/desaparición esperadas.',
+                category: 'ninos',
+                type: 'motor',
+                preloaded: true,
+                isReflejosPrimitivos: true,
+                items: [],
+                baremos: []
             }
         
         ]; // fin PRELOADED_SCALES
@@ -9496,6 +9529,57 @@
                 return;
             }
 
+            // Vista especial para Escala de Juego de Knox
+            if (scale.isKnox) {
+                const knoxHtml = `
+                    <h2>🎮 Escala de Juego de Knox (Revisada)</h2>
+                    <p style="color:#f5576c;font-weight:600;">✨ Motor dedicado con hoja de anotación completa</p>
+                    <p>${scale.description}</p>
+                    <div style="background:#e8f4fd;border-radius:10px;padding:20px;margin-top:16px;">
+                        <h3 style="color:#667eea;margin:0 0 12px 0;">📋 Estructura (4 dimensiones)</h3>
+                        <table style="width:100%;border-collapse:collapse;font-size:0.88em;">
+                            <tr style="background:#667eea;color:white;">
+                                <th style="padding:8px;text-align:left;">Dimensión</th>
+                                <th style="padding:8px;text-align:left;">Categorías</th>
+                            </tr>
+                            <tr style="background:#f9f9f9;">
+                                <td style="padding:8px;font-weight:600;">Manejo del espacio</td>
+                                <td style="padding:8px;">Motricidad gruesa · Intereses</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px;font-weight:600;">Manejo del material</td>
+                                <td style="padding:8px;">Manipulación · Construcción · Propósito · Atención</td>
+                            </tr>
+                            <tr style="background:#f9f9f9;">
+                                <td style="padding:8px;font-weight:600;">Simbolismo pretendido</td>
+                                <td style="padding:8px;">Imitación · Dramatización</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px;font-weight:600;">Participación</td>
+                                <td style="padding:8px;">Tipo · Cooperación · Humor · Lenguaje</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div style="margin-top:16px;background:#fff8e8;border-radius:10px;padding:16px;">
+                        <h3 style="color:#e67e22;margin:0 0 8px 0;">📌 Instrucciones de aplicación</h3>
+                        <ul style="padding-left:20px;font-size:0.9em;color:#444;line-height:1.8;margin:0;">
+                            <li>Observar al niño en <strong>espacios abiertos y cerrados</strong></li>
+                            <li>Mínimo <strong>2 períodos de 30 minutos</strong> de observación</li>
+                            <li>Marcar <strong>(+)</strong> si la conducta está presente, <strong>(−)</strong> si ausente, <strong>(NO)</strong> si no hubo oportunidad de observar</li>
+                            <li>Cada factor se puntúa en la <strong>edad más alta</strong> del grupo en que se presenta</li>
+                            <li>La puntuación de cada dimensión = <strong>promedio de sus factores</strong></li>
+                            <li>La edad de juego = <strong>promedio de las 4 dimensiones</strong></li>
+                        </ul>
+                    </div>
+                    <div style="margin-top:12px;background:#e8f5e9;border-radius:10px;padding:14px;font-size:0.85em;color:#2e7d32;">
+                        <strong>Franjas de edad:</strong> 0-6m · 6-12m · 12-18m · 18-24m · 24-30m · 30-36m · 36-48m · 48-60m · 60-72m
+                    </div>
+                `;
+                document.getElementById('modalBody').innerHTML = knoxHtml;
+                document.getElementById('modal').classList.add('active');
+                return;
+            }
+
             // Vista especial para SCIM-III
             if (scale.isSCIM) {
                 const html = `
@@ -10158,6 +10242,24 @@
             // Ruta dedicada para Beery VMI
             if (selectedScale.isVMI) {
                 startVMIEvaluation(selectedPatient);
+                return;
+            }
+
+            // Ruta dedicada para Escala de Juego de Knox
+            if (selectedScale.isKnox) {
+                startKnoxEvaluation(selectedPatient);
+                return;
+            }
+
+            // Ruta dedicada para Pares Craneales
+            if (selectedScale.isParesCreaneales) {
+                startParesCreanealesEvaluation(selectedPatient);
+                return;
+            }
+
+            // Ruta dedicada para Reflejos Primitivos
+            if (selectedScale.isReflejosPrimitivos) {
+                startReflejosPrimitivosEvaluation(selectedPatient);
                 return;
             }
 
@@ -22549,6 +22651,1018 @@ Edad 12 - Conceptual
             saved.unshift(evaluacion);
             localStorage.setItem('evaluaciones', JSON.stringify(saved));
             alert('✅ Resultado Beery VMI guardado correctamente.');
+        }
+
+
+        // ══════════════════════════════════════════════════════════════
+        // ESCALA DE JUEGO DE KNOX (REVISADA) — Motor dedicado
+        // Knox, S. (1997). Development and current use of the Knox
+        // Preschool Play Scale. En L. D. Parham & L. S. Fazio (Eds.),
+        // Play in Occupational Therapy for Children. Mosby.
+        // ══════════════════════════════════════════════════════════════
+
+        const KNOX_FRANJAS = [
+            { id:'0-6',   label:'0 a 6 meses',   meses:6  },
+            { id:'6-12',  label:'6 a 12 meses',  meses:12 },
+            { id:'12-18', label:'12 a 18 meses',  meses:18 },
+            { id:'18-24', label:'18 a 24 meses',  meses:24 },
+            { id:'24-30', label:'24 a 30 meses',  meses:30 },
+            { id:'30-36', label:'30 a 36 meses',  meses:36 },
+            { id:'36-48', label:'36 a 48 meses',  meses:48 },
+            { id:'48-60', label:'48 a 60 meses',  meses:60 },
+            { id:'60-72', label:'60 a 72 meses',  meses:72 },
+        ];
+
+        const KNOX_ITEMS = {
+            espacio_motor: {
+                dim:'espacio', label:'Motricidad gruesa',
+                conductas: {
+                    '0-6':   'Golpetea, alcanza, juega con manos y pies, se mueve para continuar sensaciones placenteras.',
+                    '6-12':  'Alcanza en prono, gatea, se sienta con equilibrio, empuja a bípedo, se traslada.',
+                    '12-18': 'Se mantiene de pie sin apoyo, camina con amplia base, movimientos amplios de grandes grupos musculares, lanza pelota.',
+                    '18-24': 'Corre, se agacha, trepa y baja de la silla, sube/baja escaleras sin alternar pies, patea pelota.',
+                    '24-30': 'Salta, se para en un pie brevemente, tira la pelota sin caerse. Comienza integración corporal en actividades complejas.',
+                    '30-36': 'Corre rodeando obstáculos, trepa aparatos, sube/baja escaleras alternando pies, atrapa pelota, se para en puntas.',
+                    '36-48': 'Movimientos más coordinados, salta en un pie 3-5 veces, atrapa y tira pelota usando hombros y codos, salta lejos.',
+                    '48-60': 'Nivel de actividad aumentado, acrobacias, pruebas de fuerza, escala, galopa, atrapa la pelota con codos a los lados.',
+                    '60-72': 'Buen control muscular y equilibrio, salta en un pie >5 veces, rebota y atrapa pelota, pirueta, anda en skate.',
+                }
+            },
+            espacio_interes: {
+                dim:'espacio', label:'Intereses',
+                conductas: {
+                    '0-6':   'Personas, mira fijamente caras, sigue movimientos, atiende a voces y sonidos, se explora a sí mismo y objetos al alcance.',
+                    '6-12':  'Sigue objetos mientras desaparecen, anticipa movimientos, movimientos con objetivo.',
+                    '12-18': 'Practica patrones de movimiento básicos, explora sensaciones kinestésicas y propioceptivas, objetos que se mueven (pelotas, camiones).',
+                    '18-24': 'Medios-fin, tareas de varios pasos.',
+                    '24-30': 'Explora nuevos patrones de movimiento (saltar), desordena.',
+                    '30-36': 'Juego brusco.',
+                    '36-48': 'Cualquier cosa nueva, manipulación motora fina, se desafía con tareas difíciles.',
+                    '48-60': 'Se enorgullece de su trabajo, ideas complejas, juego brusco.',
+                    '60-72': 'En la realidad: manipulación de situaciones de la vida real, hacer algo útil, permanencia del producto, juguetes que funcionan de verdad.',
+                }
+            },
+            material_manipulacion: {
+                dim:'material', label:'Manipulación',
+                conductas: {
+                    '0-6':   'Manipula, juguetes a la boca, golpea, agita.',
+                    '6-12':  'Tira, voltea, hurguetea con el dedo, rompe, acumula, deja caer, recoge objetos pequeños.',
+                    '12-18': 'Arroja, inserta, tira, traslada, voltea, abre, cierra.',
+                    '18-24': 'Opera juguetes mecánicos, pasa cuentas, ensarta cuentas en una cuerda.',
+                    '24-30': 'Toca, da golpecitos, bota, aprieta, rellena.',
+                    '30-36': 'Asocia, compara.',
+                    '36-48': 'Actividad de músculos pequeños: martilla, clasifica, inserta objetos pequeños, corta.',
+                    '48-60': 'Control motor fino aumentado, movimientos rápidos, fuerza, tirar.',
+                    '60-72': 'Usa herramientas para hacer cosas, copia, hace trazos, combina materiales.',
+                }
+            },
+            material_construccion: {
+                dim:'material', label:'Construcción',
+                conductas: {
+                    '0-6':   'Junta dos objetos.',
+                    '6-12':  'Combina objetos relacionados, pone objetos en un contenedor.',
+                    '12-18': 'Apila, separa, junta, intento de lograr un producto, relaciona dos objetos apropiadamente (ej: tapa en olla).',
+                    '18-24': 'Usa herramientas.',
+                    '24-30': 'Garabatea, ensarta cuentas, arma rompecabezas de 4-5 piezas, construye horizontal y verticalmente.',
+                    '30-36': 'Combinación de múltiples esquemas.',
+                    '36-48': 'Hace productos simples, combina materiales, tridimensional, diseño evidente.',
+                    '48-60': 'Hace productos con diseños específicos, estructuras complejas, rompecabezas de 10 piezas.',
+                    '60-72': 'Hace productos reconocibles, construcciones pequeñas con detalle, usa productos en el juego.',
+                }
+            },
+            material_proposito: {
+                dim:'material', label:'Propósito',
+                conductas: {
+                    '0-6':   'Sensación: usa materiales para ver, tocar, escuchar, oler, chupar.',
+                    '6-12':  'Acción para producir efecto, juguetes causa-efecto.',
+                    '12-18': 'Variedad de esquemas, importancia del proceso, ensayo y error, juego relacional.',
+                    '18-24': 'Piensa antes de actuar.',
+                    '24-30': 'Importancia del proceso, menos interés en el producto terminado, planea acciones.',
+                    '30-36': 'Juguetes con partes movibles (ej: camión de basura, muñeca con articulaciones).',
+                    '36-48': 'Comienza a mostrar interés en el producto terminado.',
+                    '48-60': 'El producto es muy importante, lo usa para expresarse, exagera.',
+                    '60-72': 'Replicar la realidad.',
+                }
+            },
+            material_atencion: {
+                dim:'material', label:'Atención',
+                conductas: {
+                    '0-6':   'Sigue con los ojos objetos en movimiento, atención de 3 a 5 segundos.',
+                    '6-12':  '15 segundos para objetos detallados, 30 segundos para juguetes visuales y auditivos.',
+                    '12-18': 'Cambia rápido.',
+                    '18-24': 'Juego tranquilo 5-10 minutos, juego con un solo objeto 5 minutos.',
+                    '24-30': 'Interés intenso, juego tranquilo hasta 15 minutos, un objeto/tema 5-10 minutos.',
+                    '30-36': '15 a 30 minutos.',
+                    '36-48': 'Alrededor de 30 minutos, un objeto/tema 10 minutos.',
+                    '48-60': 'Solo hasta 1 hora, un objeto/tema 10-15 minutos.',
+                    '60-72': 'Un objeto/tema 15 o más minutos.',
+                }
+            },
+            simbolismo_imitacion: {
+                dim:'simbolismo', label:'Imitación',
+                conductas: {
+                    '0-6':   'Imita expresiones faciales y movimientos físicos (ej: sonrisa, juego de manos), imita vocalización.',
+                    '6-12':  'Imita acciones, emociones, sonidos y gestos observados, patrones de actividades familiares.',
+                    '12-18': 'Imita acciones simples y eventos presentes, movimientos novedosos, asocia esquemas simples.',
+                    '18-24': 'Representacional, reconoce cómo activar juguetes en imitación, imitación diferida.',
+                    '24-30': 'Rutinas adultas con mímica relacionada con juguetes, imita a los pares, juego representacional.',
+                    '30-36': 'Juguete como agente (ej: la muñeca come sola), representación más abstracta, múltiples esquemas.',
+                    '36-48': 'Imitación más compleja del mundo real, énfasis en juego doméstico y animales, experiencias pasadas.',
+                    '48-60': 'Arma libretos de adultos (ej: se disfraza), importancia de la realidad.',
+                    '60-72': 'Continúa para construir nuevos temas con énfasis en la realidad, reconstrucción del mundo real.',
+                }
+            },
+            simbolismo_dramatizacion: {
+                dim:'simbolismo', label:'Dramatización',
+                conductas: {
+                    '0-6':   'No evidente.',
+                    '6-12':  'No evidente.',
+                    '12-18': 'Comienza a actuar usándose a sí mismo (ej: se alimenta con la cuchara), actúa sobre objetos animados e inanimados.',
+                    '18-24': 'Actúa sobre la muñeca (ej: la viste, la peina), combina 2 o más acciones, objetos imaginarios.',
+                    '24-30': 'Personifica muñecas, amigos imaginarios, representa personaje elaborando eventos cotidianos con detalle.',
+                    '30-36': 'Involucra secuencia de episodios (ej: hace la masa, hornea, lo sirve).',
+                    '36-48': 'Libretos complejos, secuencias que cuentan una historia, múltiples personajes con sentimientos, personajes imaginarios.',
+                    '48-60': 'Usa conocimiento familiar para construir situaciones novedosas, juego de rol, emociones complejas, disfruta disfrazarse.',
+                    '60-72': 'Secuencia historias, disfraces, títeres, dirige 3 muñecas haciéndolas interactuar, organiza a otros niños para juego de rol.',
+                }
+            },
+            participacion_tipo: {
+                dim:'participacion', label:'Tipo',
+                conductas: {
+                    '0-6':   'Solitario, no hay esfuerzo por interactuar con otros niños, disfruta ser tomado en brazos y mecido.',
+                    '6-12':  'Interacción lactante a lactante, responde diferente a niños y adultos.',
+                    '12-18': 'Combinación solitario-observador, comienza interacción con pares.',
+                    '18-24': 'Observador, acciones simples y respuestas contingentes entre pares.',
+                    '24-30': 'Paralelo (juega junto a otros pero de forma independiente), disfruta la presencia de otros, tímido con extraños.',
+                    '30-36': 'Paralelo, comienza asociativo, juega con 2-3 niños, juega acompañado 1-2 horas.',
+                    '36-48': 'Asociativo, no hay organización para meta común, más interés en pares que en actividad, comienza juego cooperativo.',
+                    '48-60': 'Cooperativo, grupos de 2-3 organizados para alcanzar una meta, juegos en grupo con reglas simples.',
+                    '60-72': 'Grupos cooperativos de 3-6 niños, juegos competitivos, entiende reglas de fair play.',
+                }
+            },
+            participacion_cooperacion: {
+                dim:'participacion', label:'Cooperación',
+                conductas: {
+                    '0-6':   'Demanda atención personal, interacción simple de dar y recibir con el cuidador (ej: cosquillas, «¿dónde está?»).',
+                    '6-12':  'Inicia juego más que seguirlo, muestra y da objetos.',
+                    '12-18': 'Busca atención sobre sí, demanda juguetes, apunta, muestra, ofrece juguetes pero posesivo, persistente.',
+                    '18-24': 'Juegos más complejos con adultos (escondida, pillarse), ordena a otros realizar acciones.',
+                    '24-30': 'Posesivo, quita objetos, no comparte, independiente, inicia su propio juego.',
+                    '30-36': 'Entiende las necesidades de otros.',
+                    '36-48': 'Limitada, comienza a tomar turnos, pide cosas en vez de tomarlas, se suma a otros en el juego.',
+                    '48-60': 'Toma turnos, intenta controlar actividades de otros, fuerte sentido de la familia y el hogar.',
+                    '60-72': 'Cede para facilitar el juego grupal, rivalidad en juego competitivo, juego colaborativo con roles coordinados.',
+                }
+            },
+            participacion_humor: {
+                dim:'participacion', label:'Humor',
+                conductas: {
+                    '0-6':   'Sonríe.',
+                    '6-12':  'Sonríe, ríe ante juegos físicos y en anticipación.',
+                    '12-18': 'Ríe ante eventos incongruentes.',
+                    '18-24': 'Ríe ante nombramiento incongruente de objetos y eventos.',
+                    '24-30': 'Ríe ante combinaciones simples de uso de palabras y eventos incongruentes.',
+                    '30-36': 'Ríe ante combinaciones complejas de palabras y eventos incongruentes.',
+                    '36-48': 'Ríe ante palabras sin sentido y rimas.',
+                    '48-60': 'Distorsión de lo familiar.',
+                    '60-72': 'Ríe ante los múltiples significados de las palabras.',
+                }
+            },
+            participacion_lenguaje: {
+                dim:'participacion', label:'Lenguaje',
+                conductas: {
+                    '0-6':   'Atiende a sonidos y voces, balbucea, usa sonidos, juguetea con sonidos.',
+                    '6-12':  'Hace gestos con intención de comunicarse, responde a palabras familiares y expresiones faciales.',
+                    '12-18': 'Parlotea durante el juego, usa gestos y palabras para comunicar deseos, nombra objetos, combina palabras y gestos.',
+                    '18-24': 'Comprende verbos, pide información, se refiere a personas y objetos no presentes.',
+                    '24-30': 'Muy hablador, comienza uso de palabras para comunicar ideas, información, preguntas, comenta actividades.',
+                    '30-36': 'Hace preguntas, relaciona secuencias temporales.',
+                    '36-48': 'Usa palabras para comunicarse con pares, canta canciones simples, vocabulario descriptivo, cambia el habla según interlocutor.',
+                    '48-60': 'Organiza actividades con lenguaje, se jacta, amenaza, payasea, canta canciones completas, razonamiento verbal.',
+                    '60-72': 'Prominente en juego socio-dramático, conversación como la de los adultos, usa términos relacionales, canta y baila.',
+                }
+            },
+        };
+
+        const KNOX_DIMS = [
+            { id:'espacio',      label:'Manejo del espacio',      color:'#2980b9', factores:['espacio_motor','espacio_interes'] },
+            { id:'material',     label:'Manejo del material',     color:'#27ae60', factores:['material_manipulacion','material_construccion','material_proposito','material_atencion'] },
+            { id:'simbolismo',   label:'Simbolismo pretendido',   color:'#8e44ad', factores:['simbolismo_imitacion','simbolismo_dramatizacion'] },
+            { id:'participacion',label:'Participación',           color:'#e67e22', factores:['participacion_tipo','participacion_cooperacion','participacion_humor','participacion_lenguaje'] },
+        ];
+
+        let knoxPatObj = null;
+        let knoxScores = {}; // { factor_id: { franja_id: '+'/'-'/'NO'/'' } }
+
+        function startKnoxEvaluation(patient) {
+            knoxPatObj = patient;
+            knoxScores = {};
+            KNOX_DIMS.forEach(dim => dim.factores.forEach(fid => {
+                knoxScores[fid] = {};
+                KNOX_FRANJAS.forEach(f => knoxScores[fid][f.id] = '');
+            }));
+
+            // Cabecera datos paciente
+            let edadStr = '—', edadMeses = 0;
+            if (patient.birthDate) {
+                const hoy = new Date(), nac = new Date(patient.birthDate);
+                edadMeses = (hoy.getFullYear() - nac.getFullYear()) * 12 + (hoy.getMonth() - nac.getMonth());
+                if (edadMeses < 0) edadMeses = 0;
+                edadStr = Math.floor(edadMeses/12) + ' años ' + (edadMeses%12) + ' meses';
+            }
+
+            let dimsHtml = '';
+            for (const dim of KNOX_DIMS) {
+                let factoresHtml = '';
+                for (const fid of dim.factores) {
+                    const item = KNOX_ITEMS[fid];
+                    let filasHtml = '';
+                    for (const franja of KNOX_FRANJAS) {
+                        const conducta = item.conductas[franja.id] || '—';
+                        filasHtml += `
+                        <tr id="knox_row_${fid}_${franja.id}">
+                            <td style="padding:5px 8px;font-size:0.8em;color:#666;white-space:nowrap;">${franja.label}</td>
+                            <td style="padding:5px 8px;font-size:0.82em;color:#333;">${conducta}</td>
+                            <td style="padding:5px 4px;text-align:center;">
+                                <select id="knox_${fid}_${franja.id}" onchange="knoxActualizar()" 
+                                    style="border:2px solid #ddd;border-radius:6px;padding:3px 6px;font-size:0.9em;font-weight:600;cursor:pointer;min-width:60px;">
+                                    <option value="">—</option>
+                                    <option value="+">+</option>
+                                    <option value="-">−</option>
+                                    <option value="NO">NO</option>
+                                </select>
+                            </td>
+                        </tr>`;
+                    }
+                    factoresHtml += `
+                    <div style="margin-bottom:16px;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.1);">
+                        <div style="background:${dim.color}cc;color:white;padding:8px 14px;font-weight:700;font-size:0.92em;">
+                            ${item.label}
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;">
+                                <thead><tr style="background:#f5f5f5;">
+                                    <th style="padding:5px 8px;text-align:left;font-size:0.78em;color:#666;white-space:nowrap;">Franja de edad</th>
+                                    <th style="padding:5px 8px;text-align:left;font-size:0.78em;color:#666;">Conducta</th>
+                                    <th style="padding:5px 8px;text-align:center;font-size:0.78em;color:#666;">+/−/NO</th>
+                                </tr></thead>
+                                <tbody>${filasHtml}</tbody>
+                            </table>
+                        </div>
+                    </div>`;
+                }
+                dimsHtml += `
+                <div style="margin-bottom:28px;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+                    <div style="background:${dim.color};color:white;padding:12px 16px;font-weight:700;font-size:1.05em;">
+                        ${dim.label}
+                        <span id="knox_dim_result_${dim.id}" style="float:right;font-size:0.85em;opacity:0.9;"></span>
+                    </div>
+                    <div style="padding:12px 12px 4px 12px;background:#fafafa;">
+                        ${factoresHtml}
+                    </div>
+                </div>`;
+            }
+
+            const html = `
+                <h2 style="color:#2c3e50;">🎮 Escala de Juego de Knox · Hoja de Anotación</h2>
+                <p style="color:#8e44ad;font-weight:600;">Escala de Juego Preescolar Revisada — Knox, 1997</p>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:16px 0;background:#f8f9fa;border-radius:12px;padding:16px;">
+                    <div>
+                        <label style="font-size:0.85em;color:#666;">Paciente</label>
+                        <div style="font-weight:600;">${patient.name}</div>
+                    </div>
+                    <div>
+                        <label style="font-size:0.85em;color:#666;">Fecha de nacimiento</label>
+                        <input type="date" id="knoxFechaNac" value="${patient.birthDate||''}" style="border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:0.9em;width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85em;color:#666;">Edad</label>
+                        <div style="font-weight:600;">${edadStr}</div>
+                    </div>
+                    <div>
+                        <label style="font-size:0.85em;color:#666;">Fecha de observación</label>
+                        <input type="date" id="knoxFechaObs" value="${new Date().toISOString().split('T')[0]}" style="border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:0.9em;width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85em;color:#666;">Tiempo observación</label>
+                        <input type="text" id="knoxTiempoObs" placeholder="ej: 2 × 30 min" style="border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:0.9em;width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85em;color:#666;">Lugar de observación</label>
+                        <input type="text" id="knoxLugar" placeholder="ej: Aula / Patio" style="border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:0.9em;width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85em;color:#666;">Examinador</label>
+                        <input type="text" id="knoxExaminador" placeholder="Nombre" style="border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:0.9em;width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85em;color:#666;">Diagnóstico</label>
+                        <input type="text" id="knoxDiagnostico" placeholder="Diagnóstico" style="border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:0.9em;width:100%;">
+                    </div>
+                </div>
+
+                <div style="background:#e8f4fd;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:0.85em;color:#1565c0;">
+                    <strong>📌 Sistema de calificación:</strong> 
+                    <strong>(+)</strong> Conducta de juego presente · 
+                    <strong>(−)</strong> Conducta de juego ausente · 
+                    <strong>(NO)</strong> No hay oportunidad de observar
+                </div>
+
+                ${dimsHtml}
+
+                <div style="background:#fff;border:2px solid #8e44ad;border-radius:12px;padding:20px;margin-top:16px;" id="knoxResumen">
+                    <h3 style="color:#8e44ad;margin:0 0 10px 0;">📊 Resumen de Puntuación</h3>
+                    <p style="color:#999;font-size:0.9em;">Puntúa los ítems para ver el resumen automático.</p>
+                </div>
+
+                <div style="margin-top:16px;">
+                    <label style="font-size:0.85em;color:#666;font-weight:600;">Observaciones</label>
+                    <textarea id="knoxObservaciones" rows="3" placeholder="Observaciones clínicas..." 
+                        style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px;font-size:0.9em;margin-top:4px;"></textarea>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+                    <button class="btn btn-success" style="flex:1;min-width:160px;" onclick="knoxCalcular()">📊 Calcular Resultados</button>
+                    <button class="btn btn-secondary" style="flex:1;min-width:160px;" onclick="knoxGuardar()">💾 Guardar Evaluación</button>
+                    <button class="btn btn-danger" style="flex:1;min-width:120px;" onclick="knoxLimpiar()">🗑️ Limpiar</button>
+                </div>
+
+                <div id="knoxResultado" style="margin-top:20px;"></div>
+            `;
+
+            if (typeof switchTab === 'function') switchTab('evaluaciones');
+            const evalContainer = document.getElementById('evaluationProgress');
+            if (!evalContainer) { console.error('[Knox] evaluationProgress no encontrado'); return; }
+            evalContainer.innerHTML = html;
+            evalContainer.scrollIntoView({ behavior:'smooth', block:'start' });
+        }
+
+        function knoxActualizar() {
+            // Leer todos los valores actuales
+            KNOX_DIMS.forEach(dim => dim.factores.forEach(fid => {
+                KNOX_FRANJAS.forEach(f => {
+                    const el = document.getElementById('knox_' + fid + '_' + f.id);
+                    if (el) knoxScores[fid][f.id] = el.value;
+                });
+            }));
+            knoxActualizarResumen();
+        }
+
+        function knoxGetEdadFactor(fid) {
+            // Devuelve la franja de edad más alta donde el niño tiene (+)
+            const scores = knoxScores[fid];
+            let mejor = null;
+            for (let i = KNOX_FRANJAS.length - 1; i >= 0; i--) {
+                if (scores[KNOX_FRANJAS[i].id] === '+') { mejor = KNOX_FRANJAS[i]; break; }
+            }
+            return mejor;
+        }
+
+        function knoxGetEdadDim(dim) {
+            // Promedio de los meses de los factores de la dimensión que tienen al menos un (+)
+            let suma = 0, count = 0;
+            dim.factores.forEach(fid => {
+                const f = knoxGetEdadFactor(fid);
+                if (f) { suma += f.meses; count++; }
+            });
+            return count > 0 ? suma / count : null;
+        }
+
+        function knoxActualizarResumen() {
+            let filas = '';
+            let sumaTotal = 0, countTotal = 0;
+            KNOX_DIMS.forEach(dim => {
+                const edadMeses = knoxGetEdadDim(dim);
+                const edadStr = edadMeses !== null ? edadMeses.toFixed(1) + ' m' : '—';
+                // Actualizar badge en cabecera de dimensión
+                const badge = document.getElementById('knox_dim_result_' + dim.id);
+                if (badge) badge.textContent = edadMeses !== null ? '→ ' + edadStr : '';
+                filas += `<tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:8px 10px;font-weight:600;color:${dim.color};">${dim.label}</td>
+                    <td style="padding:8px 10px;text-align:center;font-weight:700;">${edadStr}</td>
+                </tr>`;
+                if (edadMeses !== null) { sumaTotal += edadMeses; countTotal++; }
+            });
+            const edadJuego = countTotal > 0 ? (sumaTotal / countTotal).toFixed(1) : '—';
+            const resumen = document.getElementById('knoxResumen');
+            if (resumen) {
+                resumen.innerHTML = `
+                <h3 style="color:#8e44ad;margin:0 0 14px 0;">📊 Resumen de Puntuación</h3>
+                <table style="width:100%;border-collapse:collapse;font-size:0.95em;">
+                    <thead><tr style="background:#8e44ad;color:white;">
+                        <th style="padding:8px 10px;text-align:left;">Dimensión</th>
+                        <th style="padding:8px 10px;text-align:center;">Edad de juego (meses)</th>
+                    </tr></thead>
+                    <tbody>${filas}</tbody>
+                    <tfoot><tr style="background:#f0e8fa;font-weight:700;">
+                        <td style="padding:10px;color:#8e44ad;">EDAD DE JUEGO (promedio)</td>
+                        <td style="padding:10px;text-align:center;font-size:1.2em;color:#8e44ad;">${edadJuego} m</td>
+                    </tr></tfoot>
+                </table>`;
+            }
+        }
+
+        function knoxCalcular() {
+            knoxActualizar();
+            let dimResultados = [];
+            let sumaTotal = 0, countTotal = 0;
+            KNOX_DIMS.forEach(dim => {
+                const edadMeses = knoxGetEdadDim(dim);
+                dimResultados.push({ dim, edadMeses });
+                if (edadMeses !== null) { sumaTotal += edadMeses; countTotal++; }
+            });
+
+            if (countTotal === 0) {
+                document.getElementById('knoxResultado').innerHTML =
+                    '<div style="background:#fff3cd;border-radius:10px;padding:16px;">⚠️ Puntúa al menos un ítem para calcular resultados.</div>';
+                return;
+            }
+
+            const edadJuego = sumaTotal / countTotal;
+            const ej_anios = Math.floor(edadJuego/12);
+            const ej_meses = Math.round(edadJuego%12);
+
+            let filasRes = dimResultados.map(({dim, edadMeses}) => {
+                const str = edadMeses !== null ? edadMeses.toFixed(1) + ' m (' + Math.floor(edadMeses/12) + 'a ' + Math.round(edadMeses%12) + 'm)' : '—';
+                return `<tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:8px 10px;font-weight:600;color:${dim.color};">${dim.label}</td>
+                    <td style="padding:8px 10px;text-align:center;">${str}</td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('knoxResultado').innerHTML = `
+            <div style="background:#f3e8ff;border-left:5px solid #8e44ad;border-radius:12px;padding:20px;margin-bottom:16px;">
+                <h3 style="color:#8e44ad;margin:0 0 14px 0;">🎮 Resultado — Escala de Juego de Knox</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
+                    <div style="background:white;border-radius:8px;padding:12px;text-align:center;">
+                        <div style="font-size:2em;font-weight:700;color:#8e44ad;">${edadJuego.toFixed(1)}</div>
+                        <div style="font-size:0.8em;color:#666;">Meses de juego</div>
+                    </div>
+                    <div style="background:white;border-radius:8px;padding:12px;text-align:center;">
+                        <div style="font-size:1.4em;font-weight:700;color:#8e44ad;">${ej_anios}a ${ej_meses}m</div>
+                        <div style="font-size:0.8em;color:#666;">Edad de juego</div>
+                    </div>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:0.92em;background:white;border-radius:8px;overflow:hidden;">
+                    <thead><tr style="background:#8e44ad;color:white;">
+                        <th style="padding:8px 10px;text-align:left;">Dimensión</th>
+                        <th style="padding:8px 10px;text-align:center;">Edad de juego</th>
+                    </tr></thead>
+                    <tbody>${filasRes}</tbody>
+                </table>
+                <p style="margin:14px 0 0 0;font-size:0.85em;color:#555;">
+                    <strong>Paciente:</strong> ${knoxPatObj.name} · 
+                    <strong>Fecha:</strong> ${document.getElementById('knoxFechaObs')?.value || new Date().toISOString().split('T')[0]}
+                </p>
+            </div>
+            <div style="background:#e8f4fd;border-radius:10px;padding:14px;font-size:0.85em;color:#1565c0;">
+                <strong>💡 Interpretación:</strong> La edad de juego representa el nivel de desarrollo lúdico del niño. 
+                Comparar con la edad cronológica del paciente. Una diferencia significativa en alguna dimensión puede 
+                orientar los objetivos terapéuticos. Knox (1997) recomienda observar en espacios abiertos y cerrados 
+                con al menos 2 periodos de 30 min.
+            </div>
+            <button class="btn btn-secondary" onclick="knoxGuardar()" style="margin-top:12px;">💾 Guardar Resultado</button>
+            `;
+        }
+
+        function knoxGuardar() {
+            knoxActualizar();
+            if (!knoxPatObj) return;
+            const obs = document.getElementById('knoxObservaciones')?.value?.trim() || '';
+            const fechaObs = document.getElementById('knoxFechaObs')?.value || new Date().toISOString().split('T')[0];
+
+            let dimResultados = [];
+            let sumaTotal = 0, countTotal = 0;
+            KNOX_DIMS.forEach(dim => {
+                const edadMeses = knoxGetEdadDim(dim);
+                dimResultados.push({ label: dim.label, edadMeses });
+                if (edadMeses !== null) { sumaTotal += edadMeses; countTotal++; }
+            });
+
+            const edadJuego = countTotal > 0 ? (sumaTotal/countTotal).toFixed(1) : 0;
+
+            const evaluacion = {
+                id: Date.now().toString(),
+                patientName: knoxPatObj.name,
+                scaleName: 'Escala de Juego de Knox (Revisada)',
+                date: new Date().toISOString(),
+                results: dimResultados.map(r => ({
+                    item: r.label,
+                    answer: r.edadMeses !== null ? r.edadMeses.toFixed(1) + ' meses' : '—',
+                    points: r.edadMeses || 0
+                })),
+                totalScore: parseFloat(edadJuego),
+                interpretation: 'Edad de juego: ' + edadJuego + ' meses (' + Math.floor(edadJuego/12) + 'a ' + Math.round(edadJuego%12) + 'm)',
+                notes: obs
+            };
+
+            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            saved.unshift(evaluacion);
+            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            alert('✅ Evaluación Knox guardada correctamente.');
+        }
+
+
+        function knoxLimpiar() {
+            if (!confirm('¿Limpiar todos los ítems?')) return;
+            KNOX_DIMS.forEach(dim => dim.factores.forEach(fid => {
+                KNOX_FRANJAS.forEach(f => {
+                    const el = document.getElementById('knox_' + fid + '_' + f.id);
+                    if (el) el.value = '';
+                });
+            }));
+            knoxActualizar();
+            document.getElementById('knoxResultado').innerHTML = '';
+        }
+
+        // ===== PARES CRANEALES =====
+        const PC_DATA = [
+            {
+                num: 'I', nombre: 'Olfatorio',
+                exploracion: ['Identificar olores tapando alternativamente los orificios de la nariz'],
+                alteraciones: ['Anosmia']
+            },
+            {
+                num: 'II', nombre: 'Óptico',
+                exploracion: ['Agudeza visual (cuantificada de forma grosera)', 'Campo visual (por confrontación)', 'Fondo de ojo', 'Discriminación de colores'],
+                alteraciones: ['Alteración agudeza (retina, nervio óptico y quiasma)', 'Alteración campo (lesiones retroquiasmáticas)', 'Edema de papila (HIC), hemorragias']
+            },
+            {
+                num: 'III', nombre: 'Ocular común',
+                exploracion: ['Motilidad ocular (alineación de globos oculares al seguir con la mirada)', 'III par: recto superior, inferior, interno y oblicuo inferior', 'Pupilas', 'Nistagmo'],
+                alteraciones: ['Mirada alterada: arriba, abajo y dentro', 'Elevación palpebral y constricción pupilar (estrabismo externo, ptosis, midriasis)']
+            },
+            {
+                num: 'IV', nombre: 'Patético',
+                exploracion: ['IV par: oblicuo superior'],
+                alteraciones: ['Mirada alterada: abajo y hacia fuera']
+            },
+            {
+                num: 'VI', nombre: 'Oculomotor externo',
+                exploracion: ['VI par: recto externo'],
+                alteraciones: ['Mirada alterada: hacia fuera (estrabismo interno)']
+            },
+            {
+                num: 'V', nombre: 'Trigémino',
+                exploracion: ['Sensibilidad de la cara', 'Reflejo corneal', 'Masticación'],
+                alteraciones: ['Alteración de la sensibilidad facial, neuralgia', 'Falta de relieve del masetero y temporal al apretar mandíbula', 'Pérdida del reflejo corneal']
+            },
+            {
+                num: 'VII', nombre: 'Facial',
+                exploracion: ['Mímica facial (arrugar frente, cerrar párpados, silbar, hinchar carrillos)', 'Gusto', 'Glándula salivar y lacrimal (parasimpático)'],
+                alteraciones: ['Parálisis central: desviación comisura bucal hacia lado sano', 'Parálisis periférica: afectación de toda una hemicara', 'Pérdida de gusto en 2/3 anteriores de la lengua', 'Alteraciones en producción de lágrima y saliva']
+            },
+            {
+                num: 'VIII', nombre: 'Estatoacústico / Vestibulococlear',
+                exploracion: ['Audición', 'Equilibrio (nistagmo)'],
+                alteraciones: ['Hipoacusia, vértigo, nistagmo', 'Rama acústica: sordera', 'Rama vestibular: síndrome vestibular']
+            },
+            {
+                num: 'IX', nombre: 'Glosofaríngeo',
+                exploracion: ['Reflejo nauseoso', 'Motilidad velopalatina'],
+                alteraciones: ['Dificultades de deglución y trastornos de la voz', 'No reflejo nauseoso', 'Desviación úvula hacia lado sano']
+            },
+            {
+                num: 'X', nombre: 'Vago',
+                exploracion: ['Fonación, voz, deglución'],
+                alteraciones: ['Disfonía, disfagia']
+            },
+            {
+                num: 'XI', nombre: 'Espinal',
+                exploracion: ['Elevación de hombros y rotación de cabeza contra resistencia'],
+                alteraciones: ['Incapacidad para elevación de hombros y rotación de cabeza']
+            },
+            {
+                num: 'XII', nombre: 'Hipogloso',
+                exploracion: ['Motilidad lengua, atrofias, fasciculaciones'],
+                alteraciones: ['Desviación lengua hacia el lado débil']
+            }
+        ];
+
+        let pcPatObj = null;
+
+        function startParesCreanealesEvaluation(patient) {
+            pcPatObj = patient;
+            switchTab('evaluaciones');
+            const container = document.getElementById('evaluationProgress');
+            if (!container) { console.error('[PC] evaluationProgress no encontrado'); return; }
+
+            let filas = PC_DATA.map(pc => `
+                <tr style="border-bottom:1px solid #e8ecf4;">
+                    <td style="padding:10px 8px;font-weight:700;color:#2c3e50;white-space:nowrap;vertical-align:top;">
+                        <span style="background:#2980b9;color:white;border-radius:50%;display:inline-block;width:26px;height:26px;text-align:center;line-height:26px;font-size:0.8em;margin-right:6px;">${pc.num}</span>
+                        ${pc.nombre}
+                    </td>
+                    <td style="padding:10px 8px;font-size:0.88em;color:#555;vertical-align:top;">
+                        ${pc.exploracion.map(e => `<div>• ${e}</div>`).join('')}
+                    </td>
+                    <td style="padding:10px 8px;vertical-align:top;">
+                        <select id="pc_estado_${pc.num}" onchange="pcActualizar()" style="width:100%;padding:6px;border:2px solid #ddd;border-radius:6px;font-size:0.9em;cursor:pointer;">
+                            <option value="">— sin explorar —</option>
+                            <option value="normal">✅ Normal</option>
+                            <option value="alterado">⚠️ Alterado</option>
+                            <option value="no-evaluable">❓ No evaluable</option>
+                        </select>
+                    </td>
+                    <td style="padding:10px 8px;vertical-align:top;">
+                        <div id="pc_alt_opts_${pc.num}" style="display:none;margin-bottom:6px;">
+                            ${pc.alteraciones.map((alt, i) => `
+                                <label style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;font-size:0.85em;cursor:pointer;">
+                                    <input type="checkbox" id="pc_alt_${pc.num}_${i}" style="margin-top:2px;"> ${alt}
+                                </label>`).join('')}
+                        </div>
+                        <textarea id="pc_obs_${pc.num}" placeholder="Observaciones…" rows="2"
+                            style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:0.85em;resize:vertical;"></textarea>
+                    </td>
+                </tr>`).join('');
+
+            container.innerHTML = `
+                <div style="padding:20px;background:#eaf2fb;border-radius:12px;">
+                    <h2 style="color:#2980b9;margin-bottom:4px;">🧠 Exploración de Pares Craneales</h2>
+                    <p style="color:#555;font-size:0.92em;margin-bottom:16px;">
+                        <strong>Paciente:</strong> ${patient.name}
+                        &nbsp;|&nbsp;<strong>Fecha:</strong> <input type="date" id="pcFecha" value="${new Date().toISOString().split('T')[0]}"
+                            style="border:1px solid #ccc;border-radius:4px;padding:3px 6px;font-size:0.95em;">
+                    </p>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:0.93em;background:white;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+                            <thead>
+                                <tr style="background:#2980b9;color:white;">
+                                    <th style="padding:10px 8px;text-align:left;white-space:nowrap;">Par craneal</th>
+                                    <th style="padding:10px 8px;text-align:left;min-width:200px;">Exploración</th>
+                                    <th style="padding:10px 8px;text-align:left;min-width:130px;">Estado</th>
+                                    <th style="padding:10px 8px;text-align:left;min-width:220px;">Alteraciones / Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>${filas}</tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:16px;">
+                        <label style="font-weight:600;font-size:0.9em;color:#2c3e50;">Observaciones generales:</label>
+                        <textarea id="pcObsGeneral" rows="3" placeholder="Observaciones generales de la exploración…"
+                            style="width:100%;margin-top:6px;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:0.92em;resize:vertical;"></textarea>
+                    </div>
+                    <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
+                        <button onclick="pcCalcular()" style="background:linear-gradient(135deg,#2980b9,#3498db);color:white;padding:12px 28px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:15px;">
+                            📊 Ver Resumen
+                        </button>
+                        <button onclick="pcGuardar()" style="background:#27ae60;color:white;padding:12px 28px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:15px;">
+                            💾 Guardar
+                        </button>
+                        <button onclick="cancelEvaluation()" style="background:#95a5a6;color:white;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-size:14px;">
+                            ❌ Cancelar
+                        </button>
+                    </div>
+                    <div id="pcResumen" style="margin-top:20px;"></div>
+                </div>`;
+        }
+
+        function pcActualizar() {
+            PC_DATA.forEach(pc => {
+                const sel = document.getElementById('pc_estado_' + pc.num);
+                const alts = document.getElementById('pc_alt_opts_' + pc.num);
+                if (!sel || !alts) return;
+                alts.style.display = sel.value === 'alterado' ? 'block' : 'none';
+            });
+        }
+
+        function pcGetResultados() {
+            return PC_DATA.map(pc => {
+                const sel = document.getElementById('pc_estado_' + pc.num);
+                const obs = document.getElementById('pc_obs_' + pc.num);
+                const estado = sel ? sel.value : '';
+                const alteracionesMarcadas = pc.alteraciones.filter((_, i) => {
+                    const cb = document.getElementById('pc_alt_' + pc.num + '_' + i);
+                    return cb && cb.checked;
+                });
+                return { num: pc.num, nombre: pc.nombre, estado, alteraciones: alteracionesMarcadas, obs: obs ? obs.value.trim() : '' };
+            });
+        }
+
+        function pcCalcular() {
+            const res = pcGetResultados();
+            const normales = res.filter(r => r.estado === 'normal');
+            const alterados = res.filter(r => r.estado === 'alterado');
+            const noEval = res.filter(r => r.estado === 'no-evaluable');
+            const sinExp = res.filter(r => !r.estado);
+
+            let html = `<div style="background:white;border-radius:10px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:5px solid #2980b9;">
+                <h3 style="color:#2980b9;margin:0 0 12px 0;">📊 Resumen — Pares Craneales</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px;">
+                    <div style="background:#d5f5e3;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:1.8em;font-weight:700;color:#27ae60;">${normales.length}</div>
+                        <div style="font-size:0.8em;color:#555;">Normales</div>
+                    </div>
+                    <div style="background:#fdebd0;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:1.8em;font-weight:700;color:#e67e22;">${alterados.length}</div>
+                        <div style="font-size:0.8em;color:#555;">Alterados</div>
+                    </div>
+                    <div style="background:#f2f3f4;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:1.8em;font-weight:700;color:#7f8c8d;">${noEval.length}</div>
+                        <div style="font-size:0.8em;color:#555;">No evaluables</div>
+                    </div>
+                    <div style="background:#f9f9f9;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:1.8em;font-weight:700;color:#bdc3c7;">${sinExp.length}</div>
+                        <div style="font-size:0.8em;color:#555;">Sin explorar</div>
+                    </div>
+                </div>`;
+
+            if (alterados.length > 0) {
+                html += `<div style="background:#fef9e7;border-radius:8px;padding:12px;margin-bottom:10px;">
+                    <strong style="color:#e67e22;">⚠️ Pares con alteraciones:</strong>
+                    <ul style="margin:8px 0 0 16px;font-size:0.88em;">
+                        ${alterados.map(r => `<li><strong>Par ${r.num} – ${r.nombre}</strong>${r.alteraciones.length ? ': ' + r.alteraciones.join('; ') : ''}${r.obs ? ' · ' + r.obs : ''}</li>`).join('')}
+                    </ul>
+                </div>`;
+            }
+            html += '</div>';
+            document.getElementById('pcResumen').innerHTML = html;
+        }
+
+        function pcGuardar() {
+            if (!pcPatObj) return;
+            const res = pcGetResultados();
+            const obsGen = document.getElementById('pcObsGeneral')?.value?.trim() || '';
+            const fecha = document.getElementById('pcFecha')?.value || new Date().toISOString().split('T')[0];
+            const alterados = res.filter(r => r.estado === 'alterado');
+
+            const evaluacion = {
+                id: Date.now().toString(),
+                patientName: pcPatObj.name,
+                scaleName: 'Exploración de Pares Craneales',
+                date: new Date().toISOString(),
+                results: res.map(r => ({
+                    item: 'Par ' + r.num + ' – ' + r.nombre,
+                    answer: r.estado || 'sin explorar',
+                    points: r.estado === 'normal' ? 1 : 0,
+                    detail: r.alteraciones.join('; ') + (r.obs ? ' · ' + r.obs : '')
+                })),
+                totalScore: res.filter(r => r.estado === 'normal').length,
+                interpretation: alterados.length === 0
+                    ? 'Exploración sin alteraciones detectadas'
+                    : 'Alteraciones en: ' + alterados.map(r => 'Par ' + r.num + ' (' + r.nombre + ')').join(', '),
+                notes: obsGen,
+                evalDate: fecha
+            };
+
+            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            saved.unshift(evaluacion);
+            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            alert('✅ Exploración de Pares Craneales guardada correctamente.');
+        }
+
+        // ===== REFLEJOS PRIMITIVOS =====
+        const RP_DATA = [
+            {
+                id: 'busqueda', nombre: 'Búsqueda',
+                estimulo: 'Al tocar la mejilla: desviación de la comisura bucal y giro de cabeza hacia ese lado',
+                fechas: 'Desaparece al mes de vida',
+                tipo: 'desaparicion', meses: 1
+            },
+            {
+                id: 'succion', nombre: 'Succión',
+                estimulo: 'Al tocar el dorso de la lengua: adopta forma cóncava y realiza succión',
+                fechas: 'Desaparece a los 3 meses (patológico >6 meses)',
+                tipo: 'desaparicion', meses: 3
+            },
+            {
+                id: 'moro', nombre: 'Moro',
+                estimulo: 'Se incorpora ligeramente en decúbito supino y al soltarlo: abducción y extensión de brazos (1ª fase) seguido de aducción y flexión (2ª fase) con llanto',
+                fechas: 'Desaparece a los 3 meses',
+                tipo: 'desaparicion', meses: 3
+            },
+            {
+                id: 'marcha', nombre: 'Marcha automática',
+                estimulo: 'En posición vertical al apoyar los pies, da unos pasos',
+                fechas: 'Desaparece al mes (patológico >3 meses)',
+                tipo: 'desaparicion', meses: 1
+            },
+            {
+                id: 'galant', nombre: 'Galant',
+                estimulo: 'El estímulo paravertebral desde debajo de la escápula hasta encima de la cresta ilíaca produce incurvación del tronco hacia ese lado',
+                fechas: 'Desaparece al 5º mes',
+                tipo: 'desaparicion', meses: 5
+            },
+            {
+                id: 'prensionP', nombre: 'Prensión palmar',
+                estimulo: 'Al introducir el pulgar en mano se produce la flexión de los dedos',
+                fechas: '4–5 meses',
+                tipo: 'desaparicion', meses: 4.5
+            },
+            {
+                id: 'prensionPl', nombre: 'Prensión plantar',
+                estimulo: 'Al tocar la planta a la altura de la base de los dedos se produce la flexión de los dedos',
+                fechas: '9–12 meses',
+                tipo: 'desaparicion', meses: 10.5
+            },
+            {
+                id: 'raf', nombre: 'Reflejo Acústico Facial (RAF)',
+                estimulo: 'Parpadeo ante el ruido',
+                fechas: 'Patológico si no aparece al 4º mes',
+                tipo: 'aparicion', meses: 4
+            },
+            {
+                id: 'rof', nombre: 'Reflejo Óptico Facial (ROF)',
+                estimulo: 'Parpadeo al aproximarle un objeto a la cara',
+                fechas: 'Patológico si no aparece al 6º mes',
+                tipo: 'aparicion', meses: 6
+            },
+            {
+                id: 'paracaidas', nombre: 'Paracaídas',
+                estimulo: 'Al inclinar al niño hacia el frente: extiende EESS y se apoya en palmas',
+                fechas: 'Aparece al 6º mes',
+                tipo: 'aparicion', meses: 6
+            },
+            {
+                id: 'suprapubico', nombre: 'Suprapúbico',
+                estimulo: 'Tras una presión suprapúbica, realiza una extensión tónica de las extremidades inferiores con aducción con equino',
+                fechas: 'Desaparece al mes (patológico >3 meses)',
+                tipo: 'desaparicion', meses: 1
+            },
+            {
+                id: 'cruzado', nombre: 'Cruzado extensor',
+                estimulo: 'Al realizar presión sobre el cotilo con la pierna flexionada se produce una extensión tónica con equino de la extremidad contralateral',
+                fechas: 'Desaparece al mes y medio (patológico >3 meses)',
+                tipo: 'desaparicion', meses: 1.5
+            }
+        ];
+
+        let rpPatObj = null;
+
+        function startReflejosPrimitivosEvaluation(patient) {
+            rpPatObj = patient;
+            switchTab('evaluaciones');
+            const container = document.getElementById('evaluationProgress');
+            if (!container) { console.error('[RP] evaluationProgress no encontrado'); return; }
+
+            const colorTipo = { desaparicion: '#8e44ad', aparicion: '#16a085' };
+
+            let filas = RP_DATA.map(rp => `
+                <tr style="border-bottom:1px solid #ede0f7;">
+                    <td style="padding:10px 8px;font-weight:700;color:#2c3e50;vertical-align:top;white-space:nowrap;">
+                        <span style="background:${colorTipo[rp.tipo]};color:white;border-radius:6px;padding:2px 8px;font-size:0.78em;display:block;margin-bottom:4px;">${rp.tipo === 'desaparicion' ? '↓ desaparece' : '↑ aparece'}</span>
+                        ${rp.nombre}
+                    </td>
+                    <td style="padding:10px 8px;font-size:0.87em;color:#555;vertical-align:top;">${rp.estimulo}</td>
+                    <td style="padding:10px 8px;font-size:0.85em;color:${colorTipo[rp.tipo]};font-weight:600;vertical-align:top;white-space:nowrap;">${rp.fechas}</td>
+                    <td style="padding:10px 8px;vertical-align:top;">
+                        <select id="rp_estado_${rp.id}" style="width:100%;padding:6px;border:2px solid #ddd;border-radius:6px;font-size:0.9em;cursor:pointer;">
+                            <option value="">— sin evaluar —</option>
+                            <option value="presente">✅ Presente</option>
+                            <option value="ausente">❌ Ausente</option>
+                            <option value="incompleto">⚠️ Incompleto/débil</option>
+                            <option value="no-evaluable">❓ No evaluable</option>
+                        </select>
+                    </td>
+                    <td style="padding:10px 8px;vertical-align:top;">
+                        <textarea id="rp_obs_${rp.id}" placeholder="Observaciones…" rows="2"
+                            style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:0.85em;resize:vertical;"></textarea>
+                    </td>
+                </tr>`).join('');
+
+            container.innerHTML = `
+                <div style="padding:20px;background:#f5eef8;border-radius:12px;">
+                    <h2 style="color:#8e44ad;margin-bottom:4px;">👶 Reflejos Primitivos — Evaluación Neonatal</h2>
+                    <p style="color:#555;font-size:0.92em;margin-bottom:16px;">
+                        <strong>Paciente:</strong> ${patient.name}
+                        &nbsp;|&nbsp;<strong>Fecha:</strong> <input type="date" id="rpFecha" value="${new Date().toISOString().split('T')[0]}"
+                            style="border:1px solid #ccc;border-radius:4px;padding:3px 6px;font-size:0.95em;">
+                        &nbsp;|&nbsp;<strong>Edad (semanas/meses):</strong>
+                        <input type="text" id="rpEdadTexto" placeholder="ej: 6 semanas" style="border:1px solid #ccc;border-radius:4px;padding:3px 8px;font-size:0.92em;width:120px;">
+                    </p>
+                    <div style="background:#fff3cd;border-left:4px solid #f39c12;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:0.85em;color:#7d6608;">
+                        💡 <strong>Recuerda:</strong> La persistencia de reflejos que deben haber desaparecido, o la ausencia de reflejos que deben haberse instaurado, puede indicar patología neurológica. Interpretar siempre junto con la edad corregida en prematuros.
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:0.92em;background:white;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+                            <thead>
+                                <tr style="background:#8e44ad;color:white;">
+                                    <th style="padding:10px 8px;text-align:left;min-width:130px;">Reflejo</th>
+                                    <th style="padding:10px 8px;text-align:left;min-width:220px;">Cómo se estimula</th>
+                                    <th style="padding:10px 8px;text-align:left;min-width:140px;">Fechas</th>
+                                    <th style="padding:10px 8px;text-align:left;min-width:140px;">Estado</th>
+                                    <th style="padding:10px 8px;text-align:left;min-width:170px;">Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>${filas}</tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:16px;">
+                        <label style="font-weight:600;font-size:0.9em;color:#2c3e50;">Observaciones generales:</label>
+                        <textarea id="rpObsGeneral" rows="3" placeholder="Observaciones generales…"
+                            style="width:100%;margin-top:6px;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:0.92em;resize:vertical;"></textarea>
+                    </div>
+                    <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
+                        <button onclick="rpCalcular()" style="background:linear-gradient(135deg,#8e44ad,#9b59b6);color:white;padding:12px 28px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:15px;">
+                            📊 Ver Resumen
+                        </button>
+                        <button onclick="rpGuardar()" style="background:#27ae60;color:white;padding:12px 28px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:15px;">
+                            💾 Guardar
+                        </button>
+                        <button onclick="cancelEvaluation()" style="background:#95a5a6;color:white;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-size:14px;">
+                            ❌ Cancelar
+                        </button>
+                    </div>
+                    <div id="rpResumen" style="margin-top:20px;"></div>
+                </div>`;
+        }
+
+        function rpGetResultados() {
+            return RP_DATA.map(rp => {
+                const sel = document.getElementById('rp_estado_' + rp.id);
+                const obs = document.getElementById('rp_obs_' + rp.id);
+                return { ...rp, estado: sel ? sel.value : '', obs: obs ? obs.value.trim() : '' };
+            });
+        }
+
+        function rpEsPatologico(rp) {
+            if (!rp.estado) return false;
+            if (rp.tipo === 'desaparicion' && rp.estado === 'presente') return true;  // sigue presente cuando debería haber desaparecido (si ya pasó el tiempo)
+            if (rp.tipo === 'aparicion' && rp.estado === 'ausente') return true;       // ausente cuando debería haberse instaurado
+            return false;
+        }
+
+        function rpCalcular() {
+            const res = rpGetResultados();
+            const edadTexto = document.getElementById('rpEdadTexto')?.value?.trim() || '';
+            const presentes = res.filter(r => r.estado === 'presente');
+            const ausentes = res.filter(r => r.estado === 'ausente');
+            const incompletos = res.filter(r => r.estado === 'incompleto');
+            const sinEval = res.filter(r => !r.estado);
+
+            let html = `<div style="background:white;border-radius:10px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:5px solid #8e44ad;">
+                <h3 style="color:#8e44ad;margin:0 0 12px 0;">📊 Resumen — Reflejos Primitivos${edadTexto ? ' · ' + edadTexto : ''}</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:14px;">
+                    <div style="background:#d5f5e3;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:1.8em;font-weight:700;color:#27ae60;">${presentes.length}</div>
+                        <div style="font-size:0.8em;color:#555;">Presentes</div>
+                    </div>
+                    <div style="background:#fadbd8;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:1.8em;font-weight:700;color:#e74c3c;">${ausentes.length}</div>
+                        <div style="font-size:0.8em;color:#555;">Ausentes</div>
+                    </div>
+                    <div style="background:#fdebd0;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:1.8em;font-weight:700;color:#e67e22;">${incompletos.length}</div>
+                        <div style="font-size:0.8em;color:#555;">Incompletos</div>
+                    </div>
+                    <div style="background:#f9f9f9;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:1.8em;font-weight:700;color:#bdc3c7;">${sinEval.length}</div>
+                        <div style="font-size:0.8em;color:#555;">Sin evaluar</div>
+                    </div>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:0.88em;">
+                    <thead><tr style="background:#f4ecf7;">
+                        <th style="padding:7px 8px;text-align:left;">Reflejo</th>
+                        <th style="padding:7px 8px;text-align:center;">Estado</th>
+                        <th style="padding:7px 8px;text-align:left;">Fechas referencia</th>
+                        <th style="padding:7px 8px;text-align:left;">Observaciones</th>
+                    </tr></thead>
+                    <tbody>
+                        ${res.map(r => {
+                            const color = r.estado === 'presente' ? '#d5f5e3' : r.estado === 'ausente' ? '#fadbd8' : r.estado === 'incompleto' ? '#fdebd0' : '#f9f9f9';
+                            const emoji = r.estado === 'presente' ? '✅' : r.estado === 'ausente' ? '❌' : r.estado === 'incompleto' ? '⚠️' : '—';
+                            return `<tr style="border-bottom:1px solid #ede0f7;background:${color}15;">
+                                <td style="padding:7px 8px;font-weight:600;">${r.nombre}</td>
+                                <td style="padding:7px 8px;text-align:center;">${emoji} ${r.estado || '—'}</td>
+                                <td style="padding:7px 8px;font-size:0.85em;color:#7d3c98;">${r.fechas}</td>
+                                <td style="padding:7px 8px;font-size:0.85em;color:#555;">${r.obs || '—'}</td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+            document.getElementById('rpResumen').innerHTML = html;
+        }
+
+        function rpGuardar() {
+            if (!rpPatObj) return;
+            const res = rpGetResultados();
+            const obsGen = document.getElementById('rpObsGeneral')?.value?.trim() || '';
+            const fecha = document.getElementById('rpFecha')?.value || new Date().toISOString().split('T')[0];
+            const edadTexto = document.getElementById('rpEdadTexto')?.value?.trim() || '';
+
+            const evaluacion = {
+                id: Date.now().toString(),
+                patientName: rpPatObj.name,
+                scaleName: 'Reflejos Primitivos (Evaluación Neonatal)',
+                date: new Date().toISOString(),
+                results: res.map(r => ({
+                    item: r.nombre,
+                    answer: r.estado || 'sin evaluar',
+                    points: r.estado === 'presente' ? 1 : 0,
+                    detail: r.obs
+                })),
+                totalScore: res.filter(r => r.estado === 'presente').length,
+                interpretation: `Edad evaluada: ${edadTexto || 'no especificada'} · Presentes: ${res.filter(r => r.estado === 'presente').length} · Ausentes: ${res.filter(r => r.estado === 'ausente').length} · Incompletos: ${res.filter(r => r.estado === 'incompleto').length}`,
+                notes: obsGen,
+                evalDate: fecha
+            };
+
+            const saved = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            saved.unshift(evaluacion);
+            localStorage.setItem('evaluaciones', JSON.stringify(saved));
+            alert('✅ Evaluación de Reflejos Primitivos guardada correctamente.');
         }
 
         </script>
