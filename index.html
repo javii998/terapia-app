@@ -22255,8 +22255,10 @@ Edad 12 - Conceptual
             const totalEdadEquiv = batGetTotalEdadEquiv(tot);
 
             const evaluacion = {
-                id: Date.now().toString(),
+                id: Date.now(),
+                patientId: batPatObj.id,
                 patientName: batPatObj.name,
+                scaleId: 'battelle-screening-preloaded',
                 scaleName: 'Battelle Screening (Inventario de Desarrollo)',
                 date: new Date().toISOString(),
                 results: [
@@ -22721,8 +22723,10 @@ Edad 12 - Conceptual
             const edad_mes = edadMeses%12;
 
             const evaluacion = {
-                id: Date.now().toString(),
+                id: Date.now(),
+                patientId: vmiPatObj.id,
                 patientName: vmiPatObj.name,
+                scaleId: 'beery-vmi-preloaded',
                 scaleName: 'Beery VMI (Integración Viso-Motora)',
                 date: new Date().toISOString(),
                 results: [{
@@ -23236,8 +23240,10 @@ Edad 12 - Conceptual
             const edadJuego = countTotal > 0 ? (sumaTotal/countTotal).toFixed(1) : 0;
 
             const evaluacion = {
-                id: Date.now().toString(),
+                id: Date.now(),
+                patientId: knoxPatObj.id,
                 patientName: knoxPatObj.name,
+                scaleId: 'knox-juego-preloaded',
                 scaleName: 'Escala de Juego de Knox (Revisada)',
                 date: new Date().toISOString(),
                 results: dimResultados.map(r => ({
@@ -23482,8 +23488,10 @@ Edad 12 - Conceptual
             const alterados = res.filter(r => r.estado === 'alterado');
 
             const evaluacion = {
-                id: Date.now().toString(),
+                id: Date.now(),
+                patientId: pcPatObj.id,
                 patientName: pcPatObj.name,
+                scaleId: 'pares-craneales-preloaded',
                 scaleName: 'Exploración de Pares Craneales',
                 date: new Date().toISOString(),
                 results: res.map(r => ({
@@ -23738,8 +23746,10 @@ Edad 12 - Conceptual
             const edadTexto = document.getElementById('rpEdadTexto')?.value?.trim() || '';
 
             const evaluacion = {
-                id: Date.now().toString(),
+                id: Date.now(),
+                patientId: rpPatObj.id,
                 patientName: rpPatObj.name,
+                scaleId: 'reflejos-primitivos-preloaded',
                 scaleName: 'Reflejos Primitivos (Evaluación Neonatal)',
                 date: new Date().toISOString(),
                 results: res.map(r => ({
