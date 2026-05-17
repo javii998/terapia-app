@@ -3409,6 +3409,7 @@
                 category: 'ninos',
                 type: 'sensitivo',
                 preloaded: true,
+                isSensoryProfile2: true,
                 items: [
                     // PROCESAMIENTO AUDITIVO
                     { name: '1. Reacciona fuertemente a sonidos inesperados o altos (sirenas, perros, secadora)', options: [
@@ -10463,7 +10464,83 @@
             }
         }
 
+        // ── SENSORY PROFILE 2 helper ─────────────────────────────────────
+        function sp2CalcProfile(answers) {
+            // Asignación de ítems (índice base 0) a cuadrantes y secciones
+            // Basado en SP2 Caregiver Questionnaire (Dunn, 2014)
+            const Q = {
+                SK: [7,9,10,20,21,24,29,30,32,40,47,48,49,50,51,54,55,59], // Buscador (19 ítems -> 19 ítems usados)
+                AV: [1,12,15,16,17,18,19,28,31,42,43,44,45,46,57,60,64,70,71,72], // Evitativo (20 ítems)
+                SN: [0,2,3,4,11,13,23,25,34,35,36,37,52,53,56,61,62,63], // Sensitivo (18 ítems)
+                RG: [5,6,8,22,26,33,38,39,41,73,74,75,76,77,78,79,80,81,82,83,84] // Registro (21 ítems)
+            };
+            const SEC = {
+                Auditiva:  [0,1,2,3,4,5,6,7],    // ítems 1-8
+                Visual:    [8,9,10,11,12,13],      // ítems 9-14 (15 no suma)
+                Tactil:    [15,16,17,18,19,20,21,22], // ítems 16-23
+                Movimiento:[26,27,28,29,30,31,32], // ítems 27-33
+                Posicion:  [34,35,36,37,38,39,40], // ítems 35-41
+                Oral:      [42,43,44,45,46,47,48,49,50,51], // ítems 43-52
+                Conducta:  [52,53,54,55,56,57,58,59,60,61,62,63], // Conducta
+                SocioEmocional: [64,65,66,67,68,69,70,71,72,73,74,75,76], // Socioemocional
+                Atencion:  [76,77,78,79,80,81,82,83,84] // Atención
+            };
+            const pts = answers.map(a => a ? a.points : 0);
+            const sumIdx = (indices) => indices.reduce((s,i) => s + (pts[i]||0), 0);
+            const sp2interp = (score, ranges) => {
+                if (score <= ranges[0]) return { label: 'Igual que la mayoría', color: '#27ae60', icon: '✅' };
+                if (score <= ranges[1]) return { label: 'Más que otros', color: '#f39c12', icon: '⚠️' };
+                return { label: 'Mucho más que otros', color: '#e74c3c', icon: '🔴' };
+            };
+            // Baremos cuadrantes (SP2, norma 3-14 años combinada, percentil 75/percentil 95)
+            const qRanges = { SK:[47,60], AV:[48,59], SN:[42,53], RG:[43,55] };
+            const sRanges = { Auditiva:[24,31], Visual:[21,27], Tactil:[21,29], Movimiento:[15,19], Posicion:[18,24], Oral:[24,32], Conducta:[22,29], SocioEmocional:[31,41], Atencion:[24,31] };
+            const result = { cuadrantes:{}, secciones:{} };
+            for (const [k,idx] of Object.entries(Q)) result.cuadrantes[k] = { score: sumIdx(idx), items: idx.length };
+            for (const [k,idx] of Object.entries(SEC)) result.secciones[k] = { score: sumIdx(idx), items: idx.length };
+            for (const [k,v] of Object.entries(result.cuadrantes)) {
+                const r = qRanges[k]; const i = sp2interp(v.score, r);
+                result.cuadrantes[k] = {...v, ...i, ranges: r };
+            }
+            for (const [k,v] of Object.entries(result.secciones)) {
+                const r = sRanges[k]||[v.items*2, v.items*3]; const i = sp2interp(v.score, r);
+                result.secciones[k] = {...v, ...i, ranges: r };
+            }
+            return result;
+        }
+
         function finishEvaluation() {
+            // ── SP2 dedicated handler ──────────────────────────────────────
+            if (currentEvaluation.scale.isSensoryProfile2) {
+                const sp2 = sp2CalcProfile(evaluationAnswers);
+                const totalPoints = evaluationAnswers.reduce((s,a)=>s+(a?a.points:0),0);
+                const qLabels = { SK:'Buscador', AV:'Evitativo', SN:'Sensitivo', RG:'Registro' };
+                const interpretParts = Object.entries(sp2.cuadrantes).map(([k,v])=>`${qLabels[k]}: ${v.score} (${v.label})`);
+                const interpretation = interpretParts.join(' · ');
+                const sp2Details = { isSensoryProfile2: true, cuadrantes: sp2.cuadrantes, secciones: sp2.secciones };
+                const evalData = {
+                    id: currentEvaluation.editingId || Date.now(),
+                    patientId: currentEvaluation.patient.id,
+                    patientName: currentEvaluation.patient.name,
+                    scaleId: currentEvaluation.scale.id,
+                    scaleName: currentEvaluation.scale.name,
+                    answers: evaluationAnswers,
+                    totalPoints,
+                    interpretation,
+                    details: JSON.stringify(sp2Details),
+                    date: new Date().toISOString(),
+                    isSensoryProfile2: true
+                };
+                if (currentEvaluation.editingId) {
+                    const idx = evaluations.findIndex(e=>e.id==currentEvaluation.editingId);
+                    if (idx!==-1) { evaluations[idx]={...evaluations[idx],...evalData}; }
+                } else { evaluations.push(evalData); }
+                localStorage.setItem('evaluations', JSON.stringify(evaluations));
+                ghScheduleSync(); DB.save('evaluations', evalData);
+                showEvaluationResults(evalData, evaluations.findIndex(e=>e.id===evalData.id));
+                return;
+            }
+
             // Calcular puntuación total
             const totalPoints = evaluationAnswers.reduce((sum, answer) => sum + (answer ? answer.points : 0), 0);
             
@@ -13971,6 +14048,76 @@
         }
 
         function showEvaluationResults(evaluation, evalIndex) {
+            // ── SP2 dedicated display ─────────────────────────────────────
+            if (evaluation.isSensoryProfile2 || evaluation.scaleId === 'sensory-profile-2-preloaded') {
+                let sp2data = null;
+                try { const d = JSON.parse(evaluation.details||'{}'); if (d.isSensoryProfile2) sp2data = d; } catch(e){}
+                if (sp2data) {
+                    const qNames = { SK:'Buscador (SK)', AV:'Evitativo (AV)', SN:'Sensitivo (SN)', RG:'Registro (RG)' };
+                    const qDesc = {
+                        SK:'Alta necesidad sensorial. Busca activamente estímulos intensos o frecuentes.',
+                        AV:'El niño evita o se retira de estímulos sensoriales. Alta umbral emocional.',
+                        SN:'Detecta estímulos que otros ignoran. Respuesta pasiva pero elevada sensibilidad.',
+                        RG:'No detecta o procesa estímulos de manera adecuada. Puede parecer "en su mundo".'
+                    };
+                    const secNames = { Auditiva:'Auditiva', Visual:'Visual', Tactil:'Táctil', Movimiento:'Movimiento', Posicion:'Posición Corporal', Oral:'Oral', Conducta:'Conducta', SocioEmocional:'Socioemocional', Atencion:'Atención' };
+                    const colorMap = { '#27ae60':'#d5f5e3', '#f39c12':'#fef9e7', '#e74c3c':'#fdedec' };
+                    let qRows = '';
+                    for (const [k,v] of Object.entries(sp2data.cuadrantes)) {
+                        const bg = colorMap[v.color]||'#f8f9fa';
+                        const bar = Math.round(Math.min(100, (v.score / (v.items*5)) * 100));
+                        qRows += `<tr style="background:${bg}">
+                            <td style="padding:10px 12px;font-weight:700;color:${v.color}">${v.icon} ${qNames[k]}</td>
+                            <td style="padding:10px;text-align:center;font-weight:700;font-size:1.2em;">${v.score}</td>
+                            <td style="padding:10px;text-align:center;font-size:.85em;color:${v.color};font-weight:600;">${v.label}</td>
+                            <td style="padding:10px"><div style="background:#e0e0e0;border-radius:6px;height:10px;"><div style="width:${bar}%;background:${v.color};height:10px;border-radius:6px"></div></div></td>
+                        </tr>
+                        <tr style="background:${bg}"><td colspan="4" style="padding:0 12px 8px;font-size:.85em;color:#555">${qDesc[k]}</td></tr>`;
+                    }
+                    let sRows = '';
+                    for (const [k,v] of Object.entries(sp2data.secciones)) {
+                        const bg = colorMap[v.color]||'#f8f9fa';
+                        sRows += `<tr style="background:${bg}">
+                            <td style="padding:7px 12px">${secNames[k]||k}</td>
+                            <td style="padding:7px;text-align:center;font-weight:700">${v.score}</td>
+                            <td style="padding:7px;text-align:center;font-size:.85em;color:${v.color}">${v.icon} ${v.label}</td>
+                        </tr>`;
+                    }
+                    // Detectar cuadrante dominante
+                    const sorted = Object.entries(sp2data.cuadrantes).sort((a,b)=>b[1].score-a[1].score);
+                    const dom = sorted[0];
+                    const sp2Html = `
+                        <div style="background:linear-gradient(135deg,#667eea20,#764ba220);border-radius:12px;padding:20px;margin-bottom:20px;">
+                            <h3 style="color:#764ba2;margin-bottom:6px;">🧠 Sensory Profile 2 — Perfil del Cuidador</h3>
+                            <p style="color:#555;font-size:.9em;">Paciente: <strong>${evaluation.patientName}</strong> · Fecha: ${new Date(evaluation.date).toLocaleDateString('es-ES')}</p>
+                            <p style="color:#555;font-size:.9em;">Puntuación total: <strong>${evaluation.totalPoints}</strong> puntos (${evaluation.answers.filter(Boolean).length} ítems respondidos)</p>
+                            <div style="background:white;border-radius:8px;padding:10px 14px;margin-top:10px;border-left:4px solid ${dom[1].color};">
+                                <strong>Cuadrante dominante:</strong> <span style="color:${dom[1].color}">${qNames[dom[0]]}</span> — ${dom[1].label} (${dom[1].score} pts)
+                            </div>
+                        </div>
+                        <h4 style="color:#333;margin-bottom:10px;">📊 Cuadrantes del Procesamiento Sensorial</h4>
+                        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.93em;">
+                            <thead><tr style="background:#764ba2;color:white;"><th style="padding:9px 12px;text-align:left">Cuadrante</th><th style="padding:9px;text-align:center">Puntos</th><th style="padding:9px;text-align:center">Clasificación</th><th style="padding:9px;text-align:left">Perfil</th></tr></thead>
+                            <tbody>${qRows}</tbody>
+                        </table>
+                        <h4 style="color:#333;margin-bottom:10px;">📋 Secciones de Procesamiento</h4>
+                        <table style="width:100%;border-collapse:collapse;font-size:.9em;margin-bottom:16px;">
+                            <thead><tr style="background:#667eea;color:white;"><th style="padding:8px 12px;text-align:left">Sección</th><th style="padding:8px;text-align:center">Puntos</th><th style="padding:8px;text-align:center">Clasificación</th></tr></thead>
+                            <tbody>${sRows}</tbody>
+                        </table>
+                        <div style="background:#f8f9fa;border-radius:8px;padding:12px;font-size:.82em;color:#666;">
+                            <strong>Interpretación de rangos:</strong> <span style="color:#27ae60">✅ Igual que la mayoría</span> = rendimiento típico · 
+                            <span style="color:#f39c12">⚠️ Más que otros</span> = diferencias moderadas · 
+                            <span style="color:#e74c3c">🔴 Mucho más que otros</span> = diferencias marcadas que pueden afectar la participación.
+                            <br><em>Normas basadas en SP2 Cuestionario del Cuidador (Dunn, 2014), edad 3–14 años.</em>
+                        </div>`;
+                    // Show in modal (standard app pattern)
+                    document.getElementById('modalContent').innerHTML = sp2Html;
+                    document.getElementById('modal').classList.add('active');
+                    return;
+                }
+            }
+
             // Detectar si es escala ASIA para añadir información adicional
             let asiaAdditionalInfo = '';
             if (evaluation.scaleName.includes('ASIA')) {
@@ -14370,11 +14517,12 @@
                                     <div class="item-name">${ev.scaleName}</div>
                                     <div class="item-details">
                                         📅 ${new Date(ev.date).toLocaleString('es-ES')}<br>
-                                        📊 ${ev.totalPoints} puntos — ${ev.interpretation}
+                                        📊 ${ev.isSensoryProfile2 ? '🧠 Ver perfil sensorial completo' : `${ev.totalPoints} puntos — ${ev.interpretation}`}
                                     </div>
                                 </div>
                                 <div class="item-actions">
                                     ${ev.isDP3 ? `<button class="btn btn-small" style="background:#1a8a8a;color:white;" onclick="dp3AbrirCorrectorManual(${ev.id})" title="Corregir DP-3">🧮 Corregir</button>` : ''}
+                                    ${ev.isSensoryProfile2 ? `<button class="btn btn-small" style="background:#764ba2;color:white;" onclick="showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver Perfil Sensorial">🧠 Ver Perfil</button>` : ''}
                                     <button class="btn btn-small" onclick="exportEvaluationPDF(${evaluations.indexOf(ev)})">📄 PDF</button>
                                     <button class="btn btn-small btn-secondary" onclick="editEvaluationFromHistory(${ev.id}, ${index})" title="Editar respuestas">✏️</button>
                                     <button class="btn btn-small btn-danger" onclick="deleteEvaluation(${ev.id}, ${index})" title="Eliminar esta evaluación">🗑️</button>
