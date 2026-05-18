@@ -6518,11 +6518,11 @@
 
         const abasAreaKeys = Object.keys(abasStructure);
         const abasResponseOptions = [
-            { text: 'Siempre cuando es necesario', value: 4, description: 'Siempre cuando es necesario' },
-            { text: 'A veces cuando es necesario', value: 3, description: 'A veces cuando es necesario' },
-            { text: 'Nunca cuando es necesario', value: 2, description: 'Nunca cuando es necesario' },
-            { text: 'No es capaz', value: 1, description: 'No es capaz' },
-            { text: 'Respuesta en blanco o doble marca', value: 0, description: 'Respuesta en blanco o doble marca' }
+            { text: 'Siempre cuando es necesario', value: 3, description: '3 — Siempre cuando es necesario' },
+            { text: 'A veces cuando es necesario', value: 2, description: '2 — A veces cuando es necesario' },
+            { text: 'Nunca cuando es necesario', value: 1, description: '1 — Nunca cuando es necesario' },
+            { text: 'No es capaz / No realiza la conducta', value: 0, description: '0 — No es capaz' },
+            { text: 'Respuesta en blanco o doble marca', value: 0, description: '0 — Blanco/Doble marca' }
         ];
 
         const abasCI = {5:{c:5,s:7,p:4,g:3},6:{c:6,s:8,p:5,g:4},7:{c:7,s:9,p:6,g:4},8:{c:8,s:9,p:6,g:5},9:{c:9,s:10,p:8,g:6},10:{c:9,s:9,p:8,g:6},11:{c:9,s:9,p:8,g:6},12:{c:7,s:6,p:7,g:4},13:{c:7,s:6,p:7,g:4},14:{c:7,s:8,p:8,g:5},15:{c:7,s:8,p:8,g:5},16:{c:6,s:7,p:6,g:4},17:{c:6,s:7,p:6,g:4},18:{c:6,s:7,p:6,g:4},19:{c:7,s:8,p:7,g:5},20:{c:7,s:8,p:7,g:5},21:{c:7,s:8,p:7,g:5}};
@@ -7860,13 +7860,13 @@
             return 55 + (pct/25)*15;
         }
         function abasInterp(pt) {
-            if (pt>=130) return '🟢 Muy alto — Funcionamiento muy superior';
-            if (pt>=120) return '🟢 Alto — Funcionamiento superior';
-            if (pt>=110) return '🟡 Medio-alto — Por encima del promedio';
-            if (pt>=90)  return '🟡 Normal — Dentro del rango promedio';
-            if (pt>=80)  return '🟠 Medio-bajo — Por debajo del promedio';
-            if (pt>=70)  return '🔴 Bajo — Funcionamiento límite';
-            return '🔴 Muy bajo — Déficit significativo';
+            if (pt>=130) return '🟢 Muy superior (PT ≥ 130)';
+            if (pt>=120) return '🟢 Superior (PT 120–129)';
+            if (pt>=110) return '🟡 Por encima del promedio (PT 110–119)';
+            if (pt>=90)  return '🟡 Promedio (PT 90–109)';
+            if (pt>=80)  return '🟠 Por debajo del promedio (PT 80–89)';
+            if (pt>=70)  return '🔴 Límite (PT 70–79)';
+            return '🔴 Extremadamente bajo (PT < 70) — Déficit significativo';
         }
         function abasPc(pt) {
             const ptInt = Math.round(pt);
@@ -7881,6 +7881,13 @@
 
         function startAbasEvaluation(patient) {
             abasResp = {}; abasAreaIdx = 0; abasPatObj = patient;
+            // Asegurar que evaluationProgress existe en el DOM
+            if (!document.getElementById('evaluationProgress')) {
+                const content = document.getElementById('evaluacionContent');
+                if (content) {
+                    content.innerHTML = '<div id="evaluationProgress"></div>';
+                }
+            }
             document.getElementById('evaluationProgress').innerHTML = `
                 <div style="background:#f8f9fa;border-radius:15px;padding:25px;margin-top:20px;">
                     <h3 style="color:#667eea;margin-bottom:20px;">📋 Datos del Evaluado — ABAS-II</h3>
@@ -7911,15 +7918,15 @@
             abasPatData = { age: years, ageMonths: months, inf, isTeacher: !isParent };
 
             const areas = [
-                { key: 'comunicacion',          label: 'Comunicación',                        max: 96 },
-                { key: 'recursos_comunitarios', label: 'Utilización de Recursos Comunitarios', max: 92 },
-                { key: 'habilidades_academicas',label: 'Habilidades Académicas Funcionales',   max: 92 },
-                { key: 'vida_hogar',            label: 'Vida en el Hogar',                     max: 96 },
-                { key: 'salud_seguridad',       label: 'Salud y Seguridad',                    max: 88 },
-                { key: 'ocio',                  label: 'Ocio',                                 max: 88 },
-                { key: 'autocuidado',           label: 'Autocuidado',                          max: 96 },
-                { key: 'autodireccion',         label: 'Autodirección',                        max: 100 },
-                { key: 'social',                label: 'Social',                               max: 92 },
+                { key: 'comunicacion',          label: 'Comunicación',                        max: 72 },
+                { key: 'recursos_comunitarios', label: 'Utilización de Recursos Comunitarios', max: 69 },
+                { key: 'habilidades_academicas',label: 'Habilidades Académicas Funcionales',   max: 69 },
+                { key: 'vida_hogar',            label: 'Vida en el Hogar',                     max: 72 },
+                { key: 'salud_seguridad',       label: 'Salud y Seguridad',                    max: 66 },
+                { key: 'ocio',                  label: 'Ocio',                                 max: 66 },
+                { key: 'autocuidado',           label: 'Autocuidado',                          max: 72 },
+                { key: 'autodireccion',         label: 'Autodirección',                        max: 75 },
+                { key: 'social',                label: 'Social',                               max: 69 },
             ];
 
             const rows = areas.map(a => `
@@ -7948,15 +7955,15 @@
 
         function abasCalcManual() {
             const areas = [
-                { key: 'comunicacion',          max: 96  },
-                { key: 'recursos_comunitarios', max: 92  },
-                { key: 'habilidades_academicas',max: 92  },
-                { key: 'vida_hogar',            max: 96  },
-                { key: 'salud_seguridad',       max: 88  },
-                { key: 'ocio',                  max: 88  },
-                { key: 'autocuidado',           max: 96  },
-                { key: 'autodireccion',         max: 100 },
-                { key: 'social',                max: 92  },
+                { key: 'comunicacion',          max: 72  },
+                { key: 'recursos_comunitarios', max: 69  },
+                { key: 'habilidades_academicas',max: 69  },
+                { key: 'vida_hogar',            max: 72  },
+                { key: 'salud_seguridad',       max: 66  },
+                { key: 'ocio',                  max: 66  },
+                { key: 'autocuidado',           max: 72  },
+                { key: 'autodireccion',         max: 75  },
+                { key: 'social',                max: 69  },
             ];
 
             // Leer PDs del formulario
@@ -8823,7 +8830,7 @@
                     : Object.values(r).filter(v => typeof v === 'number' && v !== undefined).reduce((s,v)=>s+v,0);
                 const max = (window._abasManualMode && r._manualMax !== undefined)
                     ? r._manualMax
-                    : abasStructure[k].items*4;
+                    : abasStructure[k].items*3;
                 const ss = pdToScaledForm(k, raw, age, isParent, ageMonths) || 7;
                 scores[k] = { raw, max, ss };
                 
@@ -24291,8 +24298,11 @@ Edad 12 - Conceptual
 
         function startAbasInfantilEvaluation(patient) {
             abasInfantilResp = {}; abasInfantilAreaIdx = 0; abasInfantilPatObj = patient;
-            const tab = document.getElementById('evaluationArea');
-            if (!tab) return;
+
+            // Escribir directamente en evaluacionContent — NO llamar switchTab
+            // porque switchTab llama renderEvaluationForm() y borra todo lo que se acaba de escribir
+            const container = document.getElementById('evaluacionContent');
+            if (!container) { alert('Error: no se encuentra el contenedor de evaluación.'); return; }
 
             // Calcular edad del paciente
             let age = 0, ageMonths = 0;
@@ -24307,7 +24317,7 @@ Edad 12 - Conceptual
             }
             abasInfantilPatData = { age, ageMonths };
 
-            tab.innerHTML = `
+            container.innerHTML = `
                 <div style="background:linear-gradient(135deg,#e8a000,#f5c842);color:white;padding:20px 24px;border-radius:12px;margin-bottom:20px;">
                     <h2 style="margin:0 0 6px 0;font-size:1.4em;">📋 ABAS-II Infantil-Padres (0–5 años)</h2>
                     <p style="margin:0;opacity:0.92;">Evaluado: <strong>${patient.name}</strong> · ${age} años ${ageMonths} meses</p>
@@ -24317,13 +24327,8 @@ Edad 12 - Conceptual
                     <em>cuando es necesario</em>. Si el niño aún no tiene la edad o la oportunidad de realizar la
                     conducta, marque <strong>No es capaz</strong>.
                 </div>
-                <div id="abasInfantilProgress"></div>`;
-
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            const evalTab = document.getElementById('evaluaciones');
-            if (evalTab) evalTab.classList.add('active');
-            switchTab('evaluaciones', document.querySelector('[data-tab="evaluaciones"]'));
+                <div id="abasInfantilProgress"></div>
+                <div id="abasInfantilResults"></div>`;
 
             abasInfantilRenderArea(0);
         }
@@ -24390,7 +24395,7 @@ Edad 12 - Conceptual
                 ${!isLast ? `<button onclick="abasInfantilNext()" style="flex:2;min-width:140px;background:linear-gradient(135deg,#e8a000,#f5c842);color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:700;">Siguiente ➡</button>` : ''}
                 ${isLast ? `<button onclick="abasInfantilCalc()" style="flex:2;min-width:140px;background:#27ae60;color:white;border:none;padding:12px;border-radius:8px;cursor:pointer;font-weight:700;">✅ Calcular Resultados</button>` : ''}
             </div>
-            <div id="abasInfantilResults" style="margin-top:20px;"></div>`;
+`;
 
             document.getElementById('abasInfantilProgress').innerHTML = html;
             window.scrollTo(0, 0);
@@ -24481,9 +24486,9 @@ Edad 12 - Conceptual
                 if (!pt) return '—';
                 if (pt >= 130) return 'Muy superior';
                 if (pt >= 120) return 'Superior';
-                if (pt >= 110) return 'Medio-alto';
-                if (pt >= 90)  return 'Medio';
-                if (pt >= 80)  return 'Medio-bajo';
+                if (pt >= 110) return 'Por encima del promedio';
+                if (pt >= 90)  return 'Promedio';
+                if (pt >= 80)  return 'Por debajo del promedio';
                 if (pt >= 70)  return 'Límite';
                 return 'Extremadamente bajo';
             }
