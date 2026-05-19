@@ -24296,6 +24296,153 @@ Edad 12 - Conceptual
 
         let abasInfantilResp = {}, abasInfantilAreaIdx = 0, abasInfantilPatObj = null, abasInfantilPatData = {};
 
+        // ─── Apéndice C — Edades Equivalentes ABAS-II Infantil-Padres ──────────
+        // Fuente: Apéndice C manual TEA. Columnas: Co, Ur, Ha, Vh, Ss, Oc, Ac, Ad, So, Mo
+        // Cada fila: { edadLabel, edadMeses (punto medio), Co:[min,max], ... }
+        // '–' = no aplica (PD no discrimina en esa franja)
+        const abasInfantilEdadEquivTabla = [
+            // edadLabel, meses,  Co,        Ur,      Ha,      Vh,      Ss,       Oc,       Ac,       Ad,       So,       Mo
+            { e:'0:0 a 0:3',  m:2,  Co:[0,8],   Ur:null, Ha:null, Vh:null, Ss:[0,7],  Oc:[0,5],  Ac:[0,10], Ad:[0,7],  So:[0,11], Mo:[0,8]  },
+            { e:'0:4 a 0:7',  m:6,  Co:[9,12],  Ur:null, Ha:null, Vh:null, Ss:[8,9],  Oc:[6,13], Ac:[11,22],Ad:[8,13], So:[12,19],Mo:[9,18]  },
+            { e:'0:8 a 0:11', m:10, Co:[13,16], Ur:null, Ha:null, Vh:null, Ss:[10,16],Oc:[14,20],Ac:[23,28],Ad:[14,18],So:[20,22],Mo:[19,33] },
+            { e:'1:0 a 1:3',  m:14, Co:[17,20], Ur:[0,5],Ha:[0,5],Vh:[0,8],Ss:[17,20],Oc:[21,22],Ac:[29,31],Ad:[19,23],So:[23,25],Mo:[34,39] },
+            { e:'1:4 a 1:7',  m:18, Co:[21,36], Ur:[6,11],Ha:[6,8],Vh:[9,25],Ss:[21,28],Oc:[23,34],Ac:[32,37],Ad:[24,37],So:[26,40],Mo:[40,56] },
+            { e:'1:8 a 1:11', m:22, Co:[37,41], Ur:[12,17],Ha:[9,15],Vh:[26,33],Ss:[29,38],Oc:[35,38],Ac:[38,45],Ad:[38,43],So:[41,44],Mo:[57,60] },
+            { e:'2:0 a 2:5',  m:27, Co:[42,55], Ur:[18,33],Ha:[16,23],Vh:[34,50],Ss:[39,44],Oc:[39,47],Ac:[46,50],Ad:[44,51],So:[45,51],Mo:[61,66] },
+            { e:'2:6 a 2:11', m:33, Co:[56,61], Ur:[34,38],Ha:[24,31],Vh:[51,53],Ss:[45,49],Oc:[48,51],Ac:[51,55],Ad:[52,54],So:[52,56],Mo:[67,70] },
+            { e:'3:0 a 3:5',  m:39, Co:[62,62], Ur:[39,45],Ha:[32,40],Vh:[54,54],Ss:[50,54],Oc:[52,55],Ac:[56,58],Ad:[55,56],So:[57,59],Mo:[71,73] },
+            { e:'3:6 a 3:11', m:45, Co:[63,63], Ur:[46,48],Ha:[41,48],Vh:[55,56],Ss:[55,57],Oc:[56,57],Ac:[59,60],Ad:[57,59],So:[60,61],Mo:[74,76] },
+            { e:'4:0 a 4:5',  m:51, Co:null,    Ur:[49,50],Ha:[49,55],Vh:[57,59],Ss:[58,59],Oc:[58,58],Ac:[61,62],Ad:[60,61],So:[62,62],Mo:[77,78] },
+            { e:'4:6 a 4:11', m:57, Co:[64,64], Ur:[51,52],Ha:[56,60],Vh:[60,60],Ss:[60,61],Oc:[59,59],Ac:[63,64],Ad:[62,62],So:[63,63],Mo:[79,79] },
+            { e:'5:0 a 5:11', m:66, Co:[65,69], Ur:[53,66],Ha:[61,69],Vh:[61,75],Ss:[62,72],Oc:[60,66],Ac:[65,72],Ad:[63,75],So:[64,72],Mo:[80,81] },
+        ];
+
+        // Mapa de claves internas → columna en la tabla
+        const abasInfantilEEKeys = {
+            comunicacion:         'Co',
+            recursos_comunitarios:'Ur',
+            habilidades_preacademicas:'Ha',
+            vida_hogar:           'Vh',
+            salud_seguridad:      'Ss',
+            ocio:                 'Oc',
+            autocuidado:          'Ac',
+            autodireccion:        'Ad',
+            social:               'So',
+            motora:               'Mo',
+        };
+
+        function getEdadEquivInfantil(areaKey, pd) {
+            const col = abasInfantilEEKeys[areaKey];
+            if (!col) return '—';
+            // Buscar la última fila donde el rango incluya pd
+            let found = null;
+            for (const row of abasInfantilEdadEquivTabla) {
+                const rng = row[col];
+                if (!rng) continue;
+                if (pd >= rng[0] && pd <= rng[1]) {
+                    found = row.e;
+                }
+            }
+            if (found) return found;
+            // Si supera todos los rangos, devolver el mayor
+            const rows = abasInfantilEdadEquivTabla.filter(r => r[col]);
+            if (rows.length === 0) return '—';
+            const maxRng = rows[rows.length - 1][col];
+            if (pd >= maxRng[0]) return '≥ ' + rows[rows.length - 1].e;
+            return '< ' + rows[0].e;
+        }
+
+        // ─── Modo entrada directa de PDs ─────────────────────────────────────
+        function startAbasInfantilDirectPD(patient) {
+            abasInfantilPatObj = patient;
+            let age = 0, ageMonths = 0;
+            if (patient.birthDate) {
+                const today = new Date();
+                const birth = new Date(patient.birthDate);
+                let y = today.getFullYear() - birth.getFullYear();
+                let m = today.getMonth() - birth.getMonth();
+                if (today.getDate() < birth.getDate()) m--;
+                if (m < 0) { y--; m += 12; }
+                age = y; ageMonths = m;
+            }
+            abasInfantilPatData = { age, ageMonths };
+
+            const container = document.getElementById('evaluacionContent');
+            if (!container) return;
+
+            const areaInfo = [
+                { key:'comunicacion',          label:'Comunicación (Co)',              max:69, code:'Co' },
+                { key:'recursos_comunitarios', label:'Util. Recursos Comunitarios (Ur)',max:66, code:'Ur' },
+                { key:'habilidades_preacademicas',label:'Habilidades Preacadémicas (Ha)',max:69,code:'Ha' },
+                { key:'vida_hogar',            label:'Vida en el Hogar (Vh)',          max:75, code:'Vh' },
+                { key:'salud_seguridad',       label:'Salud y Seguridad (Ss)',         max:72, code:'Ss' },
+                { key:'ocio',                  label:'Ocio (Oc)',                      max:66, code:'Oc' },
+                { key:'autocuidado',           label:'Autocuidado (Ac)',               max:72, code:'Ac' },
+                { key:'autodireccion',         label:'Autodirección (Ad)',             max:75, code:'Ad' },
+                { key:'social',                label:'Social (So)',                    max:72, code:'So' },
+                { key:'motora',                label:'Motora (Mo)',                    max:81, code:'Mo' },
+            ];
+
+            let fieldsHTML = areaInfo.map(a => `
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid #eee;">
+                    <label style="flex:1;font-weight:600;color:#555;">${a.label}</label>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input type="number" id="pd_direct_${a.key}" min="0" max="${a.max}" placeholder="0–${a.max}"
+                            style="width:90px;padding:8px;border:2px solid #ddd;border-radius:8px;font-size:1em;text-align:center;"
+                            oninput="this.style.borderColor=this.value?'#e8a000':'#ddd'">
+                        <span style="color:#aaa;font-size:0.85em;">/ ${a.max}</span>
+                    </div>
+                </div>`).join('');
+
+            container.innerHTML = `
+                <div style="background:linear-gradient(135deg,#e8a000,#f5c842);color:white;padding:20px 24px;border-radius:12px;margin-bottom:20px;">
+                    <h2 style="margin:0 0 6px 0;font-size:1.4em;">📋 ABAS-II Infantil-Padres — Entrada directa de PDs</h2>
+                    <p style="margin:0;opacity:0.92;">Evaluado: <strong>${patient.name}</strong> · ${age} años ${ageMonths} meses</p>
+                </div>
+                <div style="background:#fff8e1;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:0.9em;color:#555;border-left:4px solid #f5c842;">
+                    Introduce las <strong>Puntuaciones Directas (PD)</strong> ya calculadas para cada área. El sistema calculará automáticamente los PT (puntuaciones típicas), dominios, CAG y las <strong>edades equivalentes del Apéndice C</strong>.
+                </div>
+                <div style="background:white;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:20px;">
+                    ${fieldsHTML}
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <button onclick="calcularAbasInfantilDesdePDs()"
+                        style="flex:2;background:#27ae60;color:white;border:none;padding:14px 24px;border-radius:10px;cursor:pointer;font-weight:700;font-size:1em;">
+                        ✅ Calcular Resultados
+                    </button>
+                    <button onclick="startAbasInfantilEvaluation(abasInfantilPatObj)"
+                        style="flex:1;background:#95a5a6;color:white;border:none;padding:14px;border-radius:10px;cursor:pointer;font-size:0.9em;">
+                        🔄 Modo ítems
+                    </button>
+                </div>
+                <div id="abasInfantilResults" style="margin-top:20px;"></div>`;
+        }
+
+        function calcularAbasInfantilDesdePDs() {
+            const areaKeys = ['comunicacion','recursos_comunitarios','habilidades_preacademicas','vida_hogar','salud_seguridad','ocio','autocuidado','autodireccion','social','motora'];
+            const pdPorArea = {};
+            for (const k of areaKeys) {
+                const el = document.getElementById('pd_direct_' + k);
+                pdPorArea[k] = el ? (parseInt(el.value) || 0) : 0;
+            }
+            // Simular respuestas para reutilizar abasInfantilCalc
+            abasInfantilResp = {};
+            for (const k of areaKeys) {
+                const area = abasInfantilStructure[k];
+                const pd = pdPorArea[k];
+                const items = area.items;
+                // Distribuir la PD: rellenar con valor 3 hasta cubrir pd, resto 0
+                abasInfantilResp[k] = {};
+                let rem = pd;
+                for (let i = 0; i < items; i++) {
+                    if (rem >= 3) { abasInfantilResp[k][i] = 3; rem -= 3; }
+                    else if (rem > 0) { abasInfantilResp[k][i] = rem; rem = 0; }
+                    else { abasInfantilResp[k][i] = 0; }
+                }
+            }
+            abasInfantilCalc();
+        }
+
         function startAbasInfantilEvaluation(patient) {
             abasInfantilResp = {}; abasInfantilAreaIdx = 0; abasInfantilPatObj = patient;
 
@@ -24322,10 +24469,16 @@ Edad 12 - Conceptual
                     <h2 style="margin:0 0 6px 0;font-size:1.4em;">📋 ABAS-II Infantil-Padres (0–5 años)</h2>
                     <p style="margin:0;opacity:0.92;">Evaluado: <strong>${patient.name}</strong> · ${age} años ${ageMonths} meses</p>
                 </div>
-                <div style="background:#fff8e1;border-radius:10px;padding:16px;margin-bottom:20px;font-size:0.9em;color:#555;border-left:4px solid #f5c842;">
+                <div style="background:#fff8e1;border-radius:10px;padding:16px;margin-bottom:16px;font-size:0.9em;color:#555;border-left:4px solid #f5c842;">
                     <strong>Instrucciones:</strong> Para cada conducta, indique con qué frecuencia el niño la realiza
                     <em>cuando es necesario</em>. Si el niño aún no tiene la edad o la oportunidad de realizar la
                     conducta, marque <strong>No es capaz</strong>.
+                </div>
+                <div style="margin-bottom:16px;">
+                    <button onclick="startAbasInfantilDirectPD(abasInfantilPatObj)"
+                        style="background:#e67e22;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.92em;">
+                        ⚡ Tengo las PDs calculadas → Entrada directa
+                    </button>
                 </div>
                 <div id="abasInfantilProgress"></div>
                 <div id="abasInfantilResults"></div>`;
@@ -24531,6 +24684,7 @@ Edad 12 - Conceptual
                         <th style="padding:8px;text-align:center;">Cód.</th>
                         <th style="padding:8px;text-align:center;">Dominio</th>
                         <th style="padding:8px;text-align:center;">PD</th>
+                        <th style="padding:8px;text-align:center;">Edad equiv. (Ap. C)</th>
                         <th style="padding:8px;text-align:center;">PD máx.</th>
                         <th style="padding:8px;text-align:center;">% logro</th>
                     </tr></thead>
@@ -24541,11 +24695,13 @@ Edad 12 - Conceptual
                             const pdMax = a.items * 3;
                             const pct = Math.round((pd / pdMax) * 100);
                             const c = areaColors[key] || '#667eea';
+                            const ee = getEdadEquivInfantil(key, pd);
                             return `<tr style="border-bottom:1px solid #eee;">
                                 <td style="padding:7px 10px;font-weight:600;color:${c};">${a.name}</td>
                                 <td style="padding:7px;text-align:center;font-size:0.85em;color:#888;">${a.code}</td>
                                 <td style="padding:7px;text-align:center;"><span style="background:${domainColors[a.domain]}22;color:${domainColors[a.domain]};padding:2px 8px;border-radius:10px;font-size:0.8em;font-weight:600;">${domainNames[a.domain]}</span></td>
                                 <td style="padding:7px;text-align:center;font-weight:700;">${pd}</td>
+                                <td style="padding:7px;text-align:center;font-size:0.85em;font-weight:600;color:#5d4037;background:#fff8e1;border-radius:6px;">${ee}</td>
                                 <td style="padding:7px;text-align:center;color:#aaa;">${pdMax}</td>
                                 <td style="padding:7px;text-align:center;">
                                     <div style="display:flex;align-items:center;gap:6px;">
