@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v4
         (function() {
-            const BUILD_VERSION = '2026-05-20-v9-fix-showResults-infantil';
+            const BUILD_VERSION = '2026-05-20-v10-fix-pdf-edit-infantil';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -10787,8 +10787,25 @@
                 return;
             }
 
-            // ── ABAS-II ──
-            if (ev.isABAS || (ev.scaleName && ev.scaleName.includes('ABAS'))) {
+            // ── ABAS-II Infantil: redirigir a modo entrada directa con PDs guardadas ──
+            if (ev.isABASInfantil || ev.scaleId === 'abas-infantil-padres-preloaded') {
+                abasInfantilPatObj = patient;
+                let ageY = 0, ageM = 0;
+                try { const d=JSON.parse(ev.details||'{}'); ageY=d.age||0; ageM=d.ageMonths||0; } catch(e){}
+                if (patient.birthDate) {
+                    const today=new Date(); const birth=new Date(patient.birthDate);
+                    let y=today.getFullYear()-birth.getFullYear(); let m=today.getMonth()-birth.getMonth();
+                    if(today.getDate()<birth.getDate()) m--; if(m<0){y--;m+=12;}
+                    ageY=y; ageM=m;
+                }
+                abasInfantilPatData = { age: ageY, ageMonths: ageM };
+                switchTab('evaluaciones');
+                setTimeout(() => startAbasInfantilDirectPD(patient), 200);
+                return;
+            }
+
+            // ── ABAS-II Escolar/Adultos ──
+            if (ev.isABAS || (ev.scaleName && ev.scaleName.includes('ABAS') && !ev.isABASInfantil && ev.scaleId !== 'abas-infantil-padres-preloaded')) {
                 // Reconstruir abasResp desde answers individuales si están disponibles
                 const hasItems = ev.answers && ev.answers.length > 9; // más de 9 = tiene ítems individuales
                 if (hasItems) {
@@ -14630,12 +14647,17 @@
                                     <div class="item-name">${ev.scaleName}</div>
                                     <div class="item-details">
                                         📅 ${new Date(ev.date).toLocaleString('es-ES')}<br>
-                                        📊 ${ev.isSensoryProfile2 ? '🧠 Ver perfil sensorial completo' : `${ev.totalPoints} puntos — ${ev.interpretation}`}
+                                        📊 ${ev.isSensoryProfile2
+                                            ? '🧠 Ver perfil sensorial completo'
+                                            : (ev.isABASInfantil || ev.scaleId === 'abas-infantil-padres-preloaded')
+                                                ? (() => { try { const d=JSON.parse(ev.details||'{}'); return d.ptGAC ? `CAG PT=${d.ptGAC} · Con=${d.ptDominio?.conceptual||'—'} · Soc=${d.ptDominio?.social||'—'} · Prac=${d.ptDominio?.practico||'—'}` : ev.interpretation; } catch(e){ return ev.interpretation; } })()
+                                                : `${ev.totalPoints} puntos — ${ev.interpretation}`}
                                     </div>
                                 </div>
                                 <div class="item-actions">
                                     ${ev.isDP3 ? `<button class="btn btn-small" style="background:#1a8a8a;color:white;" onclick="dp3AbrirCorrectorManual(${ev.id})" title="Corregir DP-3">🧮 Corregir</button>` : ''}
                                     ${ev.isSensoryProfile2 ? `<button class="btn btn-small" style="background:#764ba2;color:white;" onclick="showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver Perfil Sensorial">🧠 Ver Perfil</button>` : ''}
+                                    ${(ev.isABASInfantil || ev.scaleId === 'abas-infantil-padres-preloaded') ? `<button class="btn btn-small" style="background:#e8a000;color:white;" onclick="closeModal();showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver informe ABAS Infantil">📊 Ver</button>` : ''}
                                     <button class="btn btn-small" onclick="exportEvaluationPDF(${evaluations.indexOf(ev)})">📄 PDF</button>
                                     <button class="btn btn-small btn-secondary" onclick="editEvaluationFromHistory(${ev.id}, ${index})" title="Editar respuestas">✏️</button>
                                     <button class="btn btn-small btn-danger" onclick="deleteEvaluation(${ev.id}, ${index})" title="Eliminar esta evaluación">🗑️</button>
@@ -14763,8 +14785,99 @@
                 doc.text(`Escala: ${evaluation.scaleName}`, margin, y); y += 7;
                 doc.setFont(undefined, 'normal');
 
-                // ── ABAS-II: informe detallado ──────────────────────────────
-                if (evaluation.isABAS) {
+                // ── ABAS-II Infantil-Padres: informe detallado ─────────────
+                if (evaluation.isABASInfantil || evaluation.scaleId === 'abas-infantil-padres-preloaded') {
+                    let det = {};
+                    try { det = JSON.parse(evaluation.details || '{}'); } catch(e) {}
+                    const ptGAC = det.ptGAC;
+                    const ptD   = det.ptDominio || {};
+                    const ssA   = det.ssPorArea || {};
+                    const pdA   = det.pdPorArea || {};
+                    const ageY  = det.age || 0;
+                    const ageM  = det.ageMonths || 0;
+
+                    function ptInterpI(pt) {
+                        if (!pt) return '—';
+                        if (pt >= 130) return 'Muy superior';
+                        if (pt >= 120) return 'Superior';
+                        if (pt >= 110) return 'Por encima de la media';
+                        if (pt >= 90)  return 'Media';
+                        if (pt >= 80)  return 'Por debajo de la media';
+                        if (pt >= 70)  return 'Límite';
+                        return 'Extremadamente bajo';
+                    }
+                    function ptPcI(pt) {
+                        if (!pt) return '—';
+                        const tbl = {40:0.1,45:0.1,50:0.1,55:0.1,60:0.4,65:1,70:2,75:5,80:9,85:16,90:25,95:37,100:50,105:63,110:75,115:84,120:91,125:95,130:98,135:99,140:99.6};
+                        const ks = Object.keys(tbl).map(Number).sort((a,b)=>a-b);
+                        let c = ks[0]; for (const k of ks) { if (Math.abs(k-pt)<=Math.abs(c-pt)) c=k; }
+                        return tbl[c] + '%';
+                    }
+
+                    // Header CAG
+                    if (ptGAC) {
+                        doc.setFillColor(232, 160, 0);
+                        doc.roundedRect(margin, y, pageWidth-2*margin, 28, 4, 4, 'F');
+                        doc.setTextColor(255,255,255);
+                        doc.setFontSize(13); doc.setFont(undefined,'bold');
+                        doc.text('CAG — Compuesto Adaptativo General', margin+8, y+9);
+                        doc.setFontSize(11); doc.setFont(undefined,'normal');
+                        doc.text(`PT: ${ptGAC}   Percentil: ${ptPcI(ptGAC)}   Interpretación: ${ptInterpI(ptGAC)}`, margin+8, y+18);
+                        doc.setFontSize(9);
+                        doc.text(`Edad: ${ageY} años ${ageM} meses`, margin+8, y+25);
+                        y += 34;
+                    }
+
+                    // Dominios
+                    const domDefs = [
+                        ['CONCEPTUAL', ptD.conceptual, [74,144,217], ['comunicacion','habilidades_preacademicas','autodireccion']],
+                        ['SOCIAL',     ptD.social,     [39,174,96],  ['social','ocio']],
+                        ['PRÁCTICO',   ptD.practico,   [230,126,34], ['recursos_comunitarios','vida_hogar','salud_seguridad','autocuidado','motora']],
+                    ];
+                    const areaNames = {comunicacion:'Comunicación',habilidades_preacademicas:'Hab. Preacadémicas',autodireccion:'Autodirección',social:'Social',ocio:'Ocio',recursos_comunitarios:'Rec. Comunitarios',vida_hogar:'Vida en el Hogar',salud_seguridad:'Salud y Seguridad',autocuidado:'Autocuidado',motora:'Motora'};
+                    domDefs.forEach(([lbl, pt, rgb, areas]) => {
+                        if (y > 240) { doc.addPage(); y = 20; }
+                        doc.setFillColor(...rgb);
+                        doc.roundedRect(margin, y, pageWidth-2*margin, 18, 3, 3, 'F');
+                        doc.setTextColor(255,255,255);
+                        doc.setFontSize(10); doc.setFont(undefined,'bold');
+                        doc.text(`Dominio ${lbl}`, margin+6, y+7);
+                        doc.setFont(undefined,'normal'); doc.setFontSize(9);
+                        doc.text(`PT: ${pt||'—'}  Percentil: ${ptPcI(pt)}  ${ptInterpI(pt)}`, margin+6, y+14);
+                        y += 22;
+                        // Áreas del dominio
+                        doc.setTextColor(0,0,0); doc.setFontSize(9);
+                        areas.forEach(ak => {
+                            if (y > 270) { doc.addPage(); y = 20; }
+                            const pd = pdA[ak] != null ? pdA[ak] : '—';
+                            const ss = ssA[ak] != null ? ssA[ak] : 'N/A';
+                            doc.setFont(undefined,'bold');
+                            doc.text('• ' + (areaNames[ak]||ak), margin+4, y);
+                            doc.setFont(undefined,'normal'); doc.setTextColor(80,80,80);
+                            doc.text(`PD: ${pd}  SS: ${ss}`, margin+80, y);
+                            doc.setTextColor(0,0,0);
+                            y += 6;
+                        });
+                        y += 3;
+                    });
+
+                    // Texto clínico
+                    if (y > 250) { doc.addPage(); y = 20; }
+                    doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(232,160,0);
+                    doc.text('Interpretación Clínica', margin, y); y += 7;
+                    doc.setDrawColor(232,160,0); doc.line(margin, y, pageWidth-margin, y); y += 5;
+                    doc.setFontSize(10); doc.setFont(undefined,'normal'); doc.setTextColor(0,0,0);
+                    const clinI = ptGAC
+                        ? `El evaluado (${ageY} años ${ageM} meses) obtiene un CAG de PT=${ptGAC} (Percentil ${ptPcI(ptGAC)}), nivel "${ptInterpI(ptGAC)}" de conducta adaptativa. `
+                        + (ptD.conceptual ? `Dominio Conceptual PT=${ptD.conceptual} (${ptInterpI(ptD.conceptual)}). ` : '')
+                        + (ptD.social ? `Dominio Social PT=${ptD.social} (${ptInterpI(ptD.social)}). ` : '')
+                        + (ptD.practico ? `Dominio Práctico PT=${ptD.practico} (${ptInterpI(ptD.practico)}).` : '')
+                        : evaluation.interpretation;
+                    doc.splitTextToSize(clinI, pageWidth-2*margin).forEach(l => { if(y>270){doc.addPage();y=20;} doc.text(l,margin,y); y+=6; });
+                    y += 8;
+
+                // ── ABAS-II Escolar/Adultos: informe detallado ──────────────
+                } else if (evaluation.isABAS) {
                     // Parsear interpretation: "CAG PD=518/840 (PT≈40) | Conceptual PD=170/288 (PT≈40) | Social..."
                     const interp = evaluation.interpretation || '';
                     const parseBlock = (label) => {
@@ -14995,12 +15108,30 @@
                         checkPage(20);
                         addText(`${i + 1}. ${ev.scaleName}`, 0, true);
                         addText(`Fecha: ${new Date(ev.date).toLocaleDateString('es-ES')}`, 1);
-                        addText(`Puntuación: ${ev.totalPoints} — ${ev.interpretation}`, 1);
-                        if (ev.answers && ev.answers.length > 0) {
-                            addText('Respuestas:', 1, true);
-                            ev.answers.forEach(ans => {
-                                addText(`• ${ans.itemName}: ${ans.selectedOption} (${ans.points} pts)`, 2);
-                            });
+                        // ABAS Infantil: mostrar PT de dominios desde details
+                        if ((ev.isABASInfantil || ev.scaleId === 'abas-infantil-padres-preloaded') && ev.details) {
+                            try {
+                                const d = JSON.parse(ev.details);
+                                if (d.ptGAC) {
+                                    addText(`CAG: PT=${d.ptGAC}  |  Conceptual: PT=${d.ptDominio?.conceptual||'—'}  |  Social: PT=${d.ptDominio?.social||'—'}  |  Práctico: PT=${d.ptDominio?.practico||'—'}`, 1, true);
+                                    addText(`Edad evaluación: ${d.age||0} años ${d.ageMonths||0} meses`, 1);
+                                    if (d.ssPorArea) {
+                                        const areaNames = {comunicacion:'Co',habilidades_preacademicas:'Ha',autodireccion:'Ad',social:'So',ocio:'Oc',recursos_comunitarios:'Ur',vida_hogar:'Vh',salud_seguridad:'Ss',autocuidado:'Ac',motora:'Mo'};
+                                        const ssStr = Object.entries(d.ssPorArea).map(([k,v]) => `${areaNames[k]||k}:${v??'—'}`).join('  ');
+                                        addText(`SS por área: ${ssStr}`, 1);
+                                    }
+                                }
+                            } catch(e) {
+                                addText(`Resultado: ${ev.interpretation}`, 1);
+                            }
+                        } else {
+                            addText(`Puntuación: ${ev.totalPoints} — ${ev.interpretation}`, 1);
+                            if (ev.answers && ev.answers.length > 0 && !ev.isABAS) {
+                                addText('Respuestas:', 1, true);
+                                ev.answers.forEach(ans => {
+                                    addText(`• ${ans.itemName}: ${ans.selectedOption} (${ans.points} pts)`, 2);
+                                });
+                            }
                         }
                         y += 3;
                     });
