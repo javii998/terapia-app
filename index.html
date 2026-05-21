@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v4
         (function() {
-            const BUILD_VERSION = '2026-05-20-v8-fix-pdToSS-null';
+            const BUILD_VERSION = '2026-05-20-v9-fix-showResults-infantil';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -14268,6 +14268,34 @@
                         </p>
                     </div>
                 `;
+            }
+
+            // ── ABAS-II Infantil-Padres: redibujar informe desde details guardado ──
+            if (evaluation.isABASInfantil || evaluation.scaleId === 'abas-infantil-padres-preloaded') {
+                let det = {};
+                try { det = JSON.parse(evaluation.details || '{}'); } catch(e) {}
+                if (det.ptGAC != null && det.pdPorArea) {
+                    // Reconstruir abasInfantilPatData temporalmente y renderizar
+                    const savedPatData = { ...abasInfantilPatData };
+                    abasInfantilPatData = { age: det.age || 0, ageMonths: det.ageMonths || 0 };
+                    const savedPatObj = abasInfantilPatObj;
+                    abasInfantilPatObj = patients.find(p => p.id === evaluation.patientId) || { name: evaluation.patientName };
+                    // Renderizar en el panel
+                    document.getElementById('evaluationProgress').innerHTML = `
+                        <div style="background:linear-gradient(135deg,#e8a000,#f5c842);color:white;padding:16px 20px;border-radius:10px;margin-bottom:16px;">
+                            <h3 style="margin:0 0 4px 0;">📋 ABAS-II Infantil-Padres — Resultado guardado</h3>
+                            <p style="margin:0;opacity:0.9;">${evaluation.patientName} · ${new Date(evaluation.date).toLocaleDateString('es-ES')}</p>
+                        </div>
+                        <div id="abasInfantilResults"></div>
+                        <div class="btn-group" style="margin-top:16px;">
+                            <button class="btn" onclick="exportEvaluationPDF(${evalIndex !== undefined ? evalIndex : 'evaluations.length - 1'})">📄 Exportar a PDF</button>
+                            <button class="btn btn-secondary" onclick="renderEvaluationForm()">Nueva Evaluación</button>
+                        </div>`;
+                    _abasInfantilRenderResultados(det.pdPorArea, true);
+                    abasInfantilPatData = savedPatData;
+                    abasInfantilPatObj = savedPatObj;
+                    return;
+                }
             }
 
             const html = `
