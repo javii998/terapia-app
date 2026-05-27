@@ -77,19 +77,45 @@
         })();
     </script>
     <script>
-        // Limpieza inicial al cargar - v4
+        // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
             const BUILD_VERSION = '2026-05-20-v10-fix-pdf-edit-infantil';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
-            
+
             console.log('[INIT] Versión build:', BUILD_VERSION, 'Stored:', storedVersion, 'Nocache:', nocache);
-            
+
+            // LISTA BLANCA: cualquier clave que empiece por estos prefijos
+            // es dato clínico y NUNCA se borra al actualizar versión.
+            // Si añades nuevas claves en futuras versiones, añade su prefijo aquí.
+            var DATA_PREFIXES = [
+                'paciente', 'patient',
+                'evaluacion', 'evaluation',
+                'sesion', 'session',
+                'goals', 'scales',
+                'config',
+                'seguridad',
+                'ing',
+                'ics_',
+                'confirmacion',
+                'darkMode',
+                'tareas',
+                'gestor-rutas',
+            ];
+
+            function esDatoClinico(key) {
+                var lk = key.toLowerCase();
+                for (var i = 0; i < DATA_PREFIXES.length; i++) {
+                    if (lk.indexOf(DATA_PREFIXES[i].toLowerCase()) === 0) return true;
+                }
+                return false;
+            }
+
             if (storedVersion !== BUILD_VERSION || nocache) {
                 localStorage.setItem('app_version', BUILD_VERSION);
-                
-                // Limpiar todo
+
+                // Limpiar caches del navegador / Service Worker
                 if ('caches' in window) {
                     caches.keys().then(function(names) {
                         names.forEach(function(name) {
@@ -98,31 +124,26 @@
                         });
                     });
                 }
-                
-                // Limpiar localStorage excepto datos importantes
-                const keepKeys = ['pacientes', 'patients', 'evaluaciones', 'evaluations', 'sesiones', 'sessions', 'pacienteActual', 'goals', 'scales', 'config', 'seguridadConfig', 'seguridadLog', 'ingTarifas', 'ingProgramadas', 'ics_eventos', 'ics_nombre', 'confirmacionesAsistencia', 'darkMode', 'tareas'];
-                const allKeys = Object.keys(localStorage);
+
+                // Borrar SOLO claves que NO son datos clínicos
+                var allKeys = Object.keys(localStorage);
+                var borradas = [];
                 allKeys.forEach(function(key) {
-                    if (!keepKeys.some(k => key.startsWith(k))) {
-                        // No borrar datos de pacientes
-                        if (!key.match(/^(paciente_|eval_|sesion_)/)) {
-                            localStorage.removeItem(key);
-                        }
+                    if (key === 'app_version') return; // recién guardada, no tocar
+                    if (!esDatoClinico(key)) {
+                        localStorage.removeItem(key);
+                        borradas.push(key);
                     }
                 });
-                
-                // Limpiar sessionStorage excepto version_checked
-                const keepSession = ['version_checked'];
-                const allSession = Object.keys(sessionStorage);
-                allSession.forEach(function(key) {
-                    if (!keepSession.includes(key)) {
-                        sessionStorage.removeItem(key);
-                    }
+                console.log('[INIT] Limpieza completada. Claves de UI borradas:', borradas,
+                            '| Datos clínicos intactos.');
+
+                // sessionStorage no tiene datos clínicos, se puede limpiar
+                var keepSession = ['version_checked'];
+                Object.keys(sessionStorage).forEach(function(key) {
+                    if (keepSession.indexOf(key) === -1) sessionStorage.removeItem(key);
                 });
-                
-                console.log('[INIT] Limpieza completada, versión:', BUILD_VERSION);
-                
-                // Limpiar URL si venía con nocache
+
                 if (nocache && window.history.replaceState) {
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
@@ -1558,9 +1579,57 @@
         body.dark-mode #ingTabla thead tr { background:#16213e; }
         body.dark-mode .ing-tr:hover { background:#16213e; }
         body.dark-mode #ingContratosList > div { background:#1a1a2e !important;border-color:#2a2a4a !important; }
+
+        /* ── GESTOR DE RUTAS ── */
+        .rutas-status {
+            font-size: 11px; margin-top: 4px; padding: 4px 8px; border-radius: 4px;
+            background: rgba(240,168,50,0.12); color: #f0a832;
+        }
+        .rutas-status.ok { background: rgba(56,199,122,0.12); color: #27ae60; }
+        #rutas-app input[type="text"]:focus { border-color: #4f7aff !important; outline: none; }
+        #rutas-app textarea:focus { border-color: #4f7aff !important; outline: none; }
+        .rutas-sitio-item {
+            background: white; border: 1px solid #e0e0e0; border-left: 3px solid #4f7aff;
+            border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; transition: opacity 0.2s;
+        }
+        .rutas-sitio-item.visitado { border-left-color: #bbb; opacity: 0.6; }
+        .rutas-sitio-item.en-ruta { border-left-color: #38c77a; }
+        .rutas-sitio-notes {
+            width: 100%; padding: 5px 8px; background: #f8f9fa; border: 1px solid #e0e0e0;
+            border-radius: 4px; font-size: 11px; resize: vertical; min-height: 36px;
+            margin-bottom: 8px; font-family: inherit; outline: none; box-sizing: border-box;
+        }
+        .rutas-sitio-actions { display: flex; gap: 6px; }
+        .rutas-sitio-btn {
+            flex: 1; padding: 5px; font-size: 11px; font-weight: 600; border: none;
+            border-radius: 4px; cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .rutas-btn-visit { background: rgba(56,199,122,0.15); color: #27ae60; }
+        .rutas-btn-visit:hover { background: rgba(56,199,122,0.3); }
+        .rutas-btn-del { background: rgba(224,92,92,0.12); color: #e05c5c; }
+        .rutas-btn-del:hover { background: rgba(224,92,92,0.25); }
+        /* dark mode adjustments for rutas */
+        body.dark-mode #rutas-app { border-color: #2a2a4a; }
+        body.dark-mode #rutas-header { background: linear-gradient(135deg,#2a3a6a,#4a2a6a); }
+        body.dark-mode .rutas-sitio-item { background: #1a1a2e; border-color: #2a2a4a; }
+        body.dark-mode .rutas-sitio-notes { background: #0f0f1a; border-color: #2a2a4a; color: #e0e0e0; }
+        body.dark-mode #rutas-app input[type="text"] { background: #0f0f1a; border-color: #2a2a4a; color: #e0e0e0; }
     </style>
 </head>
 <body>
+    <!-- ╔══════════════════════════════════════════════════════════════════╗
+         ║  ALMACENAMIENTO DE DATOS                                        ║
+         ║  Toda la información (pacientes, evaluaciones, sesiones,        ║
+         ║  objetivos, escalas, ingresos, historial de rutas…) se guarda   ║
+         ║  ÚNICAMENTE en el localStorage de este navegador/dispositivo.   ║
+         ║  NO hay servidor. Si borras los datos del navegador o abres la  ║
+         ║  app en otro dispositivo, los datos NO estarán disponibles.     ║
+         ║  Usa el módulo de Seguridad → Backup para exportar/importar.    ║
+         ╚══════════════════════════════════════════════════════════════════╝ -->
+    <div id="data-storage-banner" style="background:#fff3cd;border-bottom:2px solid #f0a832;padding:7px 18px;font-size:12px;color:#7a5700;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <span>⚠️ <strong>Almacenamiento local:</strong> todos los datos (pacientes, evaluaciones, sesiones…) se guardan <strong>solo en este navegador</strong>. Haz copias de seguridad regularmente desde el módulo <strong>🔒 Seguridad → Backup</strong>.</span>
+        <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;font-size:16px;cursor:pointer;color:#7a5700;padding:0 4px;" title="Cerrar aviso">✕</button>
+    </div>
     <div class="container">
         <header>
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -1589,6 +1658,7 @@
             <button class="tab" data-tab="crear-escala" onclick="switchTab('crear-escala', this)">➕ Crear</button>
             <button class="tab" data-tab="recursos" onclick="switchTab('recursos', this)">📎 Recursos</button>
             <button class="tab" data-tab="ingresos" onclick="switchTab('ingresos', this)">💰 Ingresos</button>
+            <button class="tab" data-tab="rutas" onclick="switchTab('rutas', this)">🗺️ Rutas</button>
         </div>
 
         <div class="content">
@@ -2105,6 +2175,79 @@
             </div>
 
             <!-- Tab: Cambios -->
+            <!-- Tab: Rutas -->
+            <div id="rutas" class="tab-content">
+                <div id="rutas-app" style="height:calc(100vh - 110px);display:flex;flex-direction:column;border-radius:12px;overflow:hidden;border:1px solid #e0e0e0;">
+                    <div id="rutas-header" style="height:48px;background:linear-gradient(135deg,#4f7aff,#7c4fff);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0;">
+                        <span style="font-size:16px;">📍</span>
+                        <span style="font-size:14px;font-weight:700;color:white;">Gestor de Rutas</span>
+                        <span style="font-size:11px;color:rgba(255,255,255,0.7);margin-left:auto;font-family:monospace;" id="rutas-dist-total"></span>
+                    </div>
+                    <div style="display:flex;flex:1;overflow:hidden;">
+                        <!-- Panel izquierdo -->
+                        <div style="width:320px;min-width:320px;background:#f8f9fa;border-right:1px solid #e0e0e0;display:flex;flex-direction:column;overflow:hidden;">
+                            <div style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+                                <!-- Origen/Destino -->
+                                <div style="background:white;border:1px solid #e0e0e0;border-radius:8px;padding:14px;">
+                                    <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;margin:0 0 10px;display:flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#4f7aff;display:inline-block;"></span>Inicio y fin</p>
+                                    <div style="margin-bottom:8px;">
+                                        <label style="display:block;font-size:11px;font-weight:600;color:#888;margin-bottom:3px;">ORIGEN</label>
+                                        <input type="text" id="rutas-origen-input" placeholder="Ej: Calle Mayor 10, Alicante" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+                                        <div class="rutas-status warn" id="rutas-origen-status">⚠ No establecido</div>
+                                    </div>
+                                    <div style="margin-bottom:8px;" id="rutas-grupo-destino">
+                                        <label style="display:block;font-size:11px;font-weight:600;color:#888;margin-bottom:3px;">DESTINO FINAL</label>
+                                        <input type="text" id="rutas-destino-input" placeholder="Ej: Av Alfonso El Sabio, Alicante" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+                                        <div class="rutas-status warn" id="rutas-destino-status">⚠ No establecido</div>
+                                    </div>
+                                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#666;margin-bottom:10px;">
+                                        <input type="checkbox" id="rutas-mismo-destino" onchange="rutasToggleMismoDestino(this.checked)" style="accent-color:#4f7aff;">
+                                        <label for="rutas-mismo-destino">Volver al punto de inicio</label>
+                                    </div>
+                                    <button class="btn" id="rutas-btn-base" onclick="rutasGuardarBase()" style="width:100%;background:#4f7aff;color:white;border:none;padding:8px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Establecer puntos</button>
+                                </div>
+                                <!-- Añadir parada -->
+                                <div style="background:white;border:1px solid #e0e0e0;border-radius:8px;padding:14px;">
+                                    <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;margin:0 0 10px;display:flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#38c77a;display:inline-block;"></span>Añadir parada</p>
+                                    <div style="margin-bottom:8px;">
+                                        <label style="display:block;font-size:11px;font-weight:600;color:#888;margin-bottom:3px;">NOMBRE</label>
+                                        <input type="text" id="rutas-nombre" placeholder="Ej: Clínica Norte" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+                                    </div>
+                                    <div style="margin-bottom:8px;">
+                                        <label style="display:block;font-size:11px;font-weight:600;color:#888;margin-bottom:3px;">DIRECCIÓN</label>
+                                        <input type="text" id="rutas-direccion" placeholder="Ej: Calle Ansaldo 12, Alicante" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+                                    </div>
+                                    <button class="btn" id="rutas-btn-buscar" onclick="rutasBuscarYAgregar()" style="width:100%;background:#38c77a;color:white;border:none;padding:8px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">+ Añadir a la lista</button>
+                                </div>
+                                <!-- Optimizar -->
+                                <button onclick="rutasCalcularRuta()" style="width:100%;background:linear-gradient(135deg,#4f7aff,#7c4fff);color:white;border:none;padding:11px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">⚡ Optimizar ruta por calles</button>
+                                <!-- Lista paradas -->
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 2px;">
+                                    <span style="font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.08em;">Paradas</span>
+                                    <span id="rutas-contador" style="background:#4f7aff;color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">0</span>
+                                </div>
+                                <div id="rutas-lista-sitios"></div>
+                            </div>
+                        </div>
+                        <!-- Mapa -->
+                        <div id="rutas-map" style="flex:1;"></div>
+                        <!-- Panel historial -->
+                        <div style="width:260px;min-width:260px;background:#f8f9fa;border-left:1px solid #e0e0e0;display:flex;flex-direction:column;overflow:hidden;">
+                            <div style="padding:12px 14px 8px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                                <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aaa;display:flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#f0a832;display:inline-block;"></span>Historial visitados</span>
+                                <span id="rutas-hist-count" style="background:#f0a832;color:#1a1000;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">0</span>
+                            </div>
+                            <div id="rutas-lista-historial" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;">
+                                <div style="text-align:center;color:#bbb;font-size:12px;padding:20px 0;">Aún no hay sitios visitados</div>
+                            </div>
+                            <div style="padding:10px;border-top:1px solid #e0e0e0;flex-shrink:0;">
+                                <button onclick="rutasLimpiarHistorial()" style="width:100%;padding:7px;font-size:11px;font-weight:600;background:rgba(224,92,92,0.1);color:#e05c5c;border:1px solid rgba(224,92,92,0.2);border-radius:6px;cursor:pointer;">🗑 Borrar historial</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="cambios" class="tab-content">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
                     <div>
@@ -9334,6 +9477,8 @@
                 resetScaleForm();
             } else if (tabName === 'evaluaciones') {
                 renderEvaluationForm();
+            } else if (tabName === 'rutas') {
+                rutasInitMapa();
             } else if (tabName === 'recursos') {
                 // Si estamos en github.io, avisar que el servidor no puede conectar
                 if (window.location.protocol === 'https:' && window.location.hostname !== 'localhost') {
@@ -25321,6 +25466,350 @@ Edad 12 - Conceptual
             evaluations.unshift(evaluacion); // sync in-memory array
             alert('✅ Evaluación ABAS-II Infantil-Padres guardada correctamente.');
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // GESTOR DE RUTAS
+        // ═══════════════════════════════════════════════════════════════
+        let rutasMap = null;
+        let rutasSitios = [];
+        let rutasBaseConfig = { origen: null, destino: null, mismoDestino: false };
+        let rutasMarcadores = [];
+        let rutasCapasRuta = [];
+        let rutasHistorial = JSON.parse(localStorage.getItem('gestor-rutas-historial') || '[]');
+        let rutasMapaIniciado = false;
+        let rutasToastTimer = null;
+
+        function rutasToast(msg, dur = 3000) {
+            // reuse app notification or simple alert-style
+            let el = document.getElementById('rutas-toast-el');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'rutas-toast-el';
+                el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:99999;opacity:0;pointer-events:none;transition:opacity .3s;';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg;
+            el.style.opacity = '1';
+            clearTimeout(rutasToastTimer);
+            rutasToastTimer = setTimeout(() => { el.style.opacity = '0'; }, dur);
+        }
+
+        function rutasInitMapa() {
+            if (rutasMapaIniciado) {
+                if (rutasMap) setTimeout(() => rutasMap.invalidateSize(), 100);
+                return;
+            }
+            // Load Leaflet if not already loaded
+            if (typeof L === 'undefined') {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
+                document.head.appendChild(link);
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
+                script.onload = () => _rutasCrearMapa();
+                document.head.appendChild(script);
+            } else {
+                _rutasCrearMapa();
+            }
+        }
+
+        function _rutasCrearMapa() {
+            if (rutasMapaIniciado) return;
+            rutasMapaIniciado = true;
+            rutasMap = L.map('rutas-map').setView([38.3452, -0.4810], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(rutasMap);
+            setTimeout(() => rutasMap.invalidateSize(), 200);
+            rutasRenderizarHistorial();
+
+            // key shortcuts
+            document.getElementById('rutas-direccion').addEventListener('keypress', e => {
+                if (e.key === 'Enter') rutasBuscarYAgregar();
+            });
+            document.getElementById('rutas-nombre').addEventListener('keypress', e => {
+                if (e.key === 'Enter') document.getElementById('rutas-direccion').focus();
+            });
+        }
+
+        // ── Geocodificación ──────────────────────────────────────────
+        async function rutasGeocodificar(texto) {
+            const variantes = [texto.trim()];
+            const sinCP = texto.replace(/\b\d{5}\b/g, '').replace(/\s{2,}/g, ' ').trim().replace(/,\s*,/g, ',').replace(/,\s*$/,'');
+            if (sinCP !== texto) variantes.push(sinCP);
+            const partes = texto.split(',').map(s => s.trim()).filter(Boolean);
+            if (partes.length > 2) variantes.push(partes.slice(-2).join(', '));
+
+            for (const q of variantes) {
+                if (!q || q.length < 4) continue;
+                try {
+                    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`, { headers: { 'Accept-Language': 'es' } });
+                    const data = await resp.json();
+                    if (data && data.length > 0) return { direccion: data[0].display_name, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+                } catch(e) { throw e; }
+                await new Promise(r => setTimeout(r, 300));
+            }
+            return null;
+        }
+
+        async function rutasObtenerRutaOSRM(puntos) {
+            if (puntos.length < 2) return null;
+            const coords = puntos.map(p => `${p.lng},${p.lat}`).join(';');
+            try {
+                const resp = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+                if (!resp.ok) return null;
+                const data = await resp.json();
+                if (data.code !== 'Ok' || !data.routes.length) return null;
+                return { geojson: data.routes[0].geometry, distancia: data.routes[0].distance, duracion: data.routes[0].duration };
+            } catch(e) { return null; }
+        }
+
+        // ── UI actions ───────────────────────────────────────────────
+        function rutasToggleMismoDestino(checked) {
+            const input = document.getElementById('rutas-destino-input');
+            if (checked) { input.disabled = true; input.value = ''; input.placeholder = 'Volverá al origen automáticamente'; }
+            else { input.disabled = false; input.placeholder = 'Ej: Av Alfonso El Sabio, Alicante'; }
+        }
+
+        async function rutasGuardarBase() {
+            const origenTxt = document.getElementById('rutas-origen-input').value.trim();
+            const destinoTxt = document.getElementById('rutas-destino-input').value.trim();
+            const esMismo = document.getElementById('rutas-mismo-destino').checked;
+            const boton = document.getElementById('rutas-btn-base');
+            if (!origenTxt && !rutasBaseConfig.origen) { rutasToast('⚠ Introduce un punto de partida.'); return; }
+            boton.disabled = true; boton.textContent = 'Buscando…';
+            try {
+                if (origenTxt) {
+                    const res = await rutasGeocodificar(origenTxt);
+                    if (!res) { rutasToast('No se encontró el origen.'); return; }
+                    rutasBaseConfig.origen = { nombre: 'Origen', ...res };
+                }
+                if (esMismo) {
+                    rutasBaseConfig.destino = { ...rutasBaseConfig.origen, nombre: 'Retorno' };
+                } else if (destinoTxt) {
+                    const res = await rutasGeocodificar(destinoTxt);
+                    if (!res) { rutasToast('No se encontró el destino.'); return; }
+                    rutasBaseConfig.destino = { nombre: 'Destino', ...res };
+                }
+                rutasBaseConfig.mismoDestino = esMismo;
+                rutasActualizarBaseUI();
+                await rutasActualizarMapa();
+                document.getElementById('rutas-origen-input').value = '';
+                document.getElementById('rutas-destino-input').value = '';
+                rutasToast('✓ Puntos establecidos');
+            } catch(e) { rutasToast('Error de conexión.'); }
+            finally { boton.disabled = false; boton.textContent = 'Establecer puntos'; }
+        }
+
+        function rutasActualizarBaseUI() {
+            const os = document.getElementById('rutas-origen-status');
+            const ds = document.getElementById('rutas-destino-status');
+            if (rutasBaseConfig.origen) {
+                os.className = 'rutas-status ok';
+                os.textContent = '📍 ' + rutasBaseConfig.origen.direccion.split(',').slice(0,2).join(',');
+            } else { os.className = 'rutas-status warn'; os.textContent = '⚠ No establecido'; }
+            if (rutasBaseConfig.destino) {
+                ds.className = 'rutas-status ok';
+                ds.textContent = rutasBaseConfig.mismoDestino ? '🔄 Volviendo al inicio' : '🏁 ' + rutasBaseConfig.destino.direccion.split(',').slice(0,2).join(',');
+            } else { ds.className = 'rutas-status warn'; ds.textContent = '⚠ No establecido'; }
+        }
+
+        async function rutasBuscarYAgregar() {
+            const nombre = document.getElementById('rutas-nombre').value.trim();
+            const direccion = document.getElementById('rutas-direccion').value.trim();
+            const boton = document.getElementById('rutas-btn-buscar');
+            if (!nombre || !direccion) { rutasToast('Rellena el nombre y la dirección.'); return; }
+            boton.disabled = true; boton.textContent = 'Buscando…';
+            try {
+                const res = await rutasGeocodificar(direccion);
+                if (!res) { rutasToast('No se encontró: "' + direccion + '"'); return; }
+                rutasSitios.push({ id: Date.now(), nombre, direccion: res.direccion, lat: res.lat, lng: res.lng, visitado: false, notas: '', orden: rutasSitios.length + 1 });
+                document.getElementById('rutas-nombre').value = '';
+                document.getElementById('rutas-direccion').value = '';
+                rutasRenderizarLista();
+                await rutasActualizarMapa();
+                rutasToast('✓ Parada añadida');
+            } catch(e) { rutasToast('Error de conexión.'); }
+            finally { boton.disabled = false; boton.textContent = '+ Añadir a la lista'; }
+        }
+
+        async function rutasCalcularRuta() {
+            if (!rutasBaseConfig.origen || !rutasBaseConfig.destino) { rutasToast('Primero establece los puntos de inicio y fin.'); return; }
+            if (rutasSitios.length < 1) { rutasToast('Añade al menos una parada.'); return; }
+            let noVisitados = [...rutasSitios];
+            let rutaOptimizada = [];
+            let puntoActual = rutasBaseConfig.origen;
+            while (noVisitados.length > 0) {
+                let idx = 0, minDist = rutasCalcDist(puntoActual, noVisitados[0]);
+                for (let i = 1; i < noVisitados.length; i++) {
+                    const d = rutasCalcDist(puntoActual, noVisitados[i]);
+                    if (d < minDist) { minDist = d; idx = i; }
+                }
+                puntoActual = noVisitados.splice(idx, 1)[0];
+                rutaOptimizada.push(puntoActual);
+            }
+            rutaOptimizada.forEach((s, i) => { s.orden = i + 1; s.enRuta = true; });
+            rutasSitios = rutaOptimizada;
+            rutasRenderizarLista();
+            await rutasActualizarMapa();
+            rutasToast('✓ Ruta optimizada');
+        }
+
+        function rutasCalcDist(a, b) {
+            const R = 6371, dLat = (b.lat - a.lat) * Math.PI / 180, dLon = (b.lng - a.lng) * Math.PI / 180;
+            const x = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+        }
+
+        async function rutasActualizarMapa() {
+            if (!rutasMap) return;
+            rutasMarcadores.forEach(m => rutasMap.removeLayer(m));
+            rutasMarcadores = [];
+            rutasCapasRuta.forEach(c => rutasMap.removeLayer(c));
+            rutasCapasRuta = [];
+            const todosLosPuntos = [];
+
+            function pin(lat, lng, html, popup) {
+                const m = L.marker([lat, lng], { icon: L.divIcon({ html, className: 'c-pin', iconSize: [22,22], iconAnchor: [11,11] }) }).bindPopup(popup).addTo(rutasMap);
+                rutasMarcadores.push(m);
+                todosLosPuntos.push([lat, lng]);
+            }
+
+            if (rutasBaseConfig.origen) pin(rutasBaseConfig.origen.lat, rutasBaseConfig.origen.lng, `<div style="background:#f0a832;width:22px;height:22px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,.4)">▶</div>`, `<b>SALIDA</b><br>${rutasBaseConfig.origen.direccion.split(',').slice(0,2).join(',')}`);
+
+            rutasSitios.sort((a,b) => a.orden - b.orden).forEach((s, i) => {
+                const col = s.visitado ? '#bbb' : '#4f7aff';
+                pin(s.lat, s.lng, `<div style="background:${col};width:22px;height:22px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,.4)">${i+1}</div>`, `<b>Parada ${i+1}: ${s.nombre}</b><br>${s.direccion.split(',').slice(0,2).join(',')}`);
+            });
+
+            if (rutasBaseConfig.destino && !rutasBaseConfig.mismoDestino) pin(rutasBaseConfig.destino.lat, rutasBaseConfig.destino.lng, `<div style="background:#9b59b6;width:22px;height:22px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,.4)">■</div>`, `<b>LLEGADA</b><br>${rutasBaseConfig.destino.direccion.split(',').slice(0,2).join(',')}`);
+
+            const secuencia = [];
+            if (rutasBaseConfig.origen) secuencia.push(rutasBaseConfig.origen);
+            rutasSitios.forEach(s => secuencia.push(s));
+            if (rutasBaseConfig.destino) secuencia.push(rutasBaseConfig.destino);
+
+            if (secuencia.length >= 2) {
+                const ruta = await rutasObtenerRutaOSRM(secuencia);
+                if (ruta) {
+                    const layer = L.geoJSON(ruta.geojson, { style: { color: '#4f7aff', weight: 4, opacity: 0.85 } }).addTo(rutasMap);
+                    rutasCapasRuta.push(layer);
+                    const km = (ruta.distancia/1000).toFixed(1), min = Math.round(ruta.duracion/60);
+                    document.getElementById('rutas-dist-total').textContent = `${km} km · ~${min} min`;
+                    rutasMap.fitBounds(layer.getBounds(), { padding: [40,40] });
+                } else {
+                    const coords = secuencia.map(p => [p.lat, p.lng]);
+                    const layer = L.polyline(coords, { color: '#4f7aff', weight: 3, opacity: 0.6, dashArray: '8,6' }).addTo(rutasMap);
+                    rutasCapasRuta.push(layer);
+                    rutasMap.fitBounds(layer.getBounds(), { padding: [40,40] });
+                    document.getElementById('rutas-dist-total').textContent = '';
+                }
+            } else if (todosLosPuntos.length > 0) {
+                rutasMap.setView(todosLosPuntos[0], 14);
+            }
+        }
+
+        function rutasRenderizarLista() {
+            const lista = document.getElementById('rutas-lista-sitios');
+            document.getElementById('rutas-contador').textContent = rutasSitios.length;
+            lista.innerHTML = '';
+            rutasSitios.sort((a,b) => a.orden - b.orden);
+            if (rutasSitios.length === 0) {
+                lista.innerHTML = '<div style="text-align:center;color:#bbb;font-size:12px;padding:16px 0;">Sin paradas aún</div>';
+                return;
+            }
+            rutasSitios.forEach((s, i) => {
+                const div = document.createElement('div');
+                div.className = `rutas-sitio-item${s.visitado ? ' visitado' : ''}${s.enRuta ? ' en-ruta' : ''}`;
+                div.innerHTML = `
+                    <div style="font-size:10px;font-weight:700;color:${s.visitado?'#bbb':s.enRuta?'#27ae60':'#4f7aff'};margin-bottom:2px;">PARADA ${i+1}</div>
+                    <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:2px;">${s.nombre}</div>
+                    <div style="font-size:11px;color:#999;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.direccion}">${s.direccion.split(',').slice(0,3).join(',')}</div>
+                    <textarea class="rutas-sitio-notes" placeholder="Notas, feedback…" onchange="rutasGuardarNotas(${s.id}, this.value)">${s.notas||''}</textarea>
+                    <div class="rutas-sitio-actions">
+                        <button class="rutas-sitio-btn rutas-btn-visit" onclick="rutasToggleVisitado(${s.id})">${s.visitado?'↩ Pendiente':'✓ Visitado'}</button>
+                        <button class="rutas-sitio-btn rutas-btn-del" onclick="rutasEliminar(${s.id})">Eliminar</button>
+                    </div>`;
+                lista.appendChild(div);
+            });
+        }
+
+        function rutasToggleVisitado(id) {
+            const s = rutasSitios.find(x => x.id === id);
+            if (s) {
+                s.visitado = !s.visitado;
+                if (s.visitado) rutasAgregarAlHistorial(s);
+            }
+            rutasRenderizarLista();
+            rutasActualizarMapa();
+        }
+
+        function rutasGuardarNotas(id, texto) {
+            const s = rutasSitios.find(x => x.id === id);
+            if (s) {
+                s.notas = texto;
+                if (s.visitado) {
+                    const h = rutasHistorial.find(x => x.idSesion === id);
+                    if (h) { h.notas = texto; _rutasGuardarHistorialLS(); rutasRenderizarHistorial(); }
+                }
+            }
+        }
+
+        async function rutasEliminar(id) {
+            if (!confirm('¿Eliminar esta parada?')) return;
+            rutasSitios = rutasSitios.filter(s => s.id !== id);
+            rutasSitios.forEach((s, i) => s.orden = i + 1);
+            rutasRenderizarLista();
+            await rutasActualizarMapa();
+        }
+
+        // ── Historial ────────────────────────────────────────────────
+        function _rutasGuardarHistorialLS() {
+            localStorage.setItem('gestor-rutas-historial', JSON.stringify(rutasHistorial));
+        }
+
+        function rutasAgregarAlHistorial(sitio) {
+            const fecha = new Date().toLocaleString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+            const existente = rutasHistorial.find(h => h.idSesion === sitio.id);
+            if (existente) { existente.notas = sitio.notas; existente.fecha = fecha; }
+            else rutasHistorial.push({ idSesion: sitio.id, nombre: sitio.nombre, direccion: sitio.direccion, notas: sitio.notas || '', fecha });
+            _rutasGuardarHistorialLS();
+            rutasRenderizarHistorial();
+        }
+
+        function rutasRenderizarHistorial() {
+            const lista = document.getElementById('rutas-lista-historial');
+            const count = document.getElementById('rutas-hist-count');
+            if (!lista || !count) return;
+            count.textContent = rutasHistorial.length;
+            if (rutasHistorial.length === 0) {
+                lista.innerHTML = '<div style="text-align:center;color:#bbb;font-size:12px;padding:20px 0;">Aún no hay sitios visitados</div>';
+                return;
+            }
+            lista.innerHTML = '';
+            [...rutasHistorial].reverse().forEach(h => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background:white;border:1px solid #e0e0e0;border-left:3px solid #f0a832;border-radius:6px;padding:9px 11px;';
+                div.innerHTML = `
+                    <div style="font-size:10px;color:#bbb;font-family:monospace;margin-bottom:3px;">✓ ${h.fecha}</div>
+                    <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:2px;">${h.nombre}</div>
+                    <div style="font-size:10px;color:#999;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${h.direccion}">${h.direccion.split(',').slice(0,3).join(',')}</div>
+                    ${h.notas ? `<div style="font-size:11px;color:#666;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:4px;padding:4px 7px;font-style:italic;white-space:pre-wrap;word-break:break-word;">${h.notas.replace(/</g,'&lt;')}</div>` : '<div style="font-size:11px;color:#bbb;font-style:italic;">Sin notas</div>'}`;
+                lista.appendChild(div);
+            });
+        }
+
+        function rutasLimpiarHistorial() {
+            if (!confirm('¿Borrar todo el historial de sitios visitados?')) return;
+            rutasHistorial = [];
+            _rutasGuardarHistorialLS();
+            rutasRenderizarHistorial();
+            rutasToast('Historial borrado');
+        }
+        // ═══════════════════════════════════════════════════════════════
+        // FIN GESTOR DE RUTAS
+        // ═══════════════════════════════════════════════════════════════
 
         </script>
 </body>
