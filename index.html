@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-05-27-v11-rutas-sync-mobile';
+            const BUILD_VERSION = '2026-05-28-v12c-fix-sync-timeout';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -9524,7 +9524,11 @@
             } else if (tabName === 'evaluaciones') {
                 renderEvaluationForm();
             } else if (tabName === 'rutas') {
-                rutasInitMapa();
+                if (rutasMapaIniciado && rutasMap) {
+                    setTimeout(() => { rutasMap.invalidateSize(); rutasRenderizarLista(); }, 520);
+                } else {
+                    setTimeout(rutasInitMapa, 520);
+                }
             } else if (tabName === 'recursos') {
                 // Si estamos en github.io, avisar que el servidor no puede conectar
                 if (window.location.protocol === 'https:' && window.location.hostname !== 'localhost') {
@@ -25550,7 +25554,7 @@ Edad 12 - Conceptual
         (function() {
             if (rutasSitios.length === 0) {
                 rutasSitios = [
-                    {id:6,nombre:'Policlínica San Juan',direccion:'Carrer Tomas Capelo, 5, 03550 Sant Joan d'Alacant',lat:38.398369181625775,lng:-0.4339328603346918,visitado:false,notas:'',orden:1,enRuta:true},
+                    {id:6,nombre:'Policlínica San Juan',direccion:"Carrer Tomas Capelo, 5, 03550 Sant Joan d'Alacant",lat:38.398369181625775,lng:-0.4339328603346918,visitado:false,notas:'',orden:1,enRuta:true},
                     {id:9,nombre:'Fisioterapia Garpo',direccion:"03550, San Juan de Alicante, L'Alacantí",lat:38.3995,lng:-0.4325,visitado:false,notas:'',orden:2,enRuta:true},
                     {id:10,nombre:'Centro Fundación Lukas',direccion:'Calle de la Pasión, Benimagrell, San Juan de Alicante',lat:38.398,lng:-0.428,visitado:false,notas:'',orden:3,enRuta:true},
                     {id:11,nombre:'Cerema',direccion:'WAU Technologies Alicante, 16, Calle Periodista Tirso Marín',lat:38.395,lng:-0.42,visitado:false,notas:'',orden:4,enRuta:true},
