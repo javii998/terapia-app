@@ -25661,10 +25661,15 @@ Edad 12 - Conceptual
             // Expandir abreviaturas españolas comunes
             function expandir(t) {
                 return t
+                    .replace(/\bCarrer\b/gi, 'Calle')
+                    .replace(/\bCarr\.\s*/gi, 'Calle ')
+                    .replace(/\bAvinguda\b/gi, 'Avenida')
+                    .replace(/\bAvda\b/gi, 'Avenida')
+                    .replace(/\bPlaça\b/gi, 'Plaza')
+                    .replace(/\bPassatge\b/gi, 'Pasaje')
                     .replace(/\bC\.\s*/gi, 'Calle ')
                     .replace(/\bCl\.\s*/gi, 'Calle ')
                     .replace(/\bAv\.\s*/gi, 'Avenida ')
-                    .replace(/\bAvda\.\s*/gi, 'Avenida ')
                     .replace(/\bPza\.\s*/gi, 'Plaza ')
                     .replace(/\bPl\.\s*/gi, 'Plaza ')
                     .replace(/\bPg\.\s*/gi, 'Pasaje ')
@@ -25674,7 +25679,17 @@ Edad 12 - Conceptual
                     .replace(/\s{2,}/g, ' ').trim();
             }
 
-            const base = expandir(texto.trim());
+            // Normalizar nombres de municipios valencianos
+            function normalizarMunicipio(t) {
+                return t
+                    .replace(/Sant Joan d['']Alacant/gi, 'San Juan de Alicante')
+                    .replace(/Alacant\b/gi, 'Alicante')
+                    .replace(/Mutxamel\b/gi, 'Mutxamel, Alicante')
+                    .replace(/\bValència\b/gi, 'Valencia')
+                    .replace(/d['']Alacant/gi, 'de Alicante');
+            }
+
+            const base = normalizarMunicipio(expandir(texto.trim()));
 
             // Forzar España al final si no aparece ya
             function conEspana(t) {
