@@ -18070,6 +18070,8 @@
                 ingProgramadas: JSON.parse(localStorage.getItem('ingProgramadas') || '[]'),
                 ingContratos:   JSON.parse(localStorage.getItem('ingContratos')   || '[]'),
                 rutasHistorial: JSON.parse(localStorage.getItem('gestor-rutas-historial') || '[]'),
+                rutasSitios:    JSON.parse(localStorage.getItem('gestor-rutas-sitios')    || '[]'),
+                rutasBaseConfig: JSON.parse(localStorage.getItem('gestor-rutas-base')     || 'null'),
                 savedAt: new Date().toISOString()
             };
         }
@@ -18162,6 +18164,8 @@
                     ghScheduleSync();
                     if (remote.ingContratos)   { ingContratos   = remote.ingContratos;   localStorage.setItem('ingContratos',   JSON.stringify(ingContratos)); }
                     if (remote.rutasHistorial) { rutasHistorial = remote.rutasHistorial; localStorage.setItem('gestor-rutas-historial', JSON.stringify(rutasHistorial)); rutasRenderizarHistorial(); }
+                    if (remote.rutasSitios && remote.rutasSitios.length > 0) { rutasSitios = remote.rutasSitios; localStorage.setItem('gestor-rutas-sitios', JSON.stringify(rutasSitios)); rutasRenderizarLista(); }
+                    if (remote.rutasBaseConfig) { rutasBaseConfig = remote.rutasBaseConfig; localStorage.setItem('gestor-rutas-base', JSON.stringify(rutasBaseConfig)); rutasActualizarBaseUI(); }
 
                     localStorage.setItem('ghLastSync', remoteSavedAt);
 
@@ -25508,8 +25512,77 @@ Edad 12 - Conceptual
         // GESTOR DE RUTAS
         // ═══════════════════════════════════════════════════════════════
         let rutasMap = null;
-        let rutasSitios = [];
-        let rutasBaseConfig = { origen: null, destino: null, mismoDestino: false };
+        let rutasSitios = JSON.parse(localStorage.getItem('gestor-rutas-sitios') || '[]');
+        let rutasBaseConfig = JSON.parse(localStorage.getItem('gestor-rutas-base') || 'null') || { origen: null, destino: null, mismoDestino: false };
+
+        // Precarga de las 52 paradas si no hay datos guardados
+        (function() {
+            if (rutasSitios.length === 0) {
+                rutasSitios = [
+                    {id:1,nombre:'Avantia',direccion:'carrer del Pintor Gastón Castelló, Casco Urbano Muchamiel, L\'Almaixada',lat:38.4285,lng:-0.4312,visitado:false,notas:'',orden:1},
+                    {id:2,nombre:'Proodos',direccion:'Calle de Elche, Casco Urbano Muchamiel, L\'Almaixada',lat:38.4275,lng:-0.4320,visitado:false,notas:'',orden:2},
+                    {id:3,nombre:'Fisioterapia y Rehabilitación Alicia Lara',direccion:'Avinguda de Carlos Soler, Casco Urbano Muchamiel, L\'Almaixada',lat:38.4270,lng:-0.4305,visitado:false,notas:'',orden:3},
+                    {id:4,nombre:'Centro Sanitario Dra. Silvia Carrillo',direccion:'Avenida del Condado de Fabraquer, Santa Faz, San Juan de Alicante',lat:38.4150,lng:-0.4430,visitado:false,notas:'',orden:4},
+                    {id:5,nombre:'Now Rehab Clinic',direccion:'18, Calle Doctor Pérez Mateos, Santa Faz',lat:38.4140,lng:-0.4420,visitado:false,notas:'',orden:5},
+                    {id:6,nombre:'Policlínica San Juan',direccion:'Calle Tomás Capelo, San Juan de Alicante, L\'Alacantí',lat:38.4012,lng:-0.4350,visitado:false,notas:'',orden:6},
+                    {id:7,nombre:'Neuro SanJuan',direccion:'03550, San Juan de Alicante, L\'Alacantí',lat:38.4005,lng:-0.4340,visitado:false,notas:'',orden:7},
+                    {id:8,nombre:'HFC FISIOTERAPIA JORGE LLEDÓ',direccion:'03550, San Juan de Alicante, L\'Alacantí',lat:38.4000,lng:-0.4330,visitado:false,notas:'',orden:8},
+                    {id:9,nombre:'Fisioterapia Garpo',direccion:'03550, San Juan de Alicante, L\'Alacantí',lat:38.3995,lng:-0.4325,visitado:false,notas:'',orden:9},
+                    {id:10,nombre:'Centro Fundación Lukas',direccion:'Calle de la Pasión, Benimagrell, San Juan de Alicante',lat:38.3980,lng:-0.4280,visitado:false,notas:'',orden:10},
+                    {id:11,nombre:'Cerema',direccion:'WAU Technologies Alicante, 16, Calle Periodista Tirso Marín',lat:38.3950,lng:-0.4200,visitado:false,notas:'',orden:11},
+                    {id:12,nombre:'Gs Fisioterapia a domicilio',direccion:'13, Avenida de Alicante, Playa Muchavista',lat:38.3870,lng:-0.4150,visitado:false,notas:'',orden:12},
+                    {id:13,nombre:'Sara Pérez Fisiosalud',direccion:'Camper Park Alicante, 8, Calle Juan de la Cierva',lat:38.3860,lng:-0.4100,visitado:false,notas:'',orden:13},
+                    {id:14,nombre:'Daniel Utrilla | Fisioterapia a Domicilio Alicante',direccion:'Avenida de las Naciones, Playa de San Juan, Alicante',lat:38.3840,lng:-0.4080,visitado:false,notas:'',orden:14},
+                    {id:15,nombre:'Corefisio',direccion:'Avenida de Santander, Playa de San Juan, Alicante',lat:38.3820,lng:-0.4060,visitado:false,notas:'',orden:15},
+                    {id:16,nombre:'clinica torregolf',direccion:'Avenida de Ansaldo, Albufereta, Alicante',lat:38.3750,lng:-0.4050,visitado:false,notas:'',orden:16},
+                    {id:17,nombre:'Centro Médico Arena',direccion:'Avenida del Locutor Vicente Hipólito, Albufereta, Alicante',lat:38.3740,lng:-0.4040,visitado:false,notas:'',orden:17},
+                    {id:18,nombre:'Origen',direccion:'Avenida de la Condomina, Albufereta, Alicante',lat:38.3730,lng:-0.4030,visitado:false,notas:'',orden:18},
+                    {id:19,nombre:'VistaSol 5 Residencia de Mayores',direccion:'Calle Concha Espina, Vistahermosa, Alicante',lat:38.3700,lng:-0.4020,visitado:false,notas:'',orden:19},
+                    {id:20,nombre:'Active Spine | Prevención y Tratamiento del dolor de espalda',direccion:'Calle José García Sellés, el Garbinet, Alicante',lat:38.3680,lng:-0.4860,visitado:false,notas:'',orden:20},
+                    {id:21,nombre:'Neurobalance',direccion:'Calle José García Sellés, el Garbinet, Alicante',lat:38.3675,lng:-0.4855,visitado:false,notas:'',orden:21},
+                    {id:22,nombre:'AFFisio',direccion:'Plaza Alcalde Agatángelo Soler, el Garbinet, Alicante',lat:38.3670,lng:-0.4850,visitado:false,notas:'',orden:22},
+                    {id:23,nombre:'Dr. Pablo Martínez',direccion:'Calle los Montesinos, Cuatrocientas Viviendas, Alicante',lat:38.3620,lng:-0.4900,visitado:false,notas:'',orden:23},
+                    {id:24,nombre:'Clínica Trauma Sport',direccion:'Trauma Sport, 17, Calle Sidi Ifni',lat:38.3600,lng:-0.4920,visitado:false,notas:'',orden:24},
+                    {id:25,nombre:'ANTONIO GUERRA REHAB&RECOVERY - Clínica de Fisioterapia, Rehabilitación y Readaptación',direccion:'Calle Tibi, Benissaudet, Alicante',lat:38.3580,lng:-0.4940,visitado:false,notas:'',orden:25},
+                    {id:26,nombre:'Los Ángeles',direccion:'Calle Francisco Montero Pérez, la Tómbola, Alicante',lat:38.3560,lng:-0.4960,visitado:false,notas:'',orden:26},
+                    {id:27,nombre:'Policlínica San Blas Salud',direccion:'Calle Padre Recaredo de los Ríos, la Ruïna, Alicante',lat:38.3500,lng:-0.4980,visitado:false,notas:'',orden:27},
+                    {id:28,nombre:'MundoTEA',direccion:'Calle San Raimundo, Sant Blai, Alicante',lat:38.3480,lng:-0.4990,visitado:false,notas:'',orden:28},
+                    {id:29,nombre:'Centro Psicopedagógico Gabaldón ALICANTE',direccion:'Calle Enriqueta Ortega, Sant Blai, Alicante',lat:38.3470,lng:-0.4995,visitado:false,notas:'',orden:29},
+                    {id:30,nombre:'Bio Ems centro de rehabilitación y fisioterapia en Alicante',direccion:'18, Avenida de Aguilera, Benalúa y els Antigons',lat:38.3440,lng:-0.5010,visitado:false,notas:'',orden:30},
+                    {id:31,nombre:'CDIAT Aspali',direccion:'24, Calle Rigoberto Ferrer, Alipark',lat:38.3420,lng:-0.5020,visitado:false,notas:'',orden:31},
+                    {id:32,nombre:'San Jorge Salud y Calidad de vida',direccion:'Avenida de Orihuela, Florida Baja, Alicante',lat:38.3400,lng:-0.5030,visitado:false,notas:'',orden:32},
+                    {id:33,nombre:'IMED',direccion:'Edificio de oficinas Marsamar, 20, Calle México',lat:38.3380,lng:-0.5040,visitado:false,notas:'',orden:33},
+                    {id:34,nombre:'Asociación Asperger Alicante (Aspali)',direccion:'Avenida de Elche, Benalúa y els Antigons, Alicante',lat:38.3360,lng:-0.5050,visitado:false,notas:'',orden:34},
+                    {id:35,nombre:'Clínica Corps by Corps à l\'aise | Fisioterapia, Logopedia y Podología',direccion:'Alicante, L\'Alacantí, Alicante',lat:38.3450,lng:-0.4810,visitado:false,notas:'',orden:35},
+                    {id:36,nombre:'Traumadepor',direccion:'Alicante, L\'Alacantí, Alicante',lat:38.3445,lng:-0.4815,visitado:false,notas:'',orden:36},
+                    {id:37,nombre:'Julia Canals',direccion:'Calle San Vicente, San Antón, Alicante',lat:38.3430,lng:-0.4820,visitado:false,notas:'',orden:37},
+                    {id:38,nombre:'Fisioterapia Eva Pérez',direccion:'Calle Petrer, el Palamó, Villafranqueza',lat:38.3700,lng:-0.5100,visitado:false,notas:'',orden:38},
+                    {id:39,nombre:'Lepol San Vicente',direccion:'Calle República Argentina, Lo Torrent, San Vicente del Raspeig',lat:38.3900,lng:-0.5250,visitado:false,notas:'',orden:39},
+                    {id:40,nombre:'SanviSalud',direccion:'Calle Villafranqueza, Centro, San Vicente del Raspeig',lat:38.3950,lng:-0.5280,visitado:false,notas:'',orden:40},
+                    {id:41,nombre:'Kinesan Clínica de Fisioterapia y Osteopatia',direccion:'03690, San Vicente del Raspeig, L\'Alacantí',lat:38.3960,lng:-0.5290,visitado:false,notas:'',orden:41},
+                    {id:42,nombre:'Cristian Pastor Lorenzo Fisioterapia',direccion:'03690, San Vicente del Raspeig, L\'Alacantí',lat:38.3955,lng:-0.5285,visitado:false,notas:'',orden:42},
+                    {id:43,nombre:'Dorsum Clinica de Fisioterapia y Osteopatia',direccion:'Calle la Huerta, Polideportivo, San Vicente del Raspeig',lat:38.3940,lng:-0.5270,visitado:false,notas:'',orden:43},
+                    {id:44,nombre:'Vedanatur',direccion:'03110, Mutxamel, L\'Alacantí',lat:38.4250,lng:-0.4350,visitado:false,notas:'',orden:44},
+                    {id:45,nombre:'Ortopedia Mora',direccion:'03110, Mutxamel, L\'Alacantí',lat:38.4245,lng:-0.4345,visitado:false,notas:'',orden:45},
+                    {id:46,nombre:'La Huerta',direccion:'Calle del Pino, el Collao, El Collao',lat:38.3800,lng:-0.5150,visitado:false,notas:'',orden:46},
+                    {id:47,nombre:'Alejandro Fochtman',direccion:'10, A-70, Orgègia',lat:38.3650,lng:-0.5050,visitado:false,notas:'',orden:47},
+                    {id:48,nombre:'Clínica Equum | Fisioterapia en El Campello',direccion:'Avinguda de l\'Estació, el Trajo, L\'Almadrava',lat:38.4380,lng:-0.3960,visitado:false,notas:'',orden:48},
+                    {id:49,nombre:'Vanesa del Oro',direccion:'03130, Santa Pola, El Baix Vinalopó',lat:38.1880,lng:-0.5580,visitado:false,notas:'',orden:49},
+                    {id:50,nombre:'Policlínica Elx',direccion:'Las Bayas, Elche, El Baix Vinalopó',lat:38.2450,lng:-0.6980,visitado:false,notas:'',orden:50},
+                    {id:51,nombre:'Clínica El Plà',direccion:'25AC, carrer Gabriel Miró, Pisos Blaus',lat:38.2600,lng:-0.6920,visitado:false,notas:'',orden:51},
+                    {id:52,nombre:'nuestra señora de la asunción',direccion:'47, carrer Antonio Machado, el Pla de Sant Josep',lat:38.2580,lng:-0.6900,visitado:false,notas:'',orden:52}
+                ];
+                localStorage.setItem('gestor-rutas-sitios', JSON.stringify(rutasSitios));
+            }
+            if (!rutasBaseConfig.origen) {
+                rutasBaseConfig = {
+                    origen: { nombre: 'Origen', direccion: 'Calle Hermanos Pérez Lledó, Casco Urbano Muchamiel', lat: 38.4290, lng: -0.4315 },
+                    destino: { nombre: 'Destino', direccion: 'Santa Pola, El Baix Vinalopó', lat: 38.1880, lng: -0.5580 },
+                    mismoDestino: false
+                };
+                localStorage.setItem('gestor-rutas-base', JSON.stringify(rutasBaseConfig));
+            }
+        })();
         let rutasMarcadores = [];
         let rutasCapasRuta = [];
         let rutasHistorial = JSON.parse(localStorage.getItem('gestor-rutas-historial') || '[]');
@@ -25545,6 +25618,12 @@ Edad 12 - Conceptual
             el.style.opacity = '1';
             clearTimeout(rutasToastTimer);
             rutasToastTimer = setTimeout(() => { el.style.opacity = '0'; }, dur);
+        }
+
+        function _rutasGuardarSitiosLS() {
+            localStorage.setItem('gestor-rutas-sitios', JSON.stringify(rutasSitios));
+            localStorage.setItem('gestor-rutas-base', JSON.stringify(rutasBaseConfig));
+            if (typeof ghScheduleSync === 'function') ghScheduleSync();
         }
 
         function rutasInitMapa() {
@@ -25646,6 +25725,7 @@ Edad 12 - Conceptual
                     rutasBaseConfig.destino = { nombre: 'Destino', ...res };
                 }
                 rutasBaseConfig.mismoDestino = esMismo;
+                _rutasGuardarSitiosLS();
                 rutasActualizarBaseUI();
                 await rutasActualizarMapa();
                 document.getElementById('rutas-origen-input').value = '';
@@ -25678,6 +25758,7 @@ Edad 12 - Conceptual
                 const res = await rutasGeocodificar(direccion);
                 if (!res) { rutasToast('No se encontró: "' + direccion + '"'); return; }
                 rutasSitios.push({ id: Date.now(), nombre, direccion: res.direccion, lat: res.lat, lng: res.lng, visitado: false, notas: '', orden: rutasSitios.length + 1 });
+                _rutasGuardarSitiosLS();
                 document.getElementById('rutas-nombre').value = '';
                 document.getElementById('rutas-direccion').value = '';
                 rutasRenderizarLista();
@@ -25704,6 +25785,7 @@ Edad 12 - Conceptual
             }
             rutaOptimizada.forEach((s, i) => { s.orden = i + 1; s.enRuta = true; });
             rutasSitios = rutaOptimizada;
+            _rutasGuardarSitiosLS();
             rutasRenderizarLista();
             await rutasActualizarMapa();
             rutasToast('✓ Ruta optimizada');
@@ -25794,6 +25876,7 @@ Edad 12 - Conceptual
                 s.visitado = !s.visitado;
                 if (s.visitado) rutasAgregarAlHistorial(s);
             }
+            _rutasGuardarSitiosLS();
             rutasRenderizarLista();
             rutasActualizarMapa();
         }
@@ -25802,6 +25885,7 @@ Edad 12 - Conceptual
             const s = rutasSitios.find(x => x.id === id);
             if (s) {
                 s.notas = texto;
+                _rutasGuardarSitiosLS();
                 if (s.visitado) {
                     const h = rutasHistorial.find(x => x.idSesion === id);
                     if (h) { h.notas = texto; _rutasGuardarHistorialLS(); rutasRenderizarHistorial(); }
@@ -25813,6 +25897,7 @@ Edad 12 - Conceptual
             if (!confirm('¿Eliminar esta parada?')) return;
             rutasSitios = rutasSitios.filter(s => s.id !== id);
             rutasSitios.forEach((s, i) => s.orden = i + 1);
+            _rutasGuardarSitiosLS();
             rutasRenderizarLista();
             await rutasActualizarMapa();
         }
