@@ -2275,7 +2275,7 @@
                             </div>
                         </div>
                         <!-- Mapa -->
-                        <div id="rutas-map" style="flex:1;"></div>
+                        <div id="rutas-map" style="flex:1;min-height:400px;"></div>
                         <!-- Panel historial -->
                         <div style="width:260px;min-width:260px;background:#f8f9fa;border-left:1px solid #e0e0e0;display:flex;flex-direction:column;overflow:hidden;">
                             <div style="padding:12px 14px 8px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
@@ -18091,11 +18091,22 @@
             if (!ghSyncEnabled) return;
             ghUpdateBadge('syncing');
             const data = ghCollectData();
-            const ok = await GH.save(data);
+            const TIMEOUT = '__timeout__';
+            let ok;
+            try {
+                const result = await Promise.race([
+                    GH.save(data),
+                    new Promise(resolve => setTimeout(() => resolve(TIMEOUT), 10000))
+                ]);
+                ok = result === TIMEOUT ? false : result;
+                if (result === TIMEOUT) showDbToast('⚠️ GitHub no respondió al guardar.');
+            } catch(e) {
+                ok = false;
+            }
             ghSyncPending = false;
             ghUpdateBadge(ok ? 'ok' : 'error');
             if (ok) showDbToast('☁️ Datos guardados en GitHub');
-            else    showDbToast('⚠️ Error al guardar en GitHub — tus datos están en local');
+            else if (ok !== false || !ok) showDbToast('⚠️ Error al guardar en GitHub — tus datos están en local');
         }
 
         /** Muestra modal para configurar el token de GitHub */
@@ -18147,17 +18158,23 @@
         async function ghActivate() {
             ghUpdateBadge('syncing');
 
-            // Timeout de 10s para no bloquear la app si GitHub no responde
+            // Timeout de 10s — GH.load() nunca rechaza (tiene try/catch interno)
+            // así que usamos una promesa que resuelve a 'TIMEOUT' tras 10s
+            const TIMEOUT = '__timeout__';
             let remote;
             try {
                 remote = await Promise.race([
                     GH.load(),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+                    new Promise(resolve => setTimeout(() => resolve(TIMEOUT), 10000))
                 ]);
             } catch(e) {
+                remote = null;
+            }
+
+            if (remote === TIMEOUT) {
                 ghUpdateBadge('ok');
                 ghSyncEnabled = true;
-                if (e.message === 'timeout') showDbToast('⚠️ GitHub no respondió. Usando datos locales.');
+                showDbToast('⚠️ GitHub no respondió. Usando datos locales.');
                 return;
             }
 
@@ -18178,7 +18195,7 @@
                     ghScheduleSync();
                     if (remote.ingContratos)   { ingContratos   = remote.ingContratos;   localStorage.setItem('ingContratos',   JSON.stringify(ingContratos)); }
                     if (remote.rutasHistorial) { rutasHistorial = remote.rutasHistorial; localStorage.setItem('gestor-rutas-historial', JSON.stringify(rutasHistorial)); rutasRenderizarHistorial(); }
-                    if (remote.rutasSitios && remote.rutasSitios.length > 0) { rutasSitios = remote.rutasSitios; localStorage.setItem('gestor-rutas-sitios', JSON.stringify(rutasSitios)); rutasRenderizarLista(); }
+                    if (remote.rutasSitios && remote.rutasSitios.length > 0) { rutasSitios = remote.rutasSitios; localStorage.setItem('gestor-rutas-sitios', JSON.stringify(rutasSitios)); if (typeof rutasRenderizarLista === 'function') rutasRenderizarLista(); }
                     if (remote.rutasBaseConfig) { rutasBaseConfig = remote.rutasBaseConfig; localStorage.setItem('gestor-rutas-base', JSON.stringify(rutasBaseConfig)); rutasActualizarBaseUI(); }
 
                     localStorage.setItem('ghLastSync', remoteSavedAt);
@@ -25659,6 +25676,8 @@ Edad 12 - Conceptual
                 attribution: '© OpenStreetMap contributors'
             }).addTo(rutasMap);
             setTimeout(() => rutasMap.invalidateSize(), 200);
+            setTimeout(() => rutasMap.invalidateSize(), 800);
+            setTimeout(() => rutasMap.invalidateSize(), 1500);
             rutasRenderizarHistorial();
 
             // key shortcuts
@@ -26008,6 +26027,7 @@ Edad 12 - Conceptual
             if (!confirm('¿Borrar las paradas actuales y recargar las paradas guardadas en el código?')) return;
             localStorage.removeItem('gestor-rutas-sitios');
             localStorage.removeItem('gestor-rutas-base');
+            localStorage.removeItem('ghLastSync'); // fuerza que al recargar se suba, no se descargue
             location.reload();
         }
 
