@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-05-28-v13-fix-coords';
+            const BUILD_VERSION = '2026-06-26-v14-fugl-meyer-completo';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -3096,8 +3096,297 @@
                             { text: '2-5 seg. más lento que lado no afectado', points: 1 },
                             { text: 'Al menos 6 seg. más lento que lado no afectado', points: 0 }
                         ]
+                    },
+
+                    // ══════════════════════════════════════════════════════
+                    // H. SENSACIÓN (máx. 12) — ojos vendados, comparar con lado no afectado
+                    // ══════════════════════════════════════════════════════
+                    {
+                        name: 'H.1 Tacto suave - Brazo/antebrazo',
+                        description: 'Sensación, ojos vendados, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Hipoestesia / disestesia', points: 1 },
+                            { text: 'Anestesia', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'H.2 Tacto suave - Superficie palmar de la mano',
+                        description: 'Sensación, ojos vendados, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Hipoestesia / disestesia', points: 1 },
+                            { text: 'Anestesia', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'H.3 Posición - Hombro',
+                        description: 'Sentido de posición, ojos vendados, pequeña alteración en la posición',
+                        options: [
+                            { text: 'Correcto ¾ o más, poca o ninguna diferencia', points: 2 },
+                            { text: 'Menos de ¾ correcto, diferencia considerable', points: 1 },
+                            { text: 'Ausencia (sin sensación de posición)', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'H.4 Posición - Codo',
+                        description: 'Sentido de posición, ojos vendados, pequeña alteración en la posición',
+                        options: [
+                            { text: 'Correcto ¾ o más, poca o ninguna diferencia', points: 2 },
+                            { text: 'Menos de ¾ correcto, diferencia considerable', points: 1 },
+                            { text: 'Ausencia (sin sensación de posición)', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'H.5 Posición - Muñeca',
+                        description: 'Sentido de posición, ojos vendados, pequeña alteración en la posición',
+                        options: [
+                            { text: 'Correcto ¾ o más, poca o ninguna diferencia', points: 2 },
+                            { text: 'Menos de ¾ correcto, diferencia considerable', points: 1 },
+                            { text: 'Ausencia (sin sensación de posición)', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'H.6 Posición - Pulgar (articulación IF)',
+                        description: 'Sentido de posición, ojos vendados, pequeña alteración en la posición',
+                        options: [
+                            { text: 'Correcto ¾ o más, poca o ninguna diferencia', points: 2 },
+                            { text: 'Menos de ¾ correcto, diferencia considerable', points: 1 },
+                            { text: 'Ausencia (sin sensación de posición)', points: 0 }
+                        ]
+                    },
+
+                    // ══════════════════════════════════════════════════════
+                    // I. MOVIMIENTO ARTICULAR PASIVO (máx. 24) — sección oficial "I"
+                    // (Prefijo de ítem "MAP." para no chocar con la sección I.
+                    //  de Actividad Refleja, ya usada en la parte A)
+                    // ══════════════════════════════════════════════════════
+                    {
+                        name: 'MAP.1 Hombro - Flexión (0°-180°)',
+                        description: 'Movimiento articular pasivo, posición sedente, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados (menos de 10° en hombro)', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.2 Hombro - Abducción (0°-90°)',
+                        description: 'Movimiento articular pasivo, posición sedente, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados (menos de 10° en hombro)', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.3 Hombro - Rotación externa',
+                        description: 'Movimiento articular pasivo, posición sedente, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.4 Hombro - Rotación interna',
+                        description: 'Movimiento articular pasivo, posición sedente, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.5 Codo - Flexión',
+                        description: 'Movimiento articular pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.6 Codo - Extensión',
+                        description: 'Movimiento articular pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.7 Antebrazo - Pronación',
+                        description: 'Movimiento articular pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.8 Antebrazo - Supinación',
+                        description: 'Movimiento articular pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.9 Muñeca - Flexión',
+                        description: 'Movimiento articular pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.10 Muñeca - Extensión',
+                        description: 'Movimiento articular pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.11 Dedos - Flexión',
+                        description: 'Movimiento articular pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'MAP.12 Dedos - Extensión',
+                        description: 'Movimiento articular pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'Normal', points: 2 },
+                            { text: 'Disminuido', points: 1 },
+                            { text: 'Solo unos pocos grados', points: 0 }
+                        ]
+                    },
+
+                    // ══════════════════════════════════════════════════════
+                    // J. DOLOR ARTICULAR (máx. 24) — durante los mismos movimientos pasivos de la sección I
+                    // ══════════════════════════════════════════════════════
+                    {
+                        name: 'J.1 Hombro - Flexión (0°-180°)',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.2 Hombro - Abducción (0°-90°)',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.3 Hombro - Rotación externa',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.4 Hombro - Rotación interna',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.5 Codo - Flexión',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.6 Codo - Extensión',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.7 Antebrazo - Pronación',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.8 Antebrazo - Supinación',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.9 Muñeca - Flexión',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.10 Muñeca - Extensión',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.11 Dedos - Flexión',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
+                    },
+                    {
+                        name: 'J.12 Dedos - Extensión',
+                        description: 'Dolor articular durante movimiento pasivo, comparar con lado no afectado',
+                        options: [
+                            { text: 'No dolor', points: 2 },
+                            { text: 'Algún dolor', points: 1 },
+                            { text: 'Dolor marcado durante o al final del movimiento', points: 0 }
+                        ]
                     }
                 ],
+                // Baremos de severidad: aplican solo al Total A-D (Función Motora, máx. 66),
+                // que es la puntuación "oficial" de referencia del FMA-ES.
+                // H (Sensación /12), I (Movimiento Articular Pasivo /24) y J (Dolor Articular /24)
+                // se informan como subtotales independientes (igual que en el protocolo original),
+                // sin baremo de severidad propio.
                 baremos: [
                     { min: 0, max: 22, interpretation: 'Deterioro motor severo' },
                     { min: 23, max: 43, interpretation: 'Deterioro motor moderado-severo' },
@@ -10789,6 +11078,58 @@
             return result;
         }
 
+        // ── FUGL-MEYER (FMA-ES): desglose por sección a partir de las respuestas ──
+        // Se recalcula siempre desde evaluation.answers (nunca desde "details" guardado)
+        // para que funcione igual con evaluaciones antiguas (solo función motora, 33 ítems)
+        // y con la escala completa actual (63 ítems: A-D + H + I + J).
+        function fuglMeyerBreakdown(answers) {
+            const sec = {
+                extremidadSuperior: 0,   // Sección A (subsecciones I-V)  máx 36
+                muneca: 0,               // Sección B                    máx 10
+                mano: 0,                 // Sección C                    máx 14
+                coordinacionVelocidad: 0,// Sección D                    máx 6
+                sensacion: 0,            // Sección H                    máx 12
+                movimientoArticularPasivo: 0, // Sección I (prefijo MAP.) máx 24
+                dolorArticular: 0        // Sección J                    máx 24
+            };
+            const contados = { A:0, B:0, C:0, D:0, H:0, MAP:0, J:0 };
+            (answers || []).forEach(a => {
+                if (!a || !a.itemName) return;
+                const n = a.itemName;
+                const p = a.points || 0;
+                if (n.startsWith('I.') || n.startsWith('II.') || n.startsWith('III.') || n.startsWith('IV.') || n.startsWith('V.')) {
+                    sec.extremidadSuperior += p; contados.A++;
+                } else if (n.startsWith('B.')) { sec.muneca += p; contados.B++; }
+                else if (n.startsWith('C.')) { sec.mano += p; contados.C++; }
+                else if (n.startsWith('D.')) { sec.coordinacionVelocidad += p; contados.D++; }
+                else if (n.startsWith('H.')) { sec.sensacion += p; contados.H++; }
+                else if (n.startsWith('MAP.')) { sec.movimientoArticularPasivo += p; contados.MAP++; }
+                else if (n.startsWith('J.')) { sec.dolorArticular += p; contados.J++; }
+            });
+            sec.totalFuncionMotora = sec.extremidadSuperior + sec.muneca + sec.mano + sec.coordinacionVelocidad;
+            sec._contados = contados; // nº de ítems respondidos por sección (útil para detectar secciones no evaluadas)
+            return sec;
+        }
+
+        // Agrupa las respuestas crudas de una evaluación de Fugl-Meyer por sección,
+        // conservando el orden de respuesta. Se usa tanto en pantalla (showEvaluationResults)
+        // como en la exportación a PDF (exportEvaluationPDF) para no duplicar la lógica.
+        function fuglMeyerGroupAnswers(answers) {
+            const grupos = { A: [], B: [], C: [], D: [], H: [], MAP: [], J: [] };
+            (answers || []).forEach(a => {
+                if (!a || !a.itemName) return;
+                const n = a.itemName;
+                if (n.startsWith('I.') || n.startsWith('II.') || n.startsWith('III.') || n.startsWith('IV.') || n.startsWith('V.')) grupos.A.push(a);
+                else if (n.startsWith('B.')) grupos.B.push(a);
+                else if (n.startsWith('C.')) grupos.C.push(a);
+                else if (n.startsWith('D.')) grupos.D.push(a);
+                else if (n.startsWith('H.')) grupos.H.push(a);
+                else if (n.startsWith('MAP.')) grupos.MAP.push(a);
+                else if (n.startsWith('J.')) grupos.J.push(a);
+            });
+            return grupos;
+        }
+
         function finishEvaluation() {
             // ── SP2 dedicated handler ──────────────────────────────────────
             if (currentEvaluation.scale.isSensoryProfile2) {
@@ -10814,6 +11155,49 @@
                 if (currentEvaluation.editingId) {
                     const idx = evaluations.findIndex(e=>e.id==currentEvaluation.editingId);
                     if (idx!==-1) { evaluations[idx]={...evaluations[idx],...evalData}; }
+                } else { evaluations.push(evalData); }
+                localStorage.setItem('evaluations', JSON.stringify(evaluations));
+                ghScheduleSync(); DB.save('evaluations', evalData);
+                showEvaluationResults(evalData, evaluations.findIndex(e=>e.id===evalData.id));
+                return;
+            }
+
+            // ── FUGL-MEYER (FMA-ES) dedicated handler ───────────────────────
+            // La puntuación "oficial" de referencia es el Total A-D (función motora, máx 66),
+            // que es la que se compara con los baremos de severidad. H, I (MAP) y J son
+            // subtotales independientes (igual que en el protocolo original) y NO se suman
+            // al total para no falsear la interpretación de severidad motora.
+            if (currentEvaluation.scale.id === 'fuglmeyer-preloaded') {
+                const fm = fuglMeyerBreakdown(evaluationAnswers);
+                const totalPoints = fm.totalFuncionMotora;
+                let interpretation = 'Sin interpretación definida';
+                const baremo = currentEvaluation.scale.baremos.find(b => totalPoints >= b.min && totalPoints <= b.max);
+                if (baremo) interpretation = baremo.interpretation;
+                const fmDetails = {
+                    extremidadSuperior: fm.extremidadSuperior,
+                    muneca: fm.muneca,
+                    mano: fm.mano,
+                    coordinacionVelocidad: fm.coordinacionVelocidad,
+                    totalFuncionMotora: fm.totalFuncionMotora,
+                    sensacion: fm.sensacion,
+                    movimientoArticularPasivo: fm.movimientoArticularPasivo,
+                    dolorArticular: fm.dolorArticular
+                };
+                const evalData = {
+                    id: currentEvaluation.editingId || Date.now(),
+                    patientId: currentEvaluation.patient.id,
+                    patientName: currentEvaluation.patient.name,
+                    scaleId: currentEvaluation.scale.id,
+                    scaleName: currentEvaluation.scale.name,
+                    answers: evaluationAnswers,
+                    totalPoints,
+                    interpretation,
+                    details: JSON.stringify(fmDetails),
+                    date: new Date().toISOString()
+                };
+                if (currentEvaluation.editingId) {
+                    const idx = evaluations.findIndex(e=>e.id==currentEvaluation.editingId);
+                    if (idx!==-1) { evalData.date = evaluations[idx].date; evaluations[idx] = {...evaluations[idx], ...evalData, editedAt: new Date().toISOString()}; }
                 } else { evaluations.push(evalData); }
                 localStorage.setItem('evaluations', JSON.stringify(evaluations));
                 ghScheduleSync(); DB.save('evaluations', evalData);
@@ -14259,50 +14643,10 @@
                 }
             }
             
-            // Fugl-Meyer
-            if (scaleName.includes('Fugl') || scaleName.includes('Meyer') || scaleName.includes('FMA')) {
-                // Inicializar todas las secciones
-                details.extremidadSuperior = 0;
-                details.muneca = 0;
-                details.mano = 0;
-                details.coordinacionVelocidad = 0;
-                
-                answers.forEach(answer => {
-                    const itemName = answer.itemName;
-                    const points = answer.points;
-                    
-                    // Extremidad superior: secciones I (reflejos), II, III, IV, V
-                    if (itemName.startsWith('I.') || itemName.startsWith('II.') || 
-                        itemName.startsWith('III.') || itemName.startsWith('IV.') || 
-                        itemName.startsWith('V.')) {
-                        details.extremidadSuperior += points;
-                    }
-                    // Muñeca: sección B
-                    else if (itemName.startsWith('B.')) {
-                        details.muneca += points;
-                    }
-                    // Mano: sección C
-                    else if (itemName.startsWith('C.')) {
-                        details.mano += points;
-                    }
-                    // Coordinación/Velocidad: sección D
-                    else if (itemName.startsWith('D.')) {
-                        details.coordinacionVelocidad += points;
-                    }
-                });
-                
-                // Calcular total función motora
-                details.totalFuncionMotora = details.extremidadSuperior + 
-                                             details.muneca + 
-                                             details.mano + 
-                                             details.coordinacionVelocidad;
-                
-                // Si hay más secciones (E, F, G para sensibilidad, etc.), agregarlas
-                // Por ahora dejamos sensación, movimiento articular y dolor en 0 ya que no están en esta escala básica
-                details.sensacion = 0;
-                details.movimientoArticularPasivo = 0;
-                details.dolorArticular = 0;
-            }
+            // Fugl-Meyer: el cálculo de subtotales ahora se hace en finishEvaluation()
+            // mediante el manejo dedicado para scale.id === 'fuglmeyer-preloaded'
+            // (ver fuglMeyerBreakdown / fuglMeyerGroupAnswers), que cubre las 7 secciones
+            // completas (A-D, H, I, J). Esta función genérica ya no se usa para esa escala.
             
             // Test de Praxias de Barcelona
             if (scaleName.includes('Praxias') || scaleName.includes('Barcelona')) {
@@ -14413,6 +14757,79 @@
                     document.getElementById('modal').classList.add('active');
                     return;
                 }
+            }
+
+            // ── FUGL-MEYER (FMA-ES) dedicated display ───────────────────────
+            if (evaluation.scaleId === 'fuglmeyer-preloaded') {
+                const fm = fuglMeyerBreakdown(evaluation.answers);
+                const grp = fuglMeyerGroupAnswers(evaluation.answers);
+
+                const subtotalRow = (label, score, max, contado, destacado) => {
+                    const sinEvaluar = contado === 0;
+                    const valor = sinEvaluar ? 'No evaluado' : `${score} / ${max}`;
+                    return `<tr style="${destacado ? 'background:#667eea;color:white;font-weight:700;' : ''}">
+                        <td style="padding:8px 12px;${destacado ? '' : 'border-bottom:1px solid #eee;'}">${label}</td>
+                        <td style="padding:8px 12px;text-align:right;${destacado ? '' : 'border-bottom:1px solid #eee;'}${sinEvaluar ? 'color:#999;font-style:italic;' : ''}">${valor}</td>
+                    </tr>`;
+                };
+
+                const itemRows = (items) => items.map(a => {
+                    const color = a.points === 2 ? '#27ae60' : a.points === 1 ? '#e8a000' : '#e74c3c';
+                    return `<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 4px;border-bottom:1px solid #f0f0f0;font-size:.88em;">
+                        <span style="flex:1;">${a.itemName}<br><span style="color:#888;font-size:.92em;">${a.selectedOption}</span></span>
+                        <span style="color:${color};font-weight:700;white-space:nowrap;">${a.points} pts</span>
+                    </div>`;
+                }).join('');
+
+                const sectionBlock = (titulo, items) => items.length === 0 ? '' : `
+                    <details style="margin-bottom:10px;background:#fafbff;border-radius:8px;padding:0 12px;" open>
+                        <summary style="cursor:pointer;padding:10px 0;font-weight:700;color:#667eea;">${titulo}</summary>
+                        <div style="padding-bottom:8px;">${itemRows(items)}</div>
+                    </details>`;
+
+                const fuglHtml = `
+                    <div style="background:linear-gradient(135deg,#667eea,#5b4fd6);color:white;padding:16px 20px;border-radius:10px;margin-bottom:16px;">
+                        <h3 style="margin:0 0 4px 0;">💪 FMA-ES — Fugl-Meyer Extremidad Superior</h3>
+                        <p style="margin:0;opacity:0.9;">${evaluation.patientName} · ${new Date(evaluation.date).toLocaleDateString('es-ES')}</p>
+                    </div>
+
+                    <div style="background:#eef1ff;border-radius:10px;padding:16px 20px;margin-bottom:18px;">
+                        <div style="font-size:1.3em;font-weight:700;color:#667eea;">Total A-D (Función motora): ${fm.totalFuncionMotora} / 66</div>
+                        <div style="color:#555;margin-top:4px;">${evaluation.interpretation}</div>
+                    </div>
+
+                    <h4 style="color:#333;margin-bottom:8px;">📊 Resumen por sección (como en el protocolo FMA-ES)</h4>
+                    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.93em;">
+                        <tbody>
+                            ${subtotalRow('A. Extremidad Superior', fm.extremidadSuperior, 36, fm._contados.A)}
+                            ${subtotalRow('B. Muñeca', fm.muneca, 10, fm._contados.B)}
+                            ${subtotalRow('C. Mano', fm.mano, 14, fm._contados.C)}
+                            ${subtotalRow('D. Coordinación/Velocidad', fm.coordinacionVelocidad, 6, fm._contados.D)}
+                            ${subtotalRow('TOTAL A-D (función motora)', fm.totalFuncionMotora, 66, fm._contados.A + fm._contados.B + fm._contados.C + fm._contados.D, true)}
+                            ${subtotalRow('H. Sensación', fm.sensacion, 12, fm._contados.H)}
+                            ${subtotalRow('I. Movimiento Articular Pasivo', fm.movimientoArticularPasivo, 24, fm._contados.MAP)}
+                            ${subtotalRow('J. Dolor Articular', fm.dolorArticular, 24, fm._contados.J)}
+                        </tbody>
+                    </table>
+
+                    <h4 style="color:#333;margin-bottom:10px;">📋 Detalle completo por ítem</h4>
+                    ${sectionBlock('A. Extremidad Superior (Actividad refleja, sinergias, movimiento voluntario) — máx. 36', grp.A)}
+                    ${sectionBlock('B. Muñeca — máx. 10', grp.B)}
+                    ${sectionBlock('C. Mano — máx. 14', grp.C)}
+                    ${sectionBlock('D. Coordinación/Velocidad — máx. 6', grp.D)}
+                    ${sectionBlock('H. Sensación — máx. 12', grp.H)}
+                    ${sectionBlock('I. Movimiento Articular Pasivo — máx. 24', grp.MAP)}
+                    ${sectionBlock('J. Dolor Articular — máx. 24', grp.J)}
+
+                    <div class="btn-group" style="margin-top:16px;">
+                        <button class="btn" onclick="exportEvaluationPDF(${evalIndex !== undefined ? evalIndex : 'evaluations.length - 1'})">📄 Exportar a PDF</button>
+                        <button class="btn btn-secondary" onclick="editEvaluationFromResults(${evaluation.id})">✏️ Editar respuestas</button>
+                        <button class="btn btn-secondary" onclick="renderEvaluationForm()">Nueva Evaluación</button>
+                    </div>`;
+
+                document.getElementById('evaluationProgress').innerHTML = fuglHtml;
+                document.getElementById('evaluationProgress').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
             }
 
             // Detectar si es escala ASIA para añadir información adicional
@@ -14853,6 +15270,7 @@
                                     ${ev.isDP3 ? `<button class="btn btn-small" style="background:#1a8a8a;color:white;" onclick="dp3AbrirCorrectorManual(${ev.id})" title="Corregir DP-3">🧮 Corregir</button>` : ''}
                                     ${ev.isSensoryProfile2 ? `<button class="btn btn-small" style="background:#764ba2;color:white;" onclick="showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver Perfil Sensorial">🧠 Ver Perfil</button>` : ''}
                                     ${(ev.isABASInfantil || ev.scaleId === 'abas-infantil-padres-preloaded') ? `<button class="btn btn-small" style="background:#e8a000;color:white;" onclick="closeModal();showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver informe ABAS Infantil">📊 Ver</button>` : ''}
+                                    ${ev.scaleId === 'fuglmeyer-preloaded' ? `<button class="btn btn-small" style="background:#667eea;color:white;" onclick="closeModal();showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver informe FMA-ES completo">💪 Ver</button>` : ''}
                                     <button class="btn btn-small" onclick="exportEvaluationPDF(${evaluations.indexOf(ev)})">📄 PDF</button>
                                     <button class="btn btn-small btn-secondary" onclick="editEvaluationFromHistory(${ev.id}, ${index})" title="Editar respuestas">✏️</button>
                                     <button class="btn btn-small btn-danger" onclick="deleteEvaluation(${ev.id}, ${index})" title="Eliminar esta evaluación">🗑️</button>
@@ -15165,6 +15583,128 @@
                     clinLines.forEach(l => { if (y>270){doc.addPage();y=20;} doc.text(l,margin,y); y+=6; });
                     y += 8;
 
+                } else if (evaluation.scaleId === 'fuglmeyer-preloaded') {
+                // ── FUGL-MEYER (FMA-ES): tabla completa por secciones, como en el protocolo original ──
+                const fm = fuglMeyerBreakdown(evaluation.answers);
+                const grp = fuglMeyerGroupAnswers(evaluation.answers);
+
+                function fmItemRow(a) {
+                    if (y > 270) { doc.addPage(); y = 20; }
+                    doc.setFontSize(9.5);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    const itemLines = doc.splitTextToSize(a.itemName, pageWidth - 2 * margin - 28);
+                    itemLines.forEach(l => { doc.text(l, margin + 2, y); y += 4.6; });
+                    doc.setFont(undefined, 'normal');
+                    doc.setTextColor(120, 120, 120);
+                    doc.setFontSize(8.5);
+                    const optLines = doc.splitTextToSize(a.selectedOption, pageWidth - 2 * margin - 35);
+                    optLines.forEach(l => { doc.text(l, margin + 6, y); y += 4.2; });
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(102, 126, 234);
+                    doc.text(`${a.points} pts`, pageWidth - margin - 2, y - optLines.length * 4.2, { align: 'right' });
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont(undefined, 'normal');
+                    y += 2;
+                }
+
+                function fmSectionHeader(titulo) {
+                    if (y > 268) { doc.addPage(); y = 20; }
+                    y += 2;
+                    doc.setFillColor(232, 233, 250);
+                    doc.rect(margin, y - 5, pageWidth - 2 * margin, 7, 'F');
+                    doc.setFontSize(10.5);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(70, 60, 160);
+                    doc.text(titulo, margin + 3, y);
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont(undefined, 'normal');
+                    y += 7;
+                }
+
+                function fmSubtotal(label, score, max, destacado) {
+                    if (y > 270) { doc.addPage(); y = 20; }
+                    if (destacado) {
+                        doc.setFillColor(102, 126, 234);
+                        doc.roundedRect(margin, y - 5, pageWidth - 2 * margin, 9, 2, 2, 'F');
+                        doc.setTextColor(255, 255, 255);
+                    } else {
+                        doc.setTextColor(60, 60, 60);
+                    }
+                    doc.setFontSize(destacado ? 11 : 10);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(label, margin + 3, y);
+                    doc.text(`${score} / ${max}`, pageWidth - margin - 3, y, { align: 'right' });
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFont(undefined, 'normal');
+                    y += destacado ? 11 : 7;
+                }
+
+                function fmSectionDetail(titulo, items) {
+                    fmSectionHeader(titulo);
+                    if (items.length === 0) {
+                        doc.setFontSize(9);
+                        doc.setFont(undefined, 'italic');
+                        doc.setTextColor(150, 150, 150);
+                        doc.text('No evaluado en esta sesión.', margin + 2, y);
+                        doc.setFont(undefined, 'normal');
+                        doc.setTextColor(0, 0, 0);
+                        y += 7;
+                    } else {
+                        items.forEach(fmItemRow);
+                    }
+                    y += 3;
+                }
+
+                // Resumen ejecutivo: puntuación total + interpretación
+                doc.setFillColor(240, 247, 255);
+                doc.roundedRect(margin, y, pageWidth - 2 * margin, 20, 3, 3, 'F');
+                doc.setFontSize(13);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(102, 126, 234);
+                doc.text(`Total A-D (Función motora): ${fm.totalFuncionMotora} / 66`, margin + 6, y + 9);
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(60, 60, 60);
+                doc.text(evaluation.interpretation, margin + 6, y + 16);
+                y += 28;
+
+                // Resumen por sección (igual que la tabla final del protocolo FMA-ES)
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(102, 126, 234);
+                doc.text('Resumen por Sección', margin, y); y += 7;
+                doc.setDrawColor(102, 126, 234);
+                doc.line(margin, y, pageWidth - margin, y); y += 6;
+
+                fmSubtotal('A. Extremidad Superior', fm.extremidadSuperior, 36);
+                fmSubtotal('B. Muñeca', fm.muneca, 10);
+                fmSubtotal('C. Mano', fm.mano, 14);
+                fmSubtotal('D. Coordinación/Velocidad', fm.coordinacionVelocidad, 6);
+                fmSubtotal('TOTAL A-D (función motora)', fm.totalFuncionMotora, 66, true);
+                fmSubtotal('H. Sensación', fm.sensacion, 12);
+                fmSubtotal('I. Movimiento Articular Pasivo', fm.movimientoArticularPasivo, 24);
+                fmSubtotal('J. Dolor Articular', fm.dolorArticular, 24);
+                y += 4;
+
+                // Detalle completo por ítem, sección por sección (tabla completa, como en el PDF)
+                doc.addPage(); y = 20;
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(102, 126, 234);
+                doc.text('Detalle Completo por Ítem', margin, y); y += 7;
+                doc.setDrawColor(102, 126, 234);
+                doc.line(margin, y, pageWidth - margin, y); y += 6;
+                doc.setTextColor(0, 0, 0);
+
+                fmSectionDetail('A. Extremidad Superior — máx. 36', grp.A);
+                fmSectionDetail('B. Muñeca — máx. 10', grp.B);
+                fmSectionDetail('C. Mano — máx. 14', grp.C);
+                fmSectionDetail('D. Coordinación/Velocidad — máx. 6', grp.D);
+                fmSectionDetail('H. Sensación — máx. 12', grp.H);
+                fmSectionDetail('I. Movimiento Articular Pasivo — máx. 24', grp.MAP);
+                fmSectionDetail('J. Dolor Articular — máx. 24', grp.J);
+
                 } else {
                 // ── Escala genérica ─────────────────────────────────────────
                 doc.setFillColor(240, 247, 255);
@@ -15319,6 +15859,11 @@
                             } catch(e) {
                                 addText(`Resultado: ${ev.interpretation}`, 1);
                             }
+                        } else if (ev.scaleId === 'fuglmeyer-preloaded') {
+                            const fm = fuglMeyerBreakdown(ev.answers);
+                            addText(`Total A-D (función motora): ${fm.totalFuncionMotora}/66 — ${ev.interpretation}`, 1, true);
+                            addText(`A. Extr.Superior: ${fm.extremidadSuperior}/36  |  B. Muñeca: ${fm.muneca}/10  |  C. Mano: ${fm.mano}/14  |  D. Coord./Vel.: ${fm.coordinacionVelocidad}/6`, 1);
+                            addText(`H. Sensación: ${fm._contados.H ? fm.sensacion+'/12' : 'no evaluado'}  |  I. Mov.Art.Pasivo: ${fm._contados.MAP ? fm.movimientoArticularPasivo+'/24' : 'no evaluado'}  |  J. Dolor Articular: ${fm._contados.J ? fm.dolorArticular+'/24' : 'no evaluado'}`, 1);
                         } else {
                             addText(`Puntuación: ${ev.totalPoints} — ${ev.interpretation}`, 1);
                             if (ev.answers && ev.answers.length > 0 && !ev.isABAS) {
