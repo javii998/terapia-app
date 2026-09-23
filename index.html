@@ -10919,7 +10919,7 @@
             }
 
             // Ruta dedicada para CAVIDACE
-            if (selectedScale.isCAVIDACE) {
+            if (selectedScale.isCAVIDACE || selectedScale.id === 'cavidace-preloaded') {
                 startCAVIDACEEvaluation(selectedPatient);
                 return;
             }
