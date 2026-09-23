@@ -3103,7 +3103,7 @@
                     // ══════════════════════════════════════════════════════
                     {
                         name: 'H.1 Tacto suave - Brazo/antebrazo',
-                        description: 'Sensación, ojos vendados, comparar con lado no afectado',
+                        description: 'Paciente con OJOS VENDADOS. Aplica un toque suave con algodón o dedo sobre brazo y antebrazo del lado afectado. Compara respuesta con el lado sano. 2=Sensación normal (igual que lado sano). 1=Hipoestesia (reducida) o disestesia (alterada/distorsionada). 0=Anestesia (no siente nada).',
                         options: [
                             { text: 'Normal', points: 2 },
                             { text: 'Hipoestesia / disestesia', points: 1 },
@@ -3112,7 +3112,7 @@
                     },
                     {
                         name: 'H.2 Tacto suave - Superficie palmar de la mano',
-                        description: 'Sensación, ojos vendados, comparar con lado no afectado',
+                        description: 'Paciente con OJOS VENDADOS. Aplica un toque suave en la palma de la mano afectada. Compara con el lado sano. 2=Sensación normal. 1=Hipoestesia o disestesia. 0=Anestesia.',
                         options: [
                             { text: 'Normal', points: 2 },
                             { text: 'Hipoestesia / disestesia', points: 1 },
@@ -3121,7 +3121,7 @@
                     },
                     {
                         name: 'H.3 Posición - Hombro',
-                        description: 'Sentido de posición, ojos vendados, pequeña alteración en la posición',
+                        description: 'Paciente con OJOS VENDADOS. Mueve pasivamente el hombro afectado a una posición y pide al paciente que replique el movimiento con el brazo sano, o que diga la dirección. Realiza 4 intentos con pequeñas variaciones. 2=3 o más correctos (≥¾), poca diferencia con lado sano. 1=Menos de 3 correctos, diferencia considerable. 0=Sin percepción de posición.',
                         options: [
                             { text: 'Correcto ¾ o más, poca o ninguna diferencia', points: 2 },
                             { text: 'Menos de ¾ correcto, diferencia considerable', points: 1 },
@@ -3130,7 +3130,7 @@
                     },
                     {
                         name: 'H.4 Posición - Codo',
-                        description: 'Sentido de posición, ojos vendados, pequeña alteración en la posición',
+                        description: 'Paciente con OJOS VENDADOS. Mueve pasivamente el codo afectado y pide que replique o verbalice la posición. 4 intentos. 2=3 o más correctos, poca diferencia. 1=Menos de 3 correctos. 0=Sin percepción.',
                         options: [
                             { text: 'Correcto ¾ o más, poca o ninguna diferencia', points: 2 },
                             { text: 'Menos de ¾ correcto, diferencia considerable', points: 1 },
@@ -3139,7 +3139,7 @@
                     },
                     {
                         name: 'H.5 Posición - Muñeca',
-                        description: 'Sentido de posición, ojos vendados, pequeña alteración en la posición',
+                        description: 'Paciente con OJOS VENDADOS. Mueve pasivamente la muñeca afectada (flexión/extensión) y pide que replique o verbalice. 4 intentos. 2=3 o más correctos. 1=Menos de 3 correctos. 0=Sin percepción.',
                         options: [
                             { text: 'Correcto ¾ o más, poca o ninguna diferencia', points: 2 },
                             { text: 'Menos de ¾ correcto, diferencia considerable', points: 1 },
@@ -3148,7 +3148,7 @@
                     },
                     {
                         name: 'H.6 Posición - Pulgar (articulación IF)',
-                        description: 'Sentido de posición, ojos vendados, pequeña alteración en la posición',
+                        description: 'Paciente con OJOS VENDADOS. Mueve pasivamente la articulación IF del pulgar afectado y pide que replique o verbalice. 4 intentos. 2=3 o más correctos. 1=Menos de 3 correctos. 0=Sin percepción.',
                         options: [
                             { text: 'Correcto ¾ o más, poca o ninguna diferencia', points: 2 },
                             { text: 'Menos de ¾ correcto, diferencia considerable', points: 1 },
@@ -9788,8 +9788,9 @@
             const hasFIMFAM = savedScales.some(s => s.id === 'fimfam-preloaded');
             const hasSCIM = savedScales.some(s => s.id === 'scimiii-preloaded');
             const hasABASInfantil = savedScales.some(s => s.id === 'abas-infantil-padres-preloaded');
-            
-            if (savedScales.length === 0 || hasOldAbas || !hasFIMFAM || !hasSCIM || !hasABASInfantil) {
+            const hasCAVIDACE = savedScales.some(s => s.id === 'cavidace-preloaded');
+
+            if (savedScales.length === 0 || hasOldAbas || !hasFIMFAM || !hasSCIM || !hasABASInfantil || !hasCAVIDACE) {
                 scales = PRELOADED_SCALES.map(s => ({...s, createdAt: new Date().toISOString()}));
                 localStorage.setItem('scales', JSON.stringify(scales));
                 document.getElementById('welcomeAlert').style.display = 'block';
