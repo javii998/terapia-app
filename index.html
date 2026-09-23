@@ -9788,7 +9788,7 @@
             const hasFIMFAM = savedScales.some(s => s.id === 'fimfam-preloaded');
             const hasSCIM = savedScales.some(s => s.id === 'scimiii-preloaded');
             const hasABASInfantil = savedScales.some(s => s.id === 'abas-infantil-padres-preloaded');
-            const hasCAVIDACE = savedScales.some(s => s.id === 'cavidace-preloaded');
+            const hasCAVIDACE = savedScales.some(s => s.id === 'cavidace-preloaded' && s.isCAVIDACE);
 
             if (savedScales.length === 0 || hasOldAbas || !hasFIMFAM || !hasSCIM || !hasABASInfantil || !hasCAVIDACE) {
                 scales = PRELOADED_SCALES.map(s => ({...s, createdAt: new Date().toISOString()}));
@@ -10841,7 +10841,7 @@
                     <label>Seleccionar Escala *</label>
                     <select id="evalScale">
                         <option value="">Seleccionar...</option>
-                        ${scales.map((s, i) => `<option value="${i}">${s.name} (${s.isABAS ? '210' : s.isABASInfantil ? '213' : s.isFIMFAM ? '36' : s.isSCIM ? '17' : s.isNHPT ? '4 tiempos' : s.items.length} ítems)</option>`).join('')}
+                        ${scales.map((s, i) => `<option value="${i}">${s.name} (${s.isABAS ? '210' : s.isABASInfantil ? '213' : s.isFIMFAM ? '36' : s.isSCIM ? '17' : s.isNHPT ? '4 tiempos' : s.isCAVIDACE ? '8 subescalas' : s.items.length} ítems)</option>`).join('')}
                     </select>
                 </div>
 
