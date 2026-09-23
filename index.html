@@ -4569,6 +4569,18 @@
                 items: [{ name: 'Motor SCIM-III interno', options: [] }],
                 baremos: [{ min: 0, max: 100, interpretation: 'Ver resultados detallados SCIM-III' }]
             },
+            // CAVIDACE — motor dedicado (entrada directa de PDs)
+            {
+                id: 'cavidace-preloaded',
+                name: 'CAVIDACE (Calidad de Vida en la Infancia con Discapacidad)',
+                description: 'Escala de calidad de vida para niños y jóvenes con discapacidad intelectual. 8 subescalas: Bienestar Emocional (BE), Relaciones Interpersonales (RI), Bienestar Material (BM), Desarrollo Personal (DP), Bienestar Físico (BF), Autodeterminación (AU), Inclusión Social (IS) y Derechos (DE). Cada subescala 0–24 pts. Proporciona Índice de Calidad de Vida y Perfil de Calidad de Vida.',
+                category: 'ninos',
+                type: 'calidadvida',
+                preloaded: true,
+                isCAVIDACE: true,
+                items: [{ name: 'Motor CAVIDACE interno', options: [] }],
+                baremos: [{ min: 0, max: 192, interpretation: 'Ver resultados detallados CAVIDACE' }]
+            },
             // ABAS-II Infantil-Padres (0-5 años) — motor dedicado
             {
     id: 'abas-infantil-padres-preloaded',
@@ -10905,6 +10917,12 @@
                 return;
             }
 
+            // Ruta dedicada para CAVIDACE
+            if (selectedScale.isCAVIDACE) {
+                startCAVIDACEEvaluation(selectedPatient);
+                return;
+            }
+
             // Ruta dedicada para ABAS-II Infantil-Padres (0-5 años)
             if (selectedScale.isABASInfantil) {
                 startAbasInfantilEvaluation(selectedPatient);
@@ -14689,6 +14707,49 @@
         }
 
         function showEvaluationResults(evaluation, evalIndex) {
+            // ── CAVIDACE dedicated display ────────────────────────────────
+            if (evaluation.isCAVIDACE || evaluation.scaleId === 'cavidace-preloaded') {
+                let det = {};
+                try { det = JSON.parse(evaluation.details || '{}'); } catch(e) {}
+                const { pds={}, pes={}, sumaPE=0, icv=0, percentil=0, interpretacion='' } = det;
+                const colorICV = icv >= 115 ? '#059669' : icv >= 85 ? '#d97706' : '#dc2626';
+                const barras = cavidaceSubescalas.map(s => {
+                    const pe = pes[s.key] ?? 0;
+                    const pct = Math.round((pe / 18) * 100);
+                    const color = pe >= 12 ? '#059669' : pe >= 8 ? '#d97706' : '#dc2626';
+                    return `<div style="margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;font-size:0.85em;margin-bottom:2px;">
+                            <span style="color:#374151;">${s.key} — ${s.name}</span>
+                            <span style="font-weight:700;color:${color};">PE ${pe} &nbsp;(PD ${pds[s.key] ?? '—'}/${s.max})</span>
+                        </div>
+                        <div style="background:#e5e7eb;border-radius:4px;height:8px;">
+                            <div style="background:${color};width:${pct}%;height:8px;border-radius:4px;"></div>
+                        </div>
+                    </div>`;
+                }).join('');
+                const html = `<div style="background:white;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);max-width:640px;margin:0 auto;">
+                    <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border-radius:10px;padding:16px 20px;margin-bottom:16px;">
+                        <h3 style="margin:0 0 4px;">CAVIDACE</h3>
+                        <p style="margin:0;opacity:0.85;font-size:0.88em;">${evaluation.patientName} &nbsp;·&nbsp; ${(evaluation.date||'').slice(0,10)}</p>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;flex-wrap:wrap;">
+                        <div style="text-align:center;padding:16px 24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:10px;color:white;min-width:130px;">
+                            <div style="font-size:2.2em;font-weight:800;">${icv}</div>
+                            <div style="font-size:0.8em;opacity:0.85;">Índice de CdV</div>
+                            <div style="font-size:0.85em;margin-top:4px;font-weight:600;">${interpretacion}</div>
+                        </div>
+                        <div style="flex:1;min-width:160px;">
+                            <div style="font-size:0.9em;color:#6b7280;">Percentil: <strong style="color:#374151;">${percentil}</strong></div>
+                            <div style="font-size:0.9em;color:#6b7280;margin-top:4px;">Suma PE: <strong style="color:#374151;">${sumaPE}</strong></div>
+                            <div style="font-size:0.9em;color:#6b7280;margin-top:4px;">Interpretación: <strong style="color:${colorICV};">${interpretacion}</strong></div>
+                        </div>
+                    </div>
+                    <h4 style="margin:0 0 12px;color:#374151;font-size:0.95em;">Perfil de Calidad de Vida</h4>
+                    ${barras}
+                </div>`;
+                showModal('Resultados CAVIDACE', html);
+                return;
+            }
             // ── SP2 dedicated display ─────────────────────────────────────
             if (evaluation.isSensoryProfile2 || evaluation.scaleId === 'sensory-profile-2-preloaded') {
                 let sp2data = null;
@@ -26144,6 +26205,267 @@ Edad 12 - Conceptual
             localStorage.setItem('evaluations', JSON.stringify(saved));
             evaluations.unshift(evaluacion); // sync in-memory array
             alert('✅ Evaluación ABAS-II Infantil-Padres guardada correctamente.');
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // CAVIDACE — Motor de entrada directa de PDs
+        // ═══════════════════════════════════════════════════════════════
+
+        const cavidaceSubescalas = [
+            { key: 'BE', name: 'Bienestar Emocional',         max: 24 },
+            { key: 'RI', name: 'Relaciones Interpersonales',   max: 24 },
+            { key: 'BM', name: 'Bienestar Material',           max: 24 },
+            { key: 'DP', name: 'Desarrollo Personal',          max: 24 },
+            { key: 'BF', name: 'Bienestar Físico',             max: 24 },
+            { key: 'AU', name: 'Autodeterminación',            max: 24 },
+            { key: 'IS', name: 'Inclusión Social',             max: 24 },
+            { key: 'DE', name: 'Derechos',                     max: 24 },
+        ];
+
+        // Tabla A: PD → Puntuación Estándar (PE) por subescala
+        // Formato: { PE: { BE:[pdMin,pdMax], RI:[pdMin,pdMax], ... } }
+        const cavidaceTablaA = {
+            18: { BE:[null,null], RI:[null,null], BM:[null,null], DP:[null,null], BF:[null,null], AU:[null,null], IS:[null,null], DE:[null,null] },
+            17: { BE:[null,null], RI:[null,null], BM:[null,null], DP:[23,24],     BF:[null,null], AU:[null,null], IS:[null,null], DE:[null,null] },
+            16: { BE:[24,24],     RI:[23,24],     BM:[null,null], DP:[21,22],     BF:[null,null], AU:[null,null], IS:[23,24],     DE:[null,null] },
+            15: { BE:[22,23],     RI:[21,22],     BM:[null,null], DP:[20,20],     BF:[24,24],     AU:[null,null], IS:[21,22],     DE:[null,null] },
+            14: { BE:[21,21],     RI:[20,20],     BM:[24,24],     DP:[18,19],     BF:[23,23],     AU:[23,24],     IS:[19,20],     DE:[24,24] },
+            13: { BE:[20,20],     RI:[18,19],     BM:[22,23],     DP:[17,17],     BF:[22,22],     AU:[20,22],     IS:[18,18],     DE:[23,23] },
+            12: { BE:[18,19],     RI:[16,17],     BM:[21,21],     DP:[15,16],     BF:[20,21],     AU:[18,19],     IS:[16,17],     DE:[21,22] },
+            11: { BE:[17,17],     RI:[14,15],     BM:[20,20],     DP:[14,14],     BF:[19,19],     AU:[16,17],     IS:[14,15],     DE:[20,20] },
+            10: { BE:[15,16],     RI:[13,13],     BM:[18,19],     DP:[12,13],     BF:[18,18],     AU:[14,15],     IS:[12,13],     DE:[19,19] },
+             9: { BE:[14,14],     RI:[11,12],     BM:[17,17],     DP:[11,11],     BF:[16,17],     AU:[12,13],     IS:[10,11],     DE:[18,18] },
+             8: { BE:[12,13],     RI:[9,10],      BM:[16,16],     DP:[9,10],      BF:[15,15],     AU:[10,11],     IS:[8,9],       DE:[16,17] },
+             7: { BE:[11,11],     RI:[7,8],       BM:[14,15],     DP:[7,8],       BF:[14,14],     AU:[7,9],       IS:[6,7],       DE:[15,15] },
+             6: { BE:[9,10],      RI:[6,6],       BM:[13,13],     DP:[6,6],       BF:[12,13],     AU:[5,6],       IS:[5,5],       DE:[14,14] },
+             5: { BE:[8,8],       RI:[4,5],       BM:[12,12],     DP:[4,5],       BF:[11,11],     AU:[3,4],       IS:[3,4],       DE:[13,13] },
+             4: { BE:[6,7],       RI:[2,3],       BM:[10,11],     DP:[3,3],       BF:[10,10],     AU:[1,2],       IS:[1,2],       DE:[11,12] },
+             3: { BE:[5,5],       RI:[1,1],       BM:[9,9],       DP:[1,2],       BF:[8,9],       AU:[0,0],       IS:[0,0],       DE:[10,10] },
+             2: { BE:[4,4],       RI:[0,0],       BM:[8,8],       DP:[0,0],       BF:[null,null], AU:[null,null], IS:[null,null], DE:[9,9] },
+             1: { BE:[2,3],       RI:[null,null], BM:[6,7],       DP:[null,null], BF:[null,null], AU:[null,null], IS:[null,null], DE:[8,8] },
+             0: { BE:[0,1],       RI:[null,null], BM:[0,5],       DP:[null,null], BF:[0,7],       AU:[null,null], IS:[null,null], DE:[0,7] },
+        };
+
+        // Tabla B: Puntuación Estándar Compuesta → Índice CdV + Percentil
+        const cavidaceTablaB = [
+            [120,135,99],[119,134,99],[118,133,99],[117,132,98],[116,132,98],
+            [115,131,98],[114,130,98],[113,129,97],[112,128,97],[111,127,97],
+            [110,126,96],[109,125,95],[108,125,95],[107,124,94],[106,123,94],
+            [105,122,93],[104,121,92],[103,120,91],[102,119,90],[101,118,89],
+            [100,118,88],[99,117,87],[98,116,85],[97,115,84],[96,114,83],
+            [95,113,81],[94,112,79],[93,111,78],[92,111,76],[91,110,74],
+            [90,109,72],[89,108,70],[88,107,68],[87,106,66],[86,105,64],
+            [85,104,61],[84,103,59],[83,103,57],[82,102,55],[81,101,52],
+            [80,100,50],[79,99,48],[78,98,45],[77,97,43],[76,96,41],
+            [75,96,38],[74,95,36],[73,94,34],[72,93,32],[71,92,30],
+            [70,91,28],[69,90,26],[68,89,24],[67,89,22],[66,88,21],
+            [65,87,19],[64,86,17],[63,85,16],[62,84,15],[61,83,13],
+            [60,82,12],[59,82,11],[58,81,10],[57,80,9],[56,79,8],
+            [55,78,7],[54,77,6],[53,76,6],[52,75,5],[51,75,4],
+            [50,74,4],[49,73,3],[48,72,3],[47,71,3],[46,70,2],
+            [45,69,2],[44,68,2],[43,68,2],[42,67,1],[41,66,1],
+            [40,65,1],[39,64,1],[38,63,1]
+        ];
+
+        // Tabla C: Perfil CdV — PE uniforme de todas las subescalas → Índice CdV + Percentil
+        const cavidaceTablaC = [
+            { pe_min:16, pe_max:20, icv_min:132, icv_max:999, pc:99 },
+            { pe_min:15, pe_max:15, icv_min:122, icv_max:131, pc:95 },
+            { pe_min:14, pe_max:14, icv_min:118, icv_max:121, pc:90 },
+            { pe_min:13, pe_max:13, icv_min:114, icv_max:117, pc:85 },
+            { pe_min:12, pe_max:12, icv_min:110, icv_max:111, pc:75 },
+            { pe_min:11, pe_max:11, icv_min:106, icv_max:107, pc:65 },
+            { pe_min:10, pe_max:10, icv_min:100, icv_max:101, pc:50 },
+            { pe_min:9,  pe_max:9,  icv_min:94,  icv_max:95,  pc:35 },
+            { pe_min:8,  pe_max:8,  icv_min:89,  icv_max:91,  pc:25 },
+            { pe_min:7,  pe_max:7,  icv_min:84,  icv_max:85,  pc:15 },
+            { pe_min:6,  pe_max:6,  icv_min:79,  icv_max:83,  pc:10 },
+            { pe_min:5,  pe_max:5,  icv_min:68,  icv_max:78,  pc:5  },
+            { pe_min:1,  pe_max:4,  icv_min:0,   icv_max:67,  pc:1  },
+        ];
+
+        let cavidacePatObj = null;
+
+        function pdToCAVIDACE_PE(key, pd) {
+            for (let pe = 18; pe >= 0; pe--) {
+                const rng = cavidaceTablaA[pe] ? cavidaceTablaA[pe][key] : null;
+                if (!rng || rng[0] === null) continue;
+                if (pd >= rng[0] && pd <= rng[1]) return pe;
+            }
+            return 0;
+        }
+
+        function cavidaceCompuesto_a_ICV(suma) {
+            for (const row of cavidaceTablaB) {
+                if (row[0] === suma) return { icv: row[1], percentil: row[2] };
+            }
+            // fuera de rango: buscar más cercano por debajo
+            let best = cavidaceTablaB[cavidaceTablaB.length - 1];
+            for (const row of cavidaceTablaB) {
+                if (row[0] <= suma) { best = row; break; }
+            }
+            return { icv: best[1], percentil: best[2] };
+        }
+
+        function interpretarICV(icv) {
+            if (icv >= 130) return 'Muy alta';
+            if (icv >= 115) return 'Alta';
+            if (icv >= 85)  return 'Media';
+            if (icv >= 70)  return 'Baja';
+            return 'Muy baja';
+        }
+
+        function startCAVIDACEEvaluation(patient) {
+            cavidacePatObj = patient;
+            const edad = patient.birthDate
+                ? Math.floor((Date.now() - new Date(patient.birthDate)) / (365.25*24*3600*1000))
+                : '?';
+
+            const filas = cavidaceSubescalas.map(s => `
+                <tr>
+                    <td style="padding:8px 12px;font-weight:600;color:#374151;">${s.key}</td>
+                    <td style="padding:8px 12px;color:#6b7280;font-size:0.92em;">${s.name}</td>
+                    <td style="padding:4px 8px;">
+                        <input type="number" id="cavidace_${s.key}" min="0" max="${s.max}"
+                            style="width:70px;padding:6px;border:1.5px solid #d1d5db;border-radius:6px;text-align:center;font-size:1em;"
+                            placeholder="0-${s.max}" oninput="cavidaceActualizarPE('${s.key}')">
+                    </td>
+                    <td style="padding:8px 12px;text-align:center;" id="cavidace_pe_${s.key}">—</td>
+                </tr>`).join('');
+
+            document.getElementById('evaluationContainer').innerHTML = `
+                <div style="max-width:680px;margin:0 auto;">
+                    <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border-radius:12px;padding:20px 24px;margin-bottom:20px;">
+                        <h2 style="margin:0 0 4px;font-size:1.3em;">CAVIDACE</h2>
+                        <p style="margin:0;opacity:0.85;font-size:0.9em;">Calidad de Vida en la Infancia con Discapacidad</p>
+                        <p style="margin:6px 0 0;font-size:0.88em;opacity:0.8;">${patient.name} &nbsp;·&nbsp; ${edad} años</p>
+                    </div>
+                    <p style="color:#6b7280;font-size:0.9em;margin-bottom:12px;">Introduce las Puntuaciones Directas (PD) de cada subescala tal como aparecen en el cuadernillo corregido.</p>
+                    <table style="width:100%;border-collapse:collapse;background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                        <thead>
+                            <tr style="background:#f3f4f6;">
+                                <th style="padding:10px 12px;text-align:left;font-size:0.85em;color:#6b7280;">Código</th>
+                                <th style="padding:10px 12px;text-align:left;font-size:0.85em;color:#6b7280;">Subescala</th>
+                                <th style="padding:10px 12px;text-align:center;font-size:0.85em;color:#6b7280;">PD</th>
+                                <th style="padding:10px 12px;text-align:center;font-size:0.85em;color:#6b7280;">PE</th>
+                            </tr>
+                        </thead>
+                        <tbody>${filas}</tbody>
+                    </table>
+                    <div id="cavidace_compuesto" style="margin-top:14px;padding:12px 16px;background:#f9fafb;border-radius:8px;font-size:0.9em;color:#6b7280;">
+                        Suma PE: <strong id="cavidace_suma_pe">—</strong>
+                    </div>
+                    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn" onclick="cavidaceCalcular()" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:10px 24px;border-radius:8px;border:none;font-size:1em;cursor:pointer;">Calcular Resultados</button>
+                        <button class="btn btn-secondary" onclick="showTab('evaluaciones')" style="padding:10px 20px;border-radius:8px;">Cancelar</button>
+                    </div>
+                    <div id="cavidace_resultados" style="margin-top:20px;"></div>
+                </div>`;
+        }
+
+        function cavidaceActualizarPE(key) {
+            const input = document.getElementById('cavidace_' + key);
+            const pd = parseInt(input.value);
+            const peEl = document.getElementById('cavidace_pe_' + key);
+            if (isNaN(pd) || pd < 0) { peEl.textContent = '—'; }
+            else {
+                const pe = pdToCAVIDACE_PE(key, Math.min(pd, 24));
+                peEl.textContent = pe;
+                peEl.style.fontWeight = '700';
+                peEl.style.color = pe >= 12 ? '#059669' : pe >= 8 ? '#d97706' : '#dc2626';
+            }
+            // actualizar suma PE
+            let suma = 0, completo = true;
+            for (const s of cavidaceSubescalas) {
+                const v = parseInt(document.getElementById('cavidace_' + s.key)?.value);
+                if (isNaN(v)) { completo = false; continue; }
+                suma += pdToCAVIDACE_PE(s.key, Math.min(v, 24));
+            }
+            document.getElementById('cavidace_suma_pe').textContent = completo ? suma : '—';
+        }
+
+        function cavidaceCalcular() {
+            const pds = {}, pes = {};
+            for (const s of cavidaceSubescalas) {
+                const v = parseInt(document.getElementById('cavidace_' + s.key)?.value);
+                if (isNaN(v) || v < 0 || v > s.max) {
+                    alert('Introduce todas las PD (0-' + s.max + ') antes de calcular.');
+                    return;
+                }
+                pds[s.key] = v;
+                pes[s.key] = pdToCAVIDACE_PE(s.key, v);
+            }
+            const sumaPE = Object.values(pes).reduce((a, b) => a + b, 0);
+            const { icv, percentil } = cavidaceCompuesto_a_ICV(sumaPE);
+            const interpretacion = interpretarICV(icv);
+
+            const colorICV = icv >= 115 ? '#059669' : icv >= 85 ? '#d97706' : '#dc2626';
+            const barras = cavidaceSubescalas.map(s => {
+                const pe = pes[s.key];
+                const pct = Math.round((pe / 18) * 100);
+                const color = pe >= 12 ? '#059669' : pe >= 8 ? '#d97706' : '#dc2626';
+                return `<div style="margin-bottom:8px;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.85em;margin-bottom:2px;">
+                        <span style="color:#374151;">${s.key} — ${s.name}</span>
+                        <span style="font-weight:700;color:${color};">PE ${pe} &nbsp;(PD ${pds[s.key]}/${s.max})</span>
+                    </div>
+                    <div style="background:#e5e7eb;border-radius:4px;height:8px;">
+                        <div style="background:${color};width:${pct}%;height:8px;border-radius:4px;transition:width .3s;"></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('cavidace_resultados').innerHTML = `
+                <div style="background:white;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                    <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;flex-wrap:wrap;">
+                        <div style="text-align:center;padding:16px 24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:10px;color:white;min-width:140px;">
+                            <div style="font-size:2.2em;font-weight:800;">${icv}</div>
+                            <div style="font-size:0.8em;opacity:0.85;">Índice de CdV</div>
+                            <div style="font-size:0.85em;margin-top:4px;font-weight:600;">${interpretacion}</div>
+                        </div>
+                        <div style="flex:1;min-width:180px;">
+                            <div style="font-size:0.9em;color:#6b7280;">Percentil: <strong style="color:#374151;">${percentil}</strong></div>
+                            <div style="font-size:0.9em;color:#6b7280;margin-top:4px;">Suma PE: <strong style="color:#374151;">${sumaPE}</strong></div>
+                            <div style="font-size:0.9em;color:#6b7280;margin-top:4px;">Interpretación: <strong style="color:${colorICV};">${interpretacion}</strong></div>
+                        </div>
+                    </div>
+                    <h4 style="margin:0 0 12px;color:#374151;font-size:0.95em;">Perfil de Calidad de Vida</h4>
+                    ${barras}
+                    <div style="margin-top:16px;text-align:right;">
+                        <button class="btn" onclick="cavidaceGuardar(${JSON.stringify(pds).replace(/"/g,'&quot;')},${JSON.stringify(pes).replace(/"/g,'&quot;')},${sumaPE},${icv},${percentil},'${interpretacion}')"
+                            style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:10px 24px;border-radius:8px;border:none;font-size:1em;cursor:pointer;">
+                            Guardar Evaluación
+                        </button>
+                    </div>
+                </div>`;
+        }
+
+        function cavidaceGuardar(pds, pes, sumaPE, icv, percentil, interpretacion) {
+            if (!cavidacePatObj) { alert('No hay paciente seleccionado.'); return; }
+            const answers = cavidaceSubescalas.map(s => ({
+                itemName: s.key + ' — ' + s.name,
+                points: pds[s.key],
+                selectedOption: 'PD: ' + pds[s.key] + '/' + s.max + ' · PE: ' + pes[s.key]
+            }));
+            const evalRec = {
+                id: String(Date.now()),
+                patientId: cavidacePatObj.id,
+                patientName: cavidacePatObj.name,
+                scaleId: 'cavidace-preloaded',
+                scaleName: 'CAVIDACE',
+                date: new Date().toISOString(),
+                answers,
+                totalPoints: sumaPE,
+                interpretation: 'ICV=' + icv + ' (pc' + percentil + ') — ' + interpretacion,
+                isCAVIDACE: true,
+                details: JSON.stringify({ pds, pes, sumaPE, icv, percentil, interpretacion })
+            };
+            const saved = JSON.parse(localStorage.getItem('evaluations') || '[]');
+            saved.unshift(evalRec);
+            localStorage.setItem('evaluations', JSON.stringify(saved));
+            evaluations.unshift(evalRec);
+            alert('Evaluacion CAVIDACE guardada correctamente.');
+            showTab('evaluaciones');
         }
 
         // ═══════════════════════════════════════════════════════════════
