@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-06-26-v14-fugl-meyer-completo';
+            const BUILD_VERSION = '2026-09-23-v15-sync-robusto';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -18703,12 +18703,37 @@
             setTimeout(ghActivate, 500);
         }
 
+        /**
+         * Fusiona dos arrays por ID preservando TODOS los elementos.
+         * Si un ID existe en ambos, gana el que tenga fecha más reciente.
+         * Nunca se pierde ningún elemento de ninguna fuente.
+         */
+        function ghMergeArray(local, remote) {
+            if (!remote || !remote.length) return local && local.length ? local : [];
+            if (!local  || !local.length)  return remote;
+            const map = new Map();
+            for (const item of remote) {
+                const key = String(item.id ?? JSON.stringify(item));
+                map.set(key, item);
+            }
+            for (const item of local) {
+                const key = String(item.id ?? JSON.stringify(item));
+                if (map.has(key)) {
+                    const remoteItem = map.get(key);
+                    const rd = remoteItem.editedAt || remoteItem.createdAt || remoteItem.date || '2000-01-01';
+                    const ld = item.editedAt       || item.createdAt       || item.date       || '2000-01-01';
+                    if (ld > rd) map.set(key, item); // local más reciente gana
+                } else {
+                    map.set(key, item); // solo en local → siempre se preserva
+                }
+            }
+            return Array.from(map.values());
+        }
+
         /** Inicializa la sincronización con GitHub al arrancar */
         async function ghActivate() {
             ghUpdateBadge('syncing');
 
-            // Timeout de 10s — GH.load() nunca rechaza (tiene try/catch interno)
-            // así que usamos una promesa que resuelve a 'TIMEOUT' tras 10s
             const TIMEOUT = '__timeout__';
             let remote;
             try {
@@ -18728,49 +18753,78 @@
             }
 
             if (remote) {
-                // Hay datos en GitHub — compararlos con los locales y tomar los más recientes
-                const localSavedAt  = localStorage.getItem('ghLastSync') || '2000-01-01';
-                const remoteSavedAt = remote.savedAt || '2000-01-01';
+                // ── FUSIÓN INTELIGENTE ────────────────────────────────────────
+                // Nunca se sobrescribe nada. Se fusiona elemento a elemento.
+                // Un paciente que existe en GitHub pero no en local se añade.
+                // Un paciente que existe en local pero no en GitHub se preserva.
+                // Si existe en ambos, gana el que tenga fecha más reciente.
 
-                if (remoteSavedAt > localSavedAt) {
-                    // GitHub tiene datos más nuevos → importar
-                    if (remote.patients)       { patients    = remote.patients;    localStorage.setItem('patients',    JSON.stringify(patients)); }
-                    if (remote.evaluations)    { evaluations = remote.evaluations; localStorage.setItem('evaluations', JSON.stringify(evaluations)); }
-                    ghScheduleSync();
-                    if (remote.goals)          { goals       = remote.goals;       localStorage.setItem('goals',       JSON.stringify(goals)); }
-                    if (remote.sessions)       { sessions    = remote.sessions;    localStorage.setItem('sessions',    JSON.stringify(sessions)); }
-                    if (remote.ingTarifas)     { ingTarifas  = remote.ingTarifas;  localStorage.setItem('ingTarifas',  JSON.stringify(ingTarifas)); }
-                    if (remote.ingProgramadas) { ingProgramadas = remote.ingProgramadas; localStorage.setItem('ingProgramadas', JSON.stringify(ingProgramadas)); }
-                    ghScheduleSync();
-                    if (remote.ingContratos)   { ingContratos   = remote.ingContratos;   localStorage.setItem('ingContratos',   JSON.stringify(ingContratos)); }
-                    if (remote.rutasHistorial) { rutasHistorial = remote.rutasHistorial; localStorage.setItem('gestor-rutas-historial', JSON.stringify(rutasHistorial)); rutasRenderizarHistorial(); }
-                    if (remote.rutasSitios && remote.rutasSitios.length >= 10) {
-                        rutasSitios = remote.rutasSitios;
-                        localStorage.setItem('gestor-rutas-sitios', JSON.stringify(rutasSitios));
-                        if (typeof rutasRenderizarLista === 'function') rutasRenderizarLista();
-                    }
-                    if (remote.rutasBaseConfig && remote.rutasBaseConfig.origen) { rutasBaseConfig = remote.rutasBaseConfig; localStorage.setItem('gestor-rutas-base', JSON.stringify(rutasBaseConfig)); rutasActualizarBaseUI(); }
+                const localPatients     = JSON.parse(localStorage.getItem('patients')              || '[]');
+                const localEvals        = JSON.parse(localStorage.getItem('evaluations')           || '[]');
+                const localGoals        = JSON.parse(localStorage.getItem('goals')                 || '[]');
+                const localSessions     = JSON.parse(localStorage.getItem('sessions')              || '[]');
+                const localTarifas      = JSON.parse(localStorage.getItem('ingTarifas')            || '[]');
+                const localProgramadas  = JSON.parse(localStorage.getItem('ingProgramadas')        || '[]');
+                const localContratos    = JSON.parse(localStorage.getItem('ingContratos')          || '[]');
 
-                    localStorage.setItem('ghLastSync', remoteSavedAt);
+                const prevCount = localPatients.length;
 
-                    // Re-renderizar con los datos nuevos
-                    renderDashboard();
-                    renderPatientList();
-                    populateGoalPatientSelect();
-                    populateSessionPatientSelect();
-                    if (typeof ingRender === 'function') ingRender();
+                patients       = ghMergeArray(localPatients,   remote.patients);
+                evaluations    = ghMergeArray(localEvals,      remote.evaluations);
+                goals          = ghMergeArray(localGoals,      remote.goals);
+                sessions       = ghMergeArray(localSessions,   remote.sessions);
+                ingTarifas     = ghMergeArray(localTarifas,    remote.ingTarifas);
+                ingProgramadas = ghMergeArray(localProgramadas,remote.ingProgramadas);
+                ingContratos   = ghMergeArray(localContratos,  remote.ingContratos);
 
-                    showDbToast(`☁️ Datos cargados desde GitHub (${patients.length} pacientes, ${sessions.length} sesiones)`);
-                } else {
-                    // Local es igual o más nuevo → subir a GitHub
-                    await ghPush();
+                localStorage.setItem('patients',       JSON.stringify(patients));
+                localStorage.setItem('evaluations',    JSON.stringify(evaluations));
+                localStorage.setItem('goals',          JSON.stringify(goals));
+                localStorage.setItem('sessions',       JSON.stringify(sessions));
+                localStorage.setItem('ingTarifas',     JSON.stringify(ingTarifas));
+                localStorage.setItem('ingProgramadas', JSON.stringify(ingProgramadas));
+                localStorage.setItem('ingContratos',   JSON.stringify(ingContratos));
+
+                // Rutas: fusionar historial, solo importar sitios si GitHub tiene más
+                if (remote.rutasHistorial && remote.rutasHistorial.length > 0) {
+                    const localHist = JSON.parse(localStorage.getItem('gestor-rutas-historial') || '[]');
+                    rutasHistorial = ghMergeArray(localHist, remote.rutasHistorial);
+                    localStorage.setItem('gestor-rutas-historial', JSON.stringify(rutasHistorial));
+                    rutasRenderizarHistorial();
                 }
+                if (remote.rutasSitios && remote.rutasSitios.length >= 10) {
+                    rutasSitios = remote.rutasSitios;
+                    localStorage.setItem('gestor-rutas-sitios', JSON.stringify(rutasSitios));
+                    if (typeof rutasRenderizarLista === 'function') rutasRenderizarLista();
+                }
+                if (remote.rutasBaseConfig && remote.rutasBaseConfig.origen) {
+                    rutasBaseConfig = remote.rutasBaseConfig;
+                    localStorage.setItem('gestor-rutas-base', JSON.stringify(rutasBaseConfig));
+                    rutasActualizarBaseUI();
+                }
+
+                renderDashboard();
+                renderPatientList();
+                populateGoalPatientSelect();
+                populateSessionPatientSelect();
+                if (typeof ingRender === 'function') ingRender();
+
+                const nuevos = patients.length - prevCount;
+                const msg = nuevos > 0
+                    ? `☁️ Fusión completada: +${nuevos} paciente(s) recuperado(s) de GitHub`
+                    : `☁️ Sincronizado con GitHub (${patients.length} pacientes)`;
+                showDbToast(msg);
+
+                // Subir la fusión para que todos los dispositivos la tengan
+                ghSyncEnabled = true;
+                await ghPush();
+
             } else {
                 // No hay datos en GitHub todavía → subir los locales
+                ghSyncEnabled = true;
                 await ghPush();
             }
 
-            ghSyncEnabled = true;
             ghUpdateBadge('ok');
         }
 
