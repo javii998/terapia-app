@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-10-29-v16-cavidace-items-form-movil';
+            const BUILD_VERSION = '2026-10-29-v17-cuestionario-link-gh';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -18670,6 +18670,7 @@
             }
 
             ghUpdateBadge('ok');
+            _checkGitHubFormResponses().catch(() => {});
         }
 
         function ghUpdateBadge(state) {
@@ -26296,34 +26297,103 @@ Edad 12 - Conceptual
             return (localStorage.getItem('toServerUrl') || 'http://localhost:7734').replace(/\/$/, '');
         }
 
-        function generarCuestionarioMovil() {
+        function _getScaleItems(scale) {
+            if (scale.isABASInfantil || scale.id === 'abas-infantil-padres-preloaded') {
+                if (typeof abasInfantilStructure === 'undefined') return null;
+                const items = [];
+                const domainNames = {
+                    comunicacion: 'Comunicación', autodireccion: 'Autodirección', ocio: 'Ocio',
+                    social: 'Social', salud_seguridad: 'Salud y Seguridad', autocuidado: 'Autocuidado',
+                    motora: 'Motora', habilidades_preacademicas: 'Preacadémicas',
+                    recursos_comunitarios: 'Recursos Comunitarios', vida_hogar: 'Vida en el Hogar'
+                };
+                for (const [areaKey, areaData] of Object.entries(abasInfantilStructure)) {
+                    const domainLabel = domainNames[areaKey] || areaKey;
+                    (areaData.items || []).forEach(itemText => {
+                        items.push({
+                            name: itemText, description: domainLabel,
+                            options: [
+                                { text: '0 — Nunca / No puede hacerlo', points: 0 },
+                                { text: '1 — Nunca, aunque podría', points: 1 },
+                                { text: '2 — A veces', points: 2 },
+                                { text: '3 — Siempre', points: 3 }
+                            ]
+                        });
+                    });
+                }
+                return items.length > 0 ? items : null;
+            }
+            if (scale.isABAS) return null;
+            if (scale.items && scale.items.length > 0 && scale.items[0].options && scale.items[0].options.length > 0) {
+                return scale.items;
+            }
+            return null;
+        }
+
+        async function generarCuestionarioMovil() {
             const patIdx = document.getElementById('evalPatient')?.value;
             const scaleIdx = document.getElementById('evalScale')?.value;
             if (!patIdx || !scaleIdx) { alert('Selecciona primero un paciente y una escala.'); return; }
             const patient = patients[parseInt(patIdx)];
             const scale = scales[parseInt(scaleIdx)];
-            if (!scale.items || scale.items.length === 0 || (scale.items.length === 1 && scale.items[0].options.length === 0)) {
-                alert('Esta escala no tiene ítems configurados para cuestionario. Usa escalas con preguntas tipo Likert (como CAVIDACE o ABAS-II).');
+
+            const items = _getScaleItems(scale);
+            if (!items || items.length === 0) {
+                alert('Esta escala no tiene ítems configurados para enviar a padres.\n\nEscalas compatibles: CAVIDACE, ABAS-II Infantil-Padres, y escalas personalizadas con preguntas.');
                 return;
             }
-            const serverUrl = _toServerUrl();
-            const html = _buildMobileFormHTML(patient, scale, serverUrl);
-            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `cuestionario_${scale.name.replace(/[^a-zA-Z0-9áéíóúñü ]/g,'_').substring(0,40)}_${patient.name.replace(/[^a-zA-Z0-9áéíóúñü ]/g,'_').substring(0,30)}.html`;
-            a.click();
-            URL.revokeObjectURL(a.href);
-            alert(`✅ Cuestionario generado.\n\nEnvía el archivo .html a los padres/cuidadores de ${patient.name} por email, WhatsApp o cualquier medio.\n\nCuando lo rellenen, las respuestas llegarán automáticamente al servidor (${serverUrl}) o descargarán un JSON que podrás importar desde el panel "Respuestas recibidas".`);
+
+            const ghToken = localStorage.getItem('gh_token') || localStorage.getItem('githubToken') || '';
+            if (!ghToken) {
+                alert('No hay token de GitHub configurado. Ve a 🔒 Seguridad → GitHub Sync y activa la sincronización primero.');
+                return;
+            }
+
+            const formId = 'form_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+            const config = { formId, patientId: patient.id, patientName: patient.name, scaleId: scale.id, scaleName: scale.name, createdAt: new Date().toISOString(), items };
+
+            showModal('Generando enlace…', '<div style="text-align:center;padding:30px;"><div style="border:4px solid #e0e7ff;border-top:4px solid #6366f1;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto 16px;"></div><p style="color:#6b7280;">Subiendo cuestionario a GitHub…</p></div>');
+
+            try {
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
+                const res = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-configs/' + formId + '.json', {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'token ' + ghToken, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: 'Nuevo cuestionario ' + formId, content, branch: 'main' })
+                });
+                if (!res.ok) { const err = await res.json(); throw new Error(err.message || res.status); }
+
+                const formUrl = 'https://javii998.github.io/terapia-app/form.html?id=' + formId + '&t=' + encodeURIComponent(ghToken);
+                const waUrl = 'https://wa.me/?text=' + encodeURIComponent('Hola, por favor rellena este cuestionario sobre ' + patient.name + ':\n' + formUrl);
+
+                const pendingForms = JSON.parse(localStorage.getItem('pendingForms') || '[]');
+                pendingForms.unshift({ formId, patientId: patient.id, patientName: patient.name, scaleId: scale.id, scaleName: scale.name, createdAt: config.createdAt, url: formUrl });
+                localStorage.setItem('pendingForms', JSON.stringify(pendingForms.slice(0, 50)));
+
+                document.getElementById('modalContent').innerHTML = `
+                    <div style="margin-bottom:16px;">
+                        <p style="color:#374151;margin-bottom:6px;font-size:0.9em;"><strong>Paciente:</strong> ${patient.name} &nbsp;·&nbsp; <strong>Escala:</strong> ${scale.name}</p>
+                        <p style="color:#6b7280;font-size:0.85em;">Envía este enlace al padre/cuidador para que lo rellene desde el móvil:</p>
+                    </div>
+                    <div style="background:#f0f0ff;border-radius:8px;padding:12px;margin-bottom:16px;word-break:break-all;font-size:0.8em;color:#6366f1;font-family:monospace;">${formUrl}</div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+                        <button onclick="navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(formUrl)}')).then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>this.textContent='📋 Copiar enlace',2000)})"
+                            style="flex:1;padding:10px;background:#6366f1;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.9em;">
+                            📋 Copiar enlace
+                        </button>
+                        <a href="${waUrl}" target="_blank"
+                            style="flex:1;padding:10px;background:#25D366;color:white;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.9em;text-decoration:none;display:flex;align-items:center;justify-content:center;">
+                            💬 Enviar por WhatsApp
+                        </a>
+                    </div>
+                    <p style="font-size:0.78em;color:#9ca3af;">Las respuestas llegarán automáticamente en el próximo sync de GitHub (☁️ GitHub sync).</p>`;
+            } catch(e) {
+                document.getElementById('modalContent').innerHTML = '<p style="color:#dc2626;">No se pudo subir a GitHub:<br><code>' + e.message + '</code></p><p style="margin-top:10px;color:#6b7280;font-size:0.9em;">Comprueba que tienes el sync de GitHub activado en 🔒 Seguridad.</p>';
+            }
         }
 
-        function _buildMobileFormHTML(patient, scale, serverUrl) {
-            const formId = 'form_' + Date.now() + '_' + Math.random().toString(36).substring(2,8);
-            const itemsJson = JSON.stringify(scale.items.map(it => ({
-                name: it.name,
-                description: it.description || '',
-                options: it.options.map(o => ({ text: o.text, points: o.points }))
-            })));
+        function _buildMobileFormHTML_DELETED() {
+            // removed — replaced by GitHub-link flow in generarCuestionarioMovil()
             return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -26439,7 +26509,7 @@ render();
                                 <span style="color:#6b7280;font-size:0.85em;"> · ${resp.scaleName || resp.scaleId}</span><br>
                                 <span style="font-size:0.78em;color:#9ca3af;">${resp._submitted_at ? new Date(resp._submitted_at).toLocaleString('es') : ''}</span>
                             </div>
-                            <button onclick='importFormResponse(${JSON.stringify(resp).replace(/'/g,"\\'")})'
+                            <button onclick='_importFormResponsePayload(${JSON.stringify(resp).replace(/'/g,"\\'")})'
                                 style="padding:6px 14px;border-radius:8px;background:#6366f1;color:white;border:none;font-size:0.85em;cursor:pointer;font-weight:600;">
                                 ✅ Importar
                             </button>
@@ -26451,7 +26521,7 @@ render();
                 });
         }
 
-        function importFormResponse(resp) {
+        function _importFormResponsePayload(resp) {
             const answers = (resp.answers || []).map(a => ({
                 itemName: a.itemName,
                 points: a.points || 0,
@@ -26496,10 +26566,6 @@ render();
             else { evaluations.unshift(evalRec); }
             localStorage.setItem('evaluations', JSON.stringify(evaluations));
             if (typeof DB !== 'undefined') DB.save('evaluations', evalRec);
-            // Marcar como aceptado en el servidor
-            const serverUrl = _toServerUrl();
-            fetch(serverUrl + '/form-responses/' + encodeURIComponent(resp._id) + '/accept', { method: 'POST' }).catch(() => {});
-            // Actualizar UI
             checkFormResponses();
             alert('✅ Evaluación importada correctamente para ' + (evalRec.patientName || 'paciente') + '.');
         }
@@ -26513,12 +26579,41 @@ render();
                 reader.onload = ev => {
                     try {
                         const resp = JSON.parse(ev.target.result);
-                        importFormResponse(resp);
+                        _importFormResponsePayload(resp);
                     } catch(err) { alert('Error al leer el archivo JSON: ' + err.message); }
                 };
                 reader.readAsText(file);
             };
             input.click();
+        }
+
+        async function _checkGitHubFormResponses() {
+            const ghToken = localStorage.getItem('gh_token') || localStorage.getItem('githubToken') || '';
+            if (!ghToken) return;
+            let dirItems;
+            try {
+                const r = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-responses', {
+                    headers: { 'Authorization': 'token ' + ghToken, 'Cache-Control': 'no-cache' }
+                });
+                if (!r.ok) return;
+                dirItems = await r.json();
+            } catch(e) { return; }
+            if (!Array.isArray(dirItems) || dirItems.length === 0) return;
+            const already = JSON.parse(localStorage.getItem('importedFormResponses') || '[]');
+            let imported = 0;
+            for (const item of dirItems) {
+                if (!item.name.endsWith('.json') || already.includes(item.name)) continue;
+                try {
+                    const r2 = await fetch(item.download_url, { headers: { 'Cache-Control': 'no-cache' } });
+                    if (!r2.ok) continue;
+                    const resp = await r2.json();
+                    _importFormResponsePayload(resp);
+                    already.push(item.name);
+                    imported++;
+                } catch(e) { /* skip file */ }
+            }
+            localStorage.setItem('importedFormResponses', JSON.stringify(already));
+            if (imported > 0) showDbToast('📥 ' + imported + ' respuesta(s) de cuestionario importada(s) automáticamente.');
         }
 
         // ═══════════════════════════════════════════════════════════════
