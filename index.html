@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-10-29-v17-cuestionario-link-gh';
+            const BUILD_VERSION = '2026-10-30-v17-cuestionario-todas-escalas';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -26297,7 +26297,7 @@ Edad 12 - Conceptual
             return (localStorage.getItem('toServerUrl') || 'http://localhost:7734').replace(/\/$/, '');
         }
 
-        function _getScaleItems(scale) {
+        function _getScaleItems(scale, patient) {
             const abasOpts = [
                 { text: '0 — Nunca / No puede hacerlo', points: 0 },
                 { text: '1 — Nunca, aunque podría', points: 1 },
@@ -26324,9 +26324,8 @@ Edad 12 - Conceptual
                 return items.length > 0 ? items : null;
             }
 
-            // ABAS-II Escolar/Adultos — extraer de abasQ (estructura interna)
+            // ABAS-II Escolar/Adultos
             if (scale.isABAS) {
-                // Intentar extraer desde las preguntas del motor ABAS
                 if (typeof abasParentQuestions !== 'undefined' && abasParentQuestions.length > 0) {
                     return abasParentQuestions.map(q => ({
                         name: q.text || q.name || q,
@@ -26334,8 +26333,126 @@ Edad 12 - Conceptual
                         options: abasOpts
                     }));
                 }
-                // Si no hay estructura de preguntas disponible, retornar null
                 return null;
+            }
+
+            // SCIM-III — Independencia funcional (lesión medular)
+            if (scale.isSCIM) {
+                if (typeof scimStructure === 'undefined') return null;
+                const items = [];
+                ['autocuidado', 'respiracionEsfinteres'].forEach(key => {
+                    const sec = scimStructure[key];
+                    if (!sec) return;
+                    (sec.items || []).forEach(item => {
+                        items.push({
+                            name: item.label,
+                            description: sec.title + (item.description ? ' — ' + item.description : ''),
+                            options: item.options.map(o => ({ text: o.text, points: o.value }))
+                        });
+                    });
+                });
+                const mob = scimStructure.movilidad;
+                if (mob && mob.sections) {
+                    Object.entries(mob.sections).forEach(([, sub]) => {
+                        (sub.items || []).forEach(item => {
+                            items.push({
+                                name: item.label,
+                                description: mob.title + ' — ' + (sub.label || '') + (item.description ? ': ' + item.description : ''),
+                                options: item.options.map(o => ({ text: o.text, points: o.value }))
+                            });
+                        });
+                    });
+                }
+                return items.length > 0 ? items : null;
+            }
+
+            // FIM-FAM — Medida de Independencia Funcional
+            if (scale.isFIMFAM) {
+                if (typeof fimfamStructure === 'undefined' || typeof fimfamScaleOptions === 'undefined') return null;
+                const opts = fimfamScaleOptions.map(o => ({ text: o.text, points: o.value }));
+                const items = [];
+                Object.entries(fimfamStructure).forEach(([, subscale]) => {
+                    Object.entries(subscale.sections || {}).forEach(([, section]) => {
+                        (section.items || []).forEach(item => {
+                            items.push({
+                                name: item.label,
+                                description: subscale.title + ' — ' + section.label,
+                                options: opts
+                            });
+                        });
+                    });
+                });
+                return items.length > 0 ? items : null;
+            }
+
+            // Knox — Escala de Juego Preescolar Revisada (observación del cuidador)
+            if (scale.isKnox) {
+                if (typeof KNOX_ITEMS === 'undefined' || typeof KNOX_DIMS === 'undefined' || typeof KNOX_FRANJAS === 'undefined') return null;
+                const knoxOpts = [
+                    { text: '(+) Sí, observo esta conducta', points: 2 },
+                    { text: '(−) No observo esta conducta aún', points: 0 },
+                    { text: '(NO) No he podido observarlo', points: 1 }
+                ];
+                let edadMeses = null;
+                if (patient && patient.birthDate) {
+                    const hoy = new Date(), nac = new Date(patient.birthDate);
+                    edadMeses = (hoy.getFullYear() - nac.getFullYear()) * 12 + (hoy.getMonth() - nac.getMonth());
+                    if (edadMeses < 0) edadMeses = 0;
+                }
+                let franjaId = null;
+                if (edadMeses !== null) {
+                    for (const f of KNOX_FRANJAS) {
+                        const [lo, hi] = f.id.split('-').map(Number);
+                        if (edadMeses >= lo && edadMeses <= hi) { franjaId = f.id; break; }
+                    }
+                    if (!franjaId) franjaId = KNOX_FRANJAS[KNOX_FRANJAS.length - 1].id;
+                }
+                const items = [];
+                KNOX_DIMS.forEach(dim => {
+                    dim.factores.forEach(fid => {
+                        const item = KNOX_ITEMS[fid];
+                        if (!item) return;
+                        const conducta = franjaId && item.conductas[franjaId]
+                            ? item.conductas[franjaId]
+                            : Object.values(item.conductas)[0] || item.label;
+                        items.push({ name: item.label + ': ' + conducta, description: dim.label, options: knoxOpts });
+                    });
+                });
+                return items.length > 0 ? items : null;
+            }
+
+            // Battelle — Screening del Inventario de Desarrollo
+            if (scale.isBattelle) {
+                if (typeof BATTELLE_ITEMS === 'undefined') return null;
+                const batOpts = [
+                    { text: '2 — Sí, siempre (conducta establecida)', points: 2 },
+                    { text: '1 — A veces (conducta emergente)', points: 1 },
+                    { text: '0 — No, todavía no lo hace', points: 0 }
+                ];
+                const areaNames = {
+                    ps: 'Personal/Social', a: 'Adaptativa',
+                    mg: 'Motora Gruesa', mf: 'Motora Fina',
+                    rec: 'Comunicación Receptiva', exp: 'Comunicación Expresiva', cg: 'Cognitiva'
+                };
+                let edadMeses = null;
+                if (patient && patient.birthDate) {
+                    const hoy = new Date(), nac = new Date(patient.birthDate);
+                    edadMeses = (hoy.getFullYear() - nac.getFullYear()) * 12 + (hoy.getMonth() - nac.getMonth());
+                    if (edadMeses < 0) edadMeses = 0;
+                }
+                let filtered = BATTELLE_ITEMS;
+                if (edadMeses !== null) {
+                    filtered = BATTELLE_ITEMS.filter(item => {
+                        const [lo, hi] = item.edad.split('-').map(Number);
+                        return lo <= edadMeses + 18 && hi >= edadMeses - 18;
+                    });
+                    if (filtered.length === 0) filtered = BATTELLE_ITEMS;
+                }
+                return filtered.map(item => ({
+                    name: item.conducta,
+                    description: (areaNames[item.area] || item.area) + ' (edad esperada: ' + item.edad + ' meses)',
+                    options: batOpts
+                }));
             }
 
             // Cualquier escala con items planos y opciones válidas
@@ -26356,9 +26473,9 @@ Edad 12 - Conceptual
             const patient = patients[parseInt(patIdx)];
             const scale = scales[parseInt(scaleIdx)];
 
-            const items = _getScaleItems(scale);
+            const items = _getScaleItems(scale, patient);
             if (!items || items.length === 0) {
-                alert('Esta escala no se puede enviar como cuestionario a padres.\n\nEscalas compatibles:\n• CAVIDACE (64 ítems)\n• ABAS-II Infantil-Padres (0-5 años)\n• Escalas personalizadas con preguntas tipo Likert\n\nEscalas como FIM-FAM, SCIM-III, BOT-2 o Fugl-Meyer requieren observación clínica directa y no pueden enviarse a padres.');
+                alert('Esta escala requiere evaluación clínica presencial y no puede enviarse como cuestionario.\n\nEscalas que requieren evaluación directa:\n• Beery VMI (copia de formas geométricas en papel)\n• NHPT (test cronometrado de clavijas)\n• BOT-2 (pruebas de rendimiento motor)\n• Pares Craneales (exploración neurológica)\n• Reflejos Primitivos (exploración neonatal)\n• Fugl-Meyer (valoración post-ictus)\n\nEscalas enviables: CAVIDACE, ABAS-II, Knox, Battelle, SCIM-III, FIM-FAM y escalas personalizadas tipo Likert.');
                 return;
             }
 
