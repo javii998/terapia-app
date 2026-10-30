@@ -26298,6 +26298,14 @@ Edad 12 - Conceptual
         }
 
         function _getScaleItems(scale) {
+            const abasOpts = [
+                { text: '0 — Nunca / No puede hacerlo', points: 0 },
+                { text: '1 — Nunca, aunque podría', points: 1 },
+                { text: '2 — A veces', points: 2 },
+                { text: '3 — Siempre', points: 3 }
+            ];
+
+            // ABAS-II Infantil-Padres (0-5 años)
             if (scale.isABASInfantil || scale.id === 'abas-infantil-padres-preloaded') {
                 if (typeof abasInfantilStructure === 'undefined') return null;
                 const items = [];
@@ -26310,22 +26318,33 @@ Edad 12 - Conceptual
                 for (const [areaKey, areaData] of Object.entries(abasInfantilStructure)) {
                     const domainLabel = domainNames[areaKey] || areaKey;
                     (areaData.items || []).forEach(itemText => {
-                        items.push({
-                            name: itemText, description: domainLabel,
-                            options: [
-                                { text: '0 — Nunca / No puede hacerlo', points: 0 },
-                                { text: '1 — Nunca, aunque podría', points: 1 },
-                                { text: '2 — A veces', points: 2 },
-                                { text: '3 — Siempre', points: 3 }
-                            ]
-                        });
+                        items.push({ name: itemText, description: domainLabel, options: abasOpts });
                     });
                 }
                 return items.length > 0 ? items : null;
             }
-            if (scale.isABAS) return null;
-            if (scale.items && scale.items.length > 0 && scale.items[0].options && scale.items[0].options.length > 0) {
-                return scale.items;
+
+            // ABAS-II Escolar/Adultos — extraer de abasQ (estructura interna)
+            if (scale.isABAS) {
+                // Intentar extraer desde las preguntas del motor ABAS
+                if (typeof abasParentQuestions !== 'undefined' && abasParentQuestions.length > 0) {
+                    return abasParentQuestions.map(q => ({
+                        name: q.text || q.name || q,
+                        description: q.area || q.domain || 'ABAS-II',
+                        options: abasOpts
+                    }));
+                }
+                // Si no hay estructura de preguntas disponible, retornar null
+                return null;
+            }
+
+            // Cualquier escala con items planos y opciones válidas
+            if (scale.items && scale.items.length > 0) {
+                const first = scale.items[0];
+                if (first && first.options && first.options.length > 0 &&
+                    typeof first.options[0].points !== 'undefined') {
+                    return scale.items;
+                }
             }
             return null;
         }
@@ -26339,7 +26358,7 @@ Edad 12 - Conceptual
 
             const items = _getScaleItems(scale);
             if (!items || items.length === 0) {
-                alert('Esta escala no tiene ítems configurados para enviar a padres.\n\nEscalas compatibles: CAVIDACE, ABAS-II Infantil-Padres, y escalas personalizadas con preguntas.');
+                alert('Esta escala no se puede enviar como cuestionario a padres.\n\nEscalas compatibles:\n• CAVIDACE (64 ítems)\n• ABAS-II Infantil-Padres (0-5 años)\n• Escalas personalizadas con preguntas tipo Likert\n\nEscalas como FIM-FAM, SCIM-III, BOT-2 o Fugl-Meyer requieren observación clínica directa y no pueden enviarse a padres.');
                 return;
             }
 
@@ -26352,7 +26371,8 @@ Edad 12 - Conceptual
             const formId = 'form_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
             const config = { formId, patientId: patient.id, patientName: patient.name, scaleId: scale.id, scaleName: scale.name, createdAt: new Date().toISOString(), items };
 
-            showModal('Generando enlace…', '<div style="text-align:center;padding:30px;"><div style="border:4px solid #e0e7ff;border-top:4px solid #6366f1;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto 16px;"></div><p style="color:#6b7280;">Subiendo cuestionario a GitHub…</p></div>');
+            document.getElementById('modalContent').innerHTML = '<div style="text-align:center;padding:30px;"><div style="border:4px solid #e0e7ff;border-top:4px solid #6366f1;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto 16px;"></div><p style="color:#6b7280;">Subiendo cuestionario a GitHub…</p></div>';
+            document.getElementById('modal').classList.add('active');
 
             try {
                 const content = btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2))));
