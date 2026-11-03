@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-03-v28-fix-gemini-fallback';
+            const BUILD_VERSION = '2026-11-03-v29-fix-cors-download-gemini25';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27207,11 +27207,10 @@ render();
             for (const item of newFiles) {
                 try {
                     // Usar API autenticada (funciona con repos públicos y privados)
-                    const r2 = await fetch(item.url, {
+                    const r2 = await fetch(item.url + '?t=' + Date.now(), {
                         headers: {
                             'Authorization': 'token ' + ghToken,
-                            'Accept': 'application/vnd.github.v3.raw',
-                            'Cache-Control': 'no-cache'
+                            'Accept': 'application/vnd.github.v3.raw'
                         }
                     });
                     if (!r2.ok) { errors++; continue; }
@@ -27261,11 +27260,9 @@ render();
                     <div class="form-group" style="margin-top:12px;">
                         <label style="font-weight:600;">Modelo</label>
                         <select id="geminiModelInput" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:0.95em;margin-top:6px;">
-                            <option value="gemini-2.0-flash">gemini-2.0-flash (recomendado)</option>
-                            <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
+                            <option value="gemini-2.5-flash">gemini-2.5-flash (recomendado)</option>
+                            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
                             <option value="gemini-2.0-flash-001">gemini-2.0-flash-001</option>
-                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                            <option value="gemini-1.5-flash">gemini-1.5-flash (antiguo)</option>
                         </select>
                         <small style="color:#9ca3af;font-size:0.8em;">Si falla, prueba otro modelo. Consulta los disponibles en aistudio.google.com</small>
                     </div>
@@ -27336,10 +27333,9 @@ render();
 
             // Modelos a intentar en orden
             const stored = localStorage.getItem('gemini_model') || '';
-            // Si hay un modelo guardado y no es uno deprecado, usarlo primero
-            const DEPRECATED = ['gemini-1.5-flash', 'gemini-1.5-pro'];
-            const preferredModel = (stored && !DEPRECATED.includes(stored)) ? stored : 'gemini-2.0-flash';
-            const modelCandidates = [preferredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-2.0-flash-001', 'gemini-1.5-flash-latest']
+            const DEPRECATED = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-latest'];
+            const preferredModel = (stored && !DEPRECATED.includes(stored)) ? stored : 'gemini-2.5-flash';
+            const modelCandidates = [preferredModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-001']
                 .filter((v,i,a) => a.indexOf(v) === i); // deduplica
             let lastError = null;
             let data = null;
