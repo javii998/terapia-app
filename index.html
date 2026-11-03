@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-03-v30-fix-descarga-base64';
+            const BUILD_VERSION = '2026-11-03-v31-gemini38flash';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27260,9 +27260,9 @@ render();
                     <div class="form-group" style="margin-top:12px;">
                         <label style="font-weight:600;">Modelo</label>
                         <select id="geminiModelInput" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:0.95em;margin-top:6px;">
-                            <option value="gemini-2.5-flash">gemini-2.5-flash (recomendado)</option>
+                            <option value="gemini-3.8-flash">gemini-3.8-flash (recomendado)</option>
+                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                             <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                            <option value="gemini-2.0-flash-001">gemini-2.0-flash-001</option>
                         </select>
                         <small style="color:#9ca3af;font-size:0.8em;">Si falla, prueba otro modelo. Consulta los disponibles en aistudio.google.com</small>
                     </div>
@@ -27333,9 +27333,9 @@ render();
 
             // Modelos a intentar en orden
             const stored = localStorage.getItem('gemini_model') || '';
-            const DEPRECATED = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-latest'];
-            const preferredModel = (stored && !DEPRECATED.includes(stored)) ? stored : 'gemini-2.5-flash';
-            const modelCandidates = [preferredModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-001']
+            const DEPRECATED = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-latest', 'gemini-2.0-flash-001', 'gemini-2.0-flash-exp'];
+            const preferredModel = (stored && !DEPRECATED.includes(stored)) ? stored : 'gemini-3.8-flash';
+            const modelCandidates = [preferredModel, 'gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash']
                 .filter((v,i,a) => a.indexOf(v) === i); // deduplica
             let lastError = null;
             let data = null;
@@ -27365,7 +27365,7 @@ render();
                     lastError = e;
                     const msg = (e.message || '').toLowerCase();
                     // Solo reintentar con otro modelo si el error es por modelo no disponible
-                    const isModelError = msg.includes('not found') || msg.includes('not supported') || msg.includes('deprecated') || msg.includes('unavailable') || msg.includes('no encontrado');
+                    const isModelError = msg.includes('not found') || msg.includes('not supported') || msg.includes('deprecated') || msg.includes('unavailable') || msg.includes('no longer available') || msg.includes('no encontrado') || msg.includes('longer available');
                     if (!isModelError) break;
                 }
             }
