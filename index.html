@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-03-v18-abas-todas-respuestas-gh';
+            const BUILD_VERSION = '2026-11-03-v19-informe-ia-gemini';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -15089,9 +15089,12 @@
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <h3 style="margin: 0;">Historial de Evaluaciones</h3>
-                    ${patientEvaluations.length > 0 ? 
-                        `<button class="btn btn-small" onclick="exportAllEvaluationsPDF(${index})">📄 Informe completo PDF</button>` 
-                        : ''}
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button class="btn btn-small" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;" onclick="generarInformeIA(${index})">🤖 Informe IA</button>
+                        ${patientEvaluations.length > 0 ?
+                            `<button class="btn btn-small" onclick="exportAllEvaluationsPDF(${index})">📄 Informe completo PDF</button>`
+                            : ''}
+                    </div>
                 </div>
                 
                 ${patientEvaluations.length === 0 ? 
@@ -26770,6 +26773,148 @@ render();
             if (imported > 0) {
                 showDbToast('📥 ' + imported + ' respuesta(s) de cuestionario importada(s) desde GitHub.');
                 renderEvaluationList && renderEvaluationList();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // INFORME IA — GEMINI
+        // ═══════════════════════════════════════════════════════════════
+
+        async function generarInformeIA(patientIndex) {
+            const patient = patients[patientIndex];
+            if (!patient) return;
+
+            const apiKey = localStorage.getItem('gemini_api_key') || '';
+            if (!apiKey) {
+                document.getElementById('modalContent').innerHTML = `
+                    <h3 style="margin-bottom:12px;">🤖 Configurar Gemini AI</h3>
+                    <p style="color:#6b7280;font-size:0.9em;margin-bottom:16px;">
+                        Para generar informes necesitas una API key gratuita de Google Gemini.<br>
+                        Consíguela en: <strong>aistudio.google.com</strong> → Get API key (es gratis, sin tarjeta).
+                    </p>
+                    <div class="form-group">
+                        <label style="font-weight:600;">API Key de Gemini</label>
+                        <input type="password" id="geminiKeyInput" placeholder="AIzaSy..."
+                            style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:1em;font-family:monospace;margin-top:6px;">
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:16px;">
+                        <button class="btn" style="flex:1;" onclick="
+                            const k=document.getElementById('geminiKeyInput').value.trim();
+                            if(!k){alert('Introduce una API key');return;}
+                            localStorage.setItem('gemini_api_key',k);
+                            closeModal();
+                            setTimeout(()=>generarInformeIA(${patientIndex}),300);
+                        ">💾 Guardar y continuar</button>
+                        <button class="btn btn-secondary" onclick="closeModal()" style="padding:12px 16px;">Cancelar</button>
+                    </div>`;
+                document.getElementById('modal').classList.add('active');
+                return;
+            }
+
+            const patientEvaluations = evaluations.filter(e => e.patientId === patient.id);
+            const patientSessions = sessions.filter(s => s.patientId === patient.id);
+            const age = patient.birthDate ? Math.floor((Date.now() - new Date(patient.birthDate)) / (365.25*24*3600*1000)) : null;
+
+            document.getElementById('modalContent').innerHTML = `
+                <div style="text-align:center;padding:40px 20px;">
+                    <div style="border:4px solid #e0e7ff;border-top:4px solid #6366f1;border-radius:50%;width:48px;height:48px;animation:spin 1s linear infinite;margin:0 auto 20px;"></div>
+                    <p style="color:#6b7280;font-size:0.95em;">Analizando el perfil clínico con Gemini AI…<br><small>Esto puede tardar unos segundos</small></p>
+                </div>`;
+            document.getElementById('modal').classList.add('active');
+
+            let prompt = `Eres un terapeuta ocupacional clínico especializado. Analiza el siguiente perfil completo de un paciente y genera un informe clínico estructurado en español.\n\nPERFIL DEL PACIENTE:\n- Nombre: ${patient.name}\n`;
+            if (age) prompt += `- Edad: ${age} años\n`;
+            if (patient.gender) prompt += `- Género: ${patient.gender}\n`;
+            if (patient.diagnosis) prompt += `- Diagnóstico: ${patient.diagnosis}\n`;
+            if (patient.notes) prompt += `- Notas clínicas / Observaciones: ${patient.notes}\n`;
+            prompt += '\n';
+
+            if (patientEvaluations.length > 0) {
+                prompt += `EVALUACIONES ESTANDARIZADAS REALIZADAS (${patientEvaluations.length}):\n`;
+                patientEvaluations.forEach(ev => {
+                    const fecha = new Date(ev.date).toLocaleDateString('es-ES');
+                    prompt += `\n▸ ${ev.scaleName} (${fecha})\n`;
+                    prompt += `  Resultado: ${ev.interpretation || 'Sin interpretación'}\n`;
+                    if (ev.answers && ev.answers.length > 0 && ev.answers.length <= 30) {
+                        const notable = ev.answers.filter(a => a.selectedOption && a.selectedOption !== 'Sin respuesta');
+                        if (notable.length > 0 && notable.length <= 20) {
+                            notable.forEach(a => { prompt += `    · ${a.itemName}: ${a.selectedOption}\n`; });
+                        }
+                    }
+                });
+                prompt += '\n';
+            }
+
+            if (patientSessions.length > 0) {
+                const sessionsWithContent = patientSessions.filter(s => (s.activities && s.activities.trim() && s.activities.trim() !== '.') || (s.notes && s.notes.trim()));
+                if (sessionsWithContent.length > 0) {
+                    prompt += `HISTORIAL DE SESIONES (${patientSessions.length} sesiones registradas):\n`;
+                    sessionsWithContent.slice(-10).forEach(s => {
+                        const fecha = new Date(s.date).toLocaleDateString('es-ES');
+                        if (s.activities && s.activities.trim() && s.activities.trim() !== '.') prompt += `  [${fecha}] Actividades: ${s.activities.trim()}\n`;
+                        if (s.notes && s.notes.trim()) prompt += `  [${fecha}] Notas: ${s.notes.trim()}\n`;
+                    });
+                    prompt += '\n';
+                }
+            }
+
+            prompt += `Genera un informe clínico de terapia ocupacional con estas secciones:\n\n## 1. RESUMEN DEL PERFIL FUNCIONAL\nDescribe brevemente el nivel funcional actual del paciente según los datos disponibles.\n\n## 2. ÁREAS PRIORITARIAS DE INTERVENCIÓN\nLista las 3-5 áreas que requieren mayor atención, justificando con los datos de las evaluaciones.\n\n## 3. OBJETIVOS TERAPÉUTICOS (SMART)\nPropón 4-6 objetivos concretos, medibles y alcanzables para este paciente.\n\n## 4. ACTIVIDADES Y EJERCICIOS RECOMENDADOS\nPara cada área prioritaria, sugiere actividades específicas de terapia ocupacional (actividades de la vida diaria, ejercicios funcionales, adaptaciones, etc.).\n\n## 5. PLANIFICACIÓN DE SESIONES SUGERIDA\nPropón una estructura de sesión tipo y una frecuencia recomendada.\n\nUsa lenguaje clínico profesional pero accesible. Sé específico y práctico.`;
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+                    })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error?.message || 'HTTP ' + res.status);
+                }
+                const data = await res.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sin respuesta';
+
+                const html = text
+                    .replace(/^## (.+)$/gm, '<h3 style="color:#6366f1;margin:20px 0 8px;font-size:1em;border-bottom:2px solid #e0e7ff;padding-bottom:4px;">$1</h3>')
+                    .replace(/^### (.+)$/gm, '<h4 style="color:#374151;margin:12px 0 4px;">$1</h4>')
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/^\- (.+)$/gm, '<li style="margin-bottom:4px;">$1</li>')
+                    .replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => `<ul style="padding-left:20px;margin:6px 0;">${m}</ul>`)
+                    .replace(/\n\n/g, '</p><p style="margin:6px 0;">')
+                    .replace(/\n/g, '<br>');
+
+                document.getElementById('modalContent').innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+                        <div>
+                            <h2 style="margin:0;color:#6366f1;">🤖 Informe IA — ${patient.name}</h2>
+                            <small style="color:#9ca3af;">Generado con Gemini AI · ${new Date().toLocaleString('es-ES')}</small>
+                        </div>
+                        <div style="display:flex;gap:8px;">
+                            <button onclick="
+                                const t=document.getElementById('aiReportText').innerText;
+                                navigator.clipboard.writeText(t).then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>this.textContent='📋 Copiar',2000)});
+                            " style="padding:6px 14px;border-radius:8px;border:1px solid #6366f1;background:white;color:#6366f1;cursor:pointer;font-size:0.85em;">📋 Copiar</button>
+                            <button onclick="
+                                localStorage.removeItem('gemini_api_key');
+                                alert('API key eliminada.');
+                                closeModal();
+                            " style="padding:6px 12px;border-radius:8px;border:1px solid #dc2626;background:white;color:#dc2626;cursor:pointer;font-size:0.8em;">🗑️ Cambiar key</button>
+                        </div>
+                    </div>
+                    <div id="aiReportText" style="font-size:0.92em;line-height:1.6;max-height:65vh;overflow-y:auto;padding-right:4px;">
+                        <p style="margin:6px 0;">${html}</p>
+                    </div>`;
+            } catch(e) {
+                document.getElementById('modalContent').innerHTML = `
+                    <h3 style="color:#dc2626;">Error al generar informe</h3>
+                    <p style="margin-top:8px;color:#6b7280;">${e.message}</p>
+                    <p style="margin-top:12px;font-size:0.85em;color:#9ca3af;">Comprueba que tu API key de Gemini es válida. Puedes obtener una gratis en aistudio.google.com</p>
+                    <div style="display:flex;gap:8px;margin-top:16px;">
+                        <button class="btn btn-small" onclick="localStorage.removeItem('gemini_api_key');closeModal();setTimeout(()=>generarInformeIA(${patientIndex}),300);">🔑 Cambiar API key</button>
+                        <button class="btn btn-small btn-secondary" onclick="closeModal()">Cerrar</button>
+                    </div>`;
             }
         }
 
