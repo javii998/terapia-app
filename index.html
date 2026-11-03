@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-03-v19-informe-ia-gemini';
+            const BUILD_VERSION = '2026-11-03-v20-fix-import-loop';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -26723,8 +26723,8 @@ render();
             else { evaluations.unshift(evalRec); }
             localStorage.setItem('evaluations', JSON.stringify(evaluations));
             if (typeof DB !== 'undefined') DB.save('evaluations', evalRec);
-            checkFormResponses();
-            if (!silent) alert('✅ Evaluación importada correctamente para ' + (evalRec.patientName || 'paciente') + '.');
+            if (silent) showDbToast('📥 Respuesta importada: ' + (evalRec.patientName || 'paciente') + ' — ' + (evalRec.scaleName || ''));
+            else alert('✅ Evaluación importada correctamente para ' + (evalRec.patientName || 'paciente') + '.');
         }
 
         function importFormResponseFromFile() {
@@ -26744,18 +26744,21 @@ render();
             input.click();
         }
 
+        let _ghCheckInProgress = false;
         async function _checkGitHubFormResponses() {
+            if (_ghCheckInProgress) return;
+            _ghCheckInProgress = true;
             const ghToken = localStorage.getItem('gh_token') || localStorage.getItem('githubToken') || '';
-            if (!ghToken) return;
+            if (!ghToken) { _ghCheckInProgress = false; return; }
             let dirItems;
             try {
                 const r = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-responses', {
                     headers: { 'Authorization': 'token ' + ghToken, 'Cache-Control': 'no-cache' }
                 });
-                if (!r.ok) return;
+                if (!r.ok) { _ghCheckInProgress = false; return; }
                 dirItems = await r.json();
-            } catch(e) { return; }
-            if (!Array.isArray(dirItems) || dirItems.length === 0) return;
+            } catch(e) { _ghCheckInProgress = false; return; }
+            if (!Array.isArray(dirItems) || dirItems.length === 0) { _ghCheckInProgress = false; return; }
             const already = JSON.parse(localStorage.getItem('importedFormResponses') || '[]');
             let imported = 0;
             for (const item of dirItems) {
@@ -26770,6 +26773,7 @@ render();
                 } catch(e) { /* skip file */ }
             }
             localStorage.setItem('importedFormResponses', JSON.stringify(already));
+            _ghCheckInProgress = false;
             if (imported > 0) {
                 showDbToast('📥 ' + imported + ' respuesta(s) de cuestionario importada(s) desde GitHub.');
                 renderEvaluationList && renderEvaluationList();
