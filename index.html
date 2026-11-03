@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-10-30-v17-cuestionario-todas-escalas';
+            const BUILD_VERSION = '2026-11-03-v18-abas-todas-respuestas-gh';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -1905,7 +1905,7 @@
                             <input type="text" id="toServerUrlInput" placeholder="http://localhost:7734"
                                 style="padding:4px 8px;border:1px solid #c7d2fe;border-radius:6px;font-size:0.82em;width:190px;"
                                 oninput="localStorage.setItem('toServerUrl',this.value)">
-                            <button onclick="checkFormResponses()" style="padding:4px 10px;border-radius:6px;border:1px solid #6366f1;background:#6366f1;color:white;font-size:0.82em;cursor:pointer;">🔄 Actualizar</button>
+                            <button id="ghCheckBtn" onclick="checkFormResponses()" style="padding:4px 10px;border-radius:6px;border:1px solid #6366f1;background:#6366f1;color:white;font-size:0.82em;cursor:pointer;">☁️ Comprobar GitHub</button>
                         </div>
                     </div>
                     <div id="formResponsesList"><em style="color:#9ca3af;font-size:0.9em;">Comprobando respuestas pendientes…</em></div>
@@ -26324,16 +26324,22 @@ Edad 12 - Conceptual
                 return items.length > 0 ? items : null;
             }
 
-            // ABAS-II Escolar/Adultos
+            // ABAS-II Escolar/Adultos — usa abasStructure (siempre disponible)
             if (scale.isABAS) {
-                if (typeof abasParentQuestions !== 'undefined' && abasParentQuestions.length > 0) {
-                    return abasParentQuestions.map(q => ({
-                        name: q.text || q.name || q,
-                        description: q.area || q.domain || 'ABAS-II',
-                        options: abasOpts
-                    }));
+                if (typeof abasStructure === 'undefined') return null;
+                const abasEscolarOpts = [
+                    { text: '3 — Siempre cuando es necesario', points: 3 },
+                    { text: '2 — A veces cuando es necesario', points: 2 },
+                    { text: '1 — Nunca cuando es necesario', points: 1 },
+                    { text: '0 — No es capaz / No realiza la conducta', points: 0 }
+                ];
+                const items = [];
+                for (const [, area] of Object.entries(abasStructure)) {
+                    (area.questions || []).forEach(q => {
+                        items.push({ name: q, description: area.name, options: abasEscolarOpts });
+                    });
                 }
-                return null;
+                return items.length > 0 ? items : null;
             }
 
             // SCIM-III — Independencia funcional (lesión medular)
@@ -26628,17 +26634,31 @@ render();
             const serverUrl = _toServerUrl();
             const input = document.getElementById('toServerUrlInput');
             if (input) input.value = serverUrl;
+
+            // Siempre comprobar GitHub (mecanismo principal de entrega de respuestas)
+            const ghBtn = document.getElementById('ghCheckBtn');
+            if (ghBtn) { ghBtn.textContent = '⏳ Comprobando…'; ghBtn.disabled = true; }
+            _checkGitHubFormResponses().catch(() => {}).finally(() => {
+                if (ghBtn) { ghBtn.textContent = '☁️ Comprobar GitHub'; ghBtn.disabled = false; }
+            });
+
+            // Mostrar panel con formularios pendientes (enviados pero sin respuesta aún)
+            const pendingForms = JSON.parse(localStorage.getItem('pendingForms') || '[]');
+            const panel = document.getElementById('formResponsesPanel');
+            const list = document.getElementById('formResponsesList');
+
+            if (pendingForms.length > 0 && panel) {
+                panel.style.display = 'block';
+            }
+
+            // Comprobar también el servidor Flask local (opcional)
             fetch(serverUrl + '/form-responses', { signal: AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined })
                 .then(r => r.json())
                 .then(data => {
-                    const panel = document.getElementById('formResponsesPanel');
-                    const list = document.getElementById('formResponsesList');
                     if (!panel || !list) return;
-                    if (!data || data.length === 0) {
-                        panel.style.display = 'none';
-                        return;
-                    }
+                    if (!data || data.length === 0) return; // GitHub check ya cubre esto
                     panel.style.display = 'block';
+                    const existing = list.innerHTML;
                     list.innerHTML = data.map(resp => `
                         <div style="background:white;border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
                             <div>
@@ -26650,15 +26670,12 @@ render();
                                 style="padding:6px 14px;border-radius:8px;background:#6366f1;color:white;border:none;font-size:0.85em;cursor:pointer;font-weight:600;">
                                 ✅ Importar
                             </button>
-                        </div>`).join('');
+                        </div>`).join('') + existing;
                 })
-                .catch(() => {
-                    const panel = document.getElementById('formResponsesPanel');
-                    if (panel) panel.style.display = 'none';
-                });
+                .catch(() => { /* servidor local no disponible, GitHub ya se está comprobando */ });
         }
 
-        function _importFormResponsePayload(resp) {
+        function _importFormResponsePayload(resp, silent) {
             const answers = (resp.answers || []).map(a => ({
                 itemName: a.itemName,
                 points: a.points || 0,
@@ -26704,7 +26721,7 @@ render();
             localStorage.setItem('evaluations', JSON.stringify(evaluations));
             if (typeof DB !== 'undefined') DB.save('evaluations', evalRec);
             checkFormResponses();
-            alert('✅ Evaluación importada correctamente para ' + (evalRec.patientName || 'paciente') + '.');
+            if (!silent) alert('✅ Evaluación importada correctamente para ' + (evalRec.patientName || 'paciente') + '.');
         }
 
         function importFormResponseFromFile() {
@@ -26744,13 +26761,16 @@ render();
                     const r2 = await fetch(item.download_url, { headers: { 'Cache-Control': 'no-cache' } });
                     if (!r2.ok) continue;
                     const resp = await r2.json();
-                    _importFormResponsePayload(resp);
+                    _importFormResponsePayload(resp, true); // silencioso en batch
                     already.push(item.name);
                     imported++;
                 } catch(e) { /* skip file */ }
             }
             localStorage.setItem('importedFormResponses', JSON.stringify(already));
-            if (imported > 0) showDbToast('📥 ' + imported + ' respuesta(s) de cuestionario importada(s) automáticamente.');
+            if (imported > 0) {
+                showDbToast('📥 ' + imported + ' respuesta(s) de cuestionario importada(s) desde GitHub.');
+                renderEvaluationList && renderEvaluationList();
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
