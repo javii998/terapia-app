@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-03-v26-diagnostico-github-forms';
+            const BUILD_VERSION = '2026-11-03-v27-fix-cors-github-api';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27097,8 +27097,8 @@ render();
 
             // Listar form-configs
             try {
-                const rCfg = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-configs', {
-                    headers: { 'Authorization': 'token ' + ghToken, 'Cache-Control': 'no-cache' }
+                const rCfg = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-configs?t=' + Date.now(), {
+                    headers: { 'Authorization': 'token ' + ghToken }
                 });
                 if (rCfg.status === 404) {
                     lines += `<p style="color:#f39c12">⚠️ Carpeta <b>form-configs/</b> no existe — aún no se ha generado ningún formulario.</p>`;
@@ -27110,8 +27110,8 @@ render();
 
             // Listar form-responses
             try {
-                const rResp = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-responses', {
-                    headers: { 'Authorization': 'token ' + ghToken, 'Cache-Control': 'no-cache' }
+                const rResp = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-responses?t=' + Date.now(), {
+                    headers: { 'Authorization': 'token ' + ghToken }
                 });
                 if (rResp.status === 404) {
                     lines += `<div style="background:#fff3cd;border-radius:8px;padding:12px;margin:10px 0;font-size:.88em;">
@@ -27170,8 +27170,8 @@ render();
 
             let dirItems;
             try {
-                const r = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-responses', {
-                    headers: { 'Authorization': 'token ' + ghToken, 'Cache-Control': 'no-cache' }
+                const r = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-responses?t=' + Date.now(), {
+                    headers: { 'Authorization': 'token ' + ghToken }
                 });
                 if (!r.ok) {
                     _ghCheckInProgress = false;
