@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-03-v20-fix-import-loop';
+            const BUILD_VERSION = '2026-11-03-v26-diagnostico-github-forms';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -1906,12 +1906,22 @@
                                 style="padding:4px 8px;border:1px solid #c7d2fe;border-radius:6px;font-size:0.82em;width:190px;"
                                 oninput="localStorage.setItem('toServerUrl',this.value)">
                             <button id="ghCheckBtn" onclick="checkFormResponses()" style="padding:4px 10px;border-radius:6px;border:1px solid #6366f1;background:#6366f1;color:white;font-size:0.82em;cursor:pointer;">☁️ Comprobar GitHub</button>
+                            <button onclick="if(confirm('¿Borrar el historial de importaciones para que se vuelvan a importar todos los archivos de GitHub?')){localStorage.removeItem('importedFormResponses');checkFormResponses();}" style="padding:4px 10px;border-radius:6px;border:1px solid #dc2626;background:white;color:#dc2626;font-size:0.82em;cursor:pointer;" title="Fuerza reimportar todos los archivos aunque ya se hayan importado antes">🔄 Reimportar todo</button>
+                            <button onclick="diagnosticoGitHub()" style="padding:4px 10px;border-radius:6px;border:1px solid #9ca3af;background:white;color:#374151;font-size:0.82em;cursor:pointer;" title="Ver estado detallado">🔍 Diagnóstico</button>
                         </div>
                     </div>
                     <div id="formResponsesList"><em style="color:#9ca3af;font-size:0.9em;">Comprobando respuestas pendientes…</em></div>
                     <div style="margin-top:10px;">
                         <button onclick="importFormResponseFromFile()" style="padding:5px 12px;border-radius:6px;border:1px solid #6366f1;background:white;color:#6366f1;font-size:0.82em;cursor:pointer;">📂 Importar respuesta desde archivo JSON</button>
                     </div>
+                </div>
+                <!-- Vista centralizada de evaluaciones recibidas por móvil -->
+                <div id="mobileEvalsPanel" style="margin-bottom:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <h3 style="margin:0;color:#374151;font-size:1em;">📱 Evaluaciones recibidas por cuestionario móvil</h3>
+                        <button onclick="renderMobileEvalsList()" style="padding:3px 8px;border-radius:6px;border:1px solid #9ca3af;background:white;color:#6b7280;font-size:0.8em;cursor:pointer;">↺ Refrescar</button>
+                    </div>
+                    <div id="mobileEvalsList"></div>
                 </div>
                 <h2>Nueva Evaluación</h2>
                 <div id="evaluacionContent"></div>
@@ -2613,6 +2623,15 @@
     </div>
 
     <script>
+        // Opciones compartidas Perfil Sensorial Adolescentes y Adultos (1-5 Likert)
+        const _sp2aaOpts = [
+            { text: '1 — Casi Nunca (~5% del tiempo)', points: 1 },
+            { text: '2 — Raramente (~25% del tiempo)', points: 2 },
+            { text: '3 — A Veces (~50% del tiempo)', points: 3 },
+            { text: '4 — Frecuentemente (~75% del tiempo)', points: 4 },
+            { text: '5 — Casi Siempre (~95% del tiempo)', points: 5 }
+        ];
+
         // ===== ESCALAS PRE-CARGADAS =====
         const PRELOADED_SCALES = [
             {
@@ -5704,8 +5723,87 @@
                 isReflejosPrimitivos: true,
                 items: [],
                 baremos: []
+            },
+            // ── Perfil Sensorial Adolescentes y Adultos (Brown & Dunn, 2002) ──
+            {
+                id: 'sp2-adolescentes-adultos-preloaded',
+                name: 'Perfil Sensorial Adolescentes y Adultos (Auto-cuestionario)',
+                description: 'Auto-cuestionario de procesamiento sensorial para personas de 11 años en adelante (Brown & Dunn, 2002). Evalúa 6 secciones: Gusto/Olfato, Movimiento, Visual, Tacto, Nivel de Actividad y Auditivo. Identifica 4 cuadrantes: Bajo Registro, Búsqueda Sensorial, Sensibilidad Sensorial y Evitación Sensorial. 60 ítems.',
+                category: 'adultos',
+                type: 'sensitivo',
+                preloaded: true,
+                isSP2AA: true,
+                items: [
+                    // A. Procesamiento Gusto/Olfato
+                    { name: '1. Salgo o me corro a otro lugar cuando huelo olores en una tienda (por ejemplo, productos de baño, velas o perfumes).', description: 'A. Gusto/Olfato', options: _sp2aaOpts },
+                    { name: '2. Añado condimentos/especias a mi comida.', description: 'A. Gusto/Olfato', options: _sp2aaOpts },
+                    { name: '3. No huelo cosas que otras personas dicen que huelen.', description: 'A. Gusto/Olfato', options: _sp2aaOpts },
+                    { name: '4. Disfruto estar cerca de las personas que usan perfumes o lociones.', description: 'A. Gusto/Olfato', options: _sp2aaOpts },
+                    { name: '5. Sólo como alimentos conocidos/familiares.', description: 'A. Gusto/Olfato', options: _sp2aaOpts },
+                    { name: '6. Muchos alimentos no tienen sabor para mí (en otras palabras, no tienen mucho gusto o son insulsos).', description: 'A. Gusto/Olfato', options: _sp2aaOpts },
+                    { name: '7. No me gustan los sabores fuertes a menta o dulces (por ejemplo, picantes/canela o caramelos ácidos).', description: 'A. Gusto/Olfato', options: _sp2aaOpts },
+                    { name: '8. Voy a oler flores frescas cuando las veo.', description: 'A. Gusto/Olfato', options: _sp2aaOpts },
+                    // B. Procesamiento Movimiento
+                    { name: '9. Tengo miedo a las alturas.', description: 'B. Movimiento', options: _sp2aaOpts },
+                    { name: '10. Disfruto como me siento cuando me muevo (por ejemplo, bailando, corriendo).', description: 'B. Movimiento', options: _sp2aaOpts },
+                    { name: '11. Evito los ascensores y/o las escaleras mecánicas porque no me gusta el movimiento.', description: 'B. Movimiento', options: _sp2aaOpts },
+                    { name: '12. Tropiezo o me choco con las cosas.', description: 'B. Movimiento', options: _sp2aaOpts },
+                    { name: '13. No me gusta el movimiento del andar en auto.', description: 'B. Movimiento', options: _sp2aaOpts },
+                    { name: '14. Elijo participar en actividades físicas.', description: 'B. Movimiento', options: _sp2aaOpts },
+                    { name: '15. No me siento seguro cuando camino por escaleras (por ejemplo, me tropiezo, pierdo el equilibrio o /y necesito tomarme del pasamanos).', description: 'B. Movimiento', options: _sp2aaOpts },
+                    { name: '16. Me mareo fácilmente (por ejemplo, después de inclinarme, levantarme rápido).', description: 'B. Movimiento', options: _sp2aaOpts },
+                    // C. Procesamiento Visual
+                    { name: '17. Me gusta ir a lugares donde tienen luces brillantes y son coloridos.', description: 'C. Visual', options: _sp2aaOpts },
+                    { name: '18. Mantengo las cortinas bajas durante el día cuando estoy en casa.', description: 'C. Visual', options: _sp2aaOpts },
+                    { name: '19. Me gusta vestirme con ropa colorida.', description: 'C. Visual', options: _sp2aaOpts },
+                    { name: '20. Me siento frustrado cuando trato de encontrar algo en un cajón lleno de cosas o en un salón desordenado.', description: 'C. Visual', options: _sp2aaOpts },
+                    { name: '21. No encuentro la calle, el edificio o señales de un salón cuando voy a lugares nuevos.', description: 'C. Visual', options: _sp2aaOpts },
+                    { name: '22. Me molestan las imágenes visuales que se mueven rápido o son inestables en el cine o la TV.', description: 'C. Visual', options: _sp2aaOpts },
+                    { name: '23. No me doy cuenta cuando la gente entran en un lugar/sala.', description: 'C. Visual', options: _sp2aaOpts },
+                    { name: '24. Elijo hacer las compras en tiendas/almacenes pequeños porque me siento abrumado en tiendas grandes.', description: 'C. Visual', options: _sp2aaOpts },
+                    { name: '25. Me molesta cuando veo mucha gente alrededor mío (por ejemplo, en un shopping lleno, desfile, carnaval).', description: 'C. Visual', options: _sp2aaOpts },
+                    { name: '26. Limito las distracciones cuando trabajo (por ejemplo, cierro la puerta, o apago la TV).', description: 'C. Visual', options: _sp2aaOpts },
+                    // D. Procesamiento Tacto
+                    { name: '27. Me desagrada rozarme la espalda.', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '28. Me gusta como se siente al cortarme el cabello.', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '29. Evito o uso guantes durante las actividades que pueden ensuciarme las manos.', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '30. Toco a otros cuando estoy hablando (por ejemplo, pongo mi mano en su hombro o le sostengo su mano).', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '31. Me molesta la sensación de mi boca cuando me despierto a la mañana.', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '32. Me gusta ir descalzo.', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '33. Estoy incómodo usando ciertos tejidos (por ejemplo, lana, seda, corderoy/pana, etiquetas en la ropa).', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '34. No me agradan ciertas texturas de comidas (por ejemplo, piel del durazno, jugo de manzana, queso cottage, manteca de maní gruesa).', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '35. Me alejo cuando otros se ponen muy cerca mío.', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '36. No noto cuando mis manos o cara están sucias.', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '37. Tengo rasguños o moretones, pero no recuerdo cómo me los hice.', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '38. Evito hacer filas o pararme cerca de otras personas porque no me gusta estar muy cerca de otros.', description: 'D. Tacto', options: _sp2aaOpts },
+                    { name: '39. No noto cuando alguien toca mi brazo o mi espalda.', description: 'D. Tacto', options: _sp2aaOpts },
+                    // E. Nivel de Actividad
+                    { name: '40. Trabajo en dos o más tareas al mismo tiempo.', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    { name: '41. Me toma más tiempo que a otras personas despertarme en las mañanas.', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    { name: '42. Hago cosas por impulso o en el momento (en otras palabras, hago cosas sin tener un plan en mente).', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    { name: '43. Encuentro tiempo para alejarme de mi ajetreada vida y pasar tiempo solo.', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    { name: '44. Parezco más lento que otros cuando intento hacer una actividad o una tarea.', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    { name: '45. No comprendo los chistes tan rápido como otros.', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    { name: '46. Me mantengo alejado de las muchedumbres.', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    { name: '47. Encuentro actividades para realizar en frente de otros (ej. música, deportes, actuación, hablar en público y responder preguntas en clase).', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    { name: '48. Me resulta difícil concentrarme durante todo el tiempo cuando estoy sentado en una clase o una reunión grande.', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    { name: '49. Evito situaciones donde pueden suceder cosas inesperadas (ej. Ir a lugares no conocidos o estar rodeada de gente que no conozco).', description: 'E. Nivel de Actividad', options: _sp2aaOpts },
+                    // F. Procesamiento Auditivo
+                    { name: '50. Tarareo, silbo, canto o hago ruidos.', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '51. Me sorprendo fácilmente con ruidos inesperados o fuertes (ej. aspiradora, ladridos de perros, llamadas telefónicas).', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '52. Tengo problemas para seguir lo que la gente está diciendo cuando hablan rápido o son temas poco conocidos para mí.', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '53. Salgo de espacios donde otros están mirando TV, o les pido que bajen el volumen.', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '54. Me distraigo si hay mucho ruido alrededor mío.', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '55. No me doy cuenta cuando llaman por mi nombre.', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '56. Uso estrategias para tapar el sonido (ej. cierro la puerta, tapo mis oídos, uso tapones para oídos).', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '57. Me mantengo alejado de lugares ruidosos.', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '58. Me gusta ir a eventos con mucha música.', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '59. Tengo que pedir a las personas que repitan las cosas.', description: 'F. Auditivo', options: _sp2aaOpts },
+                    { name: '60. Encuentro difícil trabajar con ruido de fondo (ej. ventilador, radio).', description: 'F. Auditivo', options: _sp2aaOpts }
+                ],
+                baremos: [{ min: 60, max: 300, interpretation: 'Ver perfil de cuadrantes (Brown & Dunn, 2002)' }]
             }
-        
+
         ]; // fin PRELOADED_SCALES
 
 
@@ -9548,7 +9646,7 @@
                 resetScaleForm();
             } else if (tabName === 'evaluaciones') {
                 renderEvaluationForm();
-                setTimeout(checkFormResponses, 300);
+                setTimeout(() => { checkFormResponses(); renderMobileEvalsList(); }, 300);
             } else if (tabName === 'rutas') {
                 if (rutasMapaIniciado && rutasMap) {
                     setTimeout(() => { rutasMap.invalidateSize(); rutasRenderizarLista(); }, 520);
@@ -10858,6 +10956,49 @@
             return result;
         }
 
+        // ── SP2 Adolescentes y Adultos (Brown & Dunn, 2002) ─────────────────
+        function sp2AACalcProfile(answers, ageYears) {
+            const Q = {
+                BR: [2,5,11,14,20,22,35,36,38,40,43,44,51,54,58],   // Bajo Registro
+                BS: [1,3,7,9,13,16,18,27,29,31,39,41,46,49,57],     // Búsqueda Sensorial
+                SS: [6,8,12,15,19,21,24,26,30,32,33,47,50,53,59],   // Sensibilidad Sensorial
+                ES: [0,4,10,17,23,25,28,34,37,42,45,48,52,55,56]    // Evitación Sensorial
+            };
+            const SEC = {
+                GustoOlfato:    [0,1,2,3,4,5,6,7],
+                Movimiento:     [8,9,10,11,12,13,14,15],
+                Visual:         [16,17,18,19,20,21,22,23,24,25],
+                Tacto:          [26,27,28,29,30,31,32,33,34,35,36,37,38],
+                NivelActividad: [39,40,41,42,43,44,45,46,47,48],
+                Auditivo:       [49,50,51,52,53,54,55,56,57,58,59]
+            };
+            const normAs = {
+                adolescente: { BR:[18,26,40,51], BS:[27,41,58,65], SS:[19,25,40,48], ES:[18,25,40,48] },
+                adulto:      { BR:[18,23,35,44], BS:[35,42,56,62], SS:[18,25,41,48], ES:[19,26,41,49] },
+                mayor:       { BR:[19,26,40,51], BS:[28,39,52,63], SS:[18,25,41,48], ES:[18,25,42,49] }
+            };
+            const grp = ageYears < 18 ? 'adolescente' : ageYears < 65 ? 'adulto' : 'mayor';
+            const norm = normAs[grp];
+            const pts = answers.map(a => a ? a.points : 0);
+            const sumIdx = idxs => idxs.reduce((s,i) => s+(pts[i]||0), 0);
+            const classify = (score, r) => {
+                if (score <= r[0]) return { label:'Mucho menos que la mayoría', symbol:'--', color:'#3498db', icon:'📉' };
+                if (score <= r[1]) return { label:'Menos que la mayoría', symbol:'-', color:'#27ae60', icon:'↓' };
+                if (score <= r[2]) return { label:'Similar a la mayoría', symbol:'=', color:'#2ecc71', icon:'✅' };
+                if (score <= r[3]) return { label:'Más que la mayoría', symbol:'+', color:'#f39c12', icon:'⚠️' };
+                return { label:'Mucho más que la mayoría', symbol:'++', color:'#e74c3c', icon:'🔴' };
+            };
+            const result = { cuadrantes:{}, secciones:{}, ageGroup: grp };
+            for (const [k,idxs] of Object.entries(Q)) {
+                const score = sumIdx(idxs);
+                result.cuadrantes[k] = { score, items:idxs.length, ...classify(score, norm[k]), ranges:norm[k] };
+            }
+            for (const [k,idxs] of Object.entries(SEC)) {
+                result.secciones[k] = { score:sumIdx(idxs), items:idxs.length };
+            }
+            return result;
+        }
+
         // ── FUGL-MEYER (FMA-ES): desglose por sección a partir de las respuestas ──
         // Se recalcula siempre desde evaluation.answers (nunca desde "details" guardado)
         // para que funcione igual con evaluaciones antiguas (solo función motora, 33 ítems)
@@ -10952,6 +11093,44 @@
                     details: JSON.stringify(sp2Details),
                     date: new Date().toISOString(),
                     isSensoryProfile2: true
+                };
+                if (currentEvaluation.editingId) {
+                    const idx = evaluations.findIndex(e=>e.id==currentEvaluation.editingId);
+                    if (idx!==-1) { evaluations[idx]={...evaluations[idx],...evalData}; }
+                } else { evaluations.push(evalData); }
+                localStorage.setItem('evaluations', JSON.stringify(evaluations));
+                ghScheduleSync(); DB.save('evaluations', evalData);
+                showEvaluationResults(evalData, evaluations.findIndex(e=>e.id===evalData.id));
+                return;
+            }
+
+            // ── SP2 Adolescentes/Adultos dedicated handler ──────────────────
+            if (currentEvaluation.scale.isSP2AA) {
+                let ageYears = 30; // default adulto
+                if (currentEvaluation.patient && currentEvaluation.patient.birthDate) {
+                    const hoy = new Date(), nac = new Date(currentEvaluation.patient.birthDate);
+                    ageYears = hoy.getFullYear() - nac.getFullYear() - (hoy < new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate()) ? 1 : 0);
+                } else if (currentEvaluation.patient && currentEvaluation.patient.age) {
+                    ageYears = parseInt(currentEvaluation.patient.age) || 30;
+                }
+                const sp2aa = sp2AACalcProfile(evaluationAnswers, ageYears);
+                const totalPoints = evaluationAnswers.reduce((s,a)=>s+(a?a.points:0),0);
+                const qLabels = { BR:'Bajo Registro', BS:'Búsqueda', SS:'Sensibilidad', ES:'Evitación' };
+                const interpretParts = Object.entries(sp2aa.cuadrantes).map(([k,v])=>`${qLabels[k]}: ${v.score} (${v.symbol})`);
+                const interpretation = interpretParts.join(' · ');
+                const sp2aaDetails = { isSP2AA:true, cuadrantes:sp2aa.cuadrantes, secciones:sp2aa.secciones, ageGroup:sp2aa.ageGroup, ageYears };
+                const evalData = {
+                    id: currentEvaluation.editingId || Date.now(),
+                    patientId: currentEvaluation.patient.id,
+                    patientName: currentEvaluation.patient.name,
+                    scaleId: currentEvaluation.scale.id,
+                    scaleName: currentEvaluation.scale.name,
+                    answers: evaluationAnswers,
+                    totalPoints,
+                    interpretation,
+                    details: JSON.stringify(sp2aaDetails),
+                    date: new Date().toISOString(),
+                    isSP2AA: true
                 };
                 if (currentEvaluation.editingId) {
                     const idx = evaluations.findIndex(e=>e.id==currentEvaluation.editingId);
@@ -14603,6 +14782,80 @@
                 }
             }
 
+            // ── SP2 Adolescentes/Adultos dedicated display ──────────────────
+            if (evaluation.isSP2AA || evaluation.scaleId === 'sp2-adolescentes-adultos-preloaded') {
+                let sp2aaData = null;
+                try { const d = JSON.parse(evaluation.details||'{}'); if (d.isSP2AA) sp2aaData = d; } catch(e){}
+                if (sp2aaData) {
+                    const qNames = { BR:'Bajo Registro (--)', BS:'Búsqueda Sensorial (∂)', SS:'Sensibilidad Sensorial (⊙)', ES:'Evitación Sensorial (|)' };
+                    const qDesc = {
+                        BR:'No registra estímulos con facilidad. Puede parecer desconectado o en su mundo. Necesita más intensidad sensorial para darse cuenta.',
+                        BS:'Alta necesidad de estimulación. Busca activamente experiencias sensoriales intensas o frecuentes.',
+                        SS:'Detecta estímulos que otros ignoran. Respuesta más activa y notoria ante la información sensorial.',
+                        ES:'Evita o se retira de estímulos sensoriales. Puede interrumpir la participación en actividades cotidianas.'
+                    };
+                    const secNames = { GustoOlfato:'Gusto/Olfato', Movimiento:'Movimiento', Visual:'Visual', Tacto:'Tacto', NivelActividad:'Nivel de Actividad', Auditivo:'Auditivo' };
+                    const ageGroupLabel = { adolescente:'11–17 años', adulto:'18–64 años', mayor:'65 años o más' };
+                    const colorMap = { '#3498db':'#d6eaf8', '#27ae60':'#d5f5e3', '#2ecc71':'#d5f5e3', '#f39c12':'#fef9e7', '#e74c3c':'#fdedec' };
+                    let qRows = '';
+                    for (const [k,v] of Object.entries(sp2aaData.cuadrantes)) {
+                        const bg = colorMap[v.color]||'#f8f9fa';
+                        const bar = Math.round(Math.min(100, (v.score / 75) * 100));
+                        qRows += `<tr style="background:${bg}">
+                            <td style="padding:10px 12px;font-weight:700;color:${v.color}">${v.icon} ${qNames[k]}</td>
+                            <td style="padding:10px;text-align:center;font-weight:700;font-size:1.2em;">${v.score}<span style="font-size:.7em;font-weight:400;color:#888">/75</span></td>
+                            <td style="padding:10px;text-align:center;font-size:.85em;color:${v.color};font-weight:600;">${v.symbol} ${v.label}</td>
+                            <td style="padding:10px"><div style="background:#e0e0e0;border-radius:6px;height:10px;"><div style="width:${bar}%;background:${v.color};height:10px;border-radius:6px"></div></div></td>
+                        </tr>
+                        <tr style="background:${bg}"><td colspan="4" style="padding:0 12px 8px;font-size:.82em;color:#555">${qDesc[k]}</td></tr>`;
+                    }
+                    let sRows = '';
+                    for (const [k,v] of Object.entries(sp2aaData.secciones)) {
+                        const maxSec = v.items * 5;
+                        const pct = Math.round((v.score / maxSec) * 100);
+                        const barColor = pct >= 75 ? '#e74c3c' : pct >= 55 ? '#f39c12' : '#27ae60';
+                        sRows += `<tr>
+                            <td style="padding:7px 12px">${secNames[k]||k}</td>
+                            <td style="padding:7px;text-align:center;font-weight:700">${v.score}<span style="font-size:.75em;color:#888">/${maxSec}</span></td>
+                            <td style="padding:7px;min-width:100px"><div style="background:#e0e0e0;border-radius:4px;height:8px;"><div style="width:${pct}%;background:${barColor};height:8px;border-radius:4px"></div></div></td>
+                        </tr>`;
+                    }
+                    const sorted = Object.entries(sp2aaData.cuadrantes).sort((a,b)=>b[1].score-a[1].score);
+                    const dom = sorted[0];
+                    const sp2aaHtml = `
+                        <div style="background:linear-gradient(135deg,#764ba220,#2c3e5020);border-radius:12px;padding:20px;margin-bottom:20px;">
+                            <h3 style="color:#2c3e50;margin-bottom:6px;">🧠 Perfil Sensorial Adolescentes y Adultos</h3>
+                            <p style="color:#555;font-size:.9em;">Paciente: <strong>${evaluation.patientName}</strong> · Fecha: ${new Date(evaluation.date).toLocaleDateString('es-ES')}</p>
+                            <p style="color:#555;font-size:.9em;">Puntuación total: <strong>${evaluation.totalPoints}</strong> pts · Grupo normativo: <strong>${ageGroupLabel[sp2aaData.ageGroup]||sp2aaData.ageGroup}</strong></p>
+                            <div style="background:white;border-radius:8px;padding:10px 14px;margin-top:10px;border-left:4px solid ${dom[1].color};">
+                                <strong>Cuadrante más elevado:</strong> <span style="color:${dom[1].color}">${qNames[dom[0]]}</span> — ${dom[1].label} (${dom[1].score} pts)
+                            </div>
+                        </div>
+                        <h4 style="color:#333;margin-bottom:10px;">📊 Cuadrantes del Procesamiento Sensorial</h4>
+                        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.93em;">
+                            <thead><tr style="background:#2c3e50;color:white;"><th style="padding:9px 12px;text-align:left">Cuadrante</th><th style="padding:9px;text-align:center">Puntos</th><th style="padding:9px;text-align:center">Clasificación</th><th style="padding:9px;text-align:left">Perfil</th></tr></thead>
+                            <tbody>${qRows}</tbody>
+                        </table>
+                        <h4 style="color:#333;margin-bottom:10px;">📋 Secciones de Procesamiento</h4>
+                        <table style="width:100%;border-collapse:collapse;font-size:.9em;margin-bottom:16px;">
+                            <thead><tr style="background:#34495e;color:white;"><th style="padding:8px 12px;text-align:left">Sección</th><th style="padding:8px;text-align:center">Puntos</th><th style="padding:8px;text-align:left">%</th></tr></thead>
+                            <tbody>${sRows}</tbody>
+                        </table>
+                        <div style="background:#f8f9fa;border-radius:8px;padding:12px;font-size:.82em;color:#666;">
+                            <strong>Clasificación normativa:</strong>
+                            <span style="color:#3498db">📉 --</span> Mucho menos que la mayoría ·
+                            <span style="color:#27ae60">↓ -</span> Menos que la mayoría ·
+                            <span style="color:#2ecc71">✅ =</span> Similar a la mayoría ·
+                            <span style="color:#f39c12">⚠️ +</span> Más que la mayoría ·
+                            <span style="color:#e74c3c">🔴 ++</span> Mucho más que la mayoría.
+                            <br><em>Normas basadas en Sensory Profile Adolescent/Adult (Brown & Dunn, 2002). Grupos: 11–17 años (n=193), 18–64 años (n=496), ≥65 años (n=261).</em>
+                        </div>`;
+                    document.getElementById('modalContent').innerHTML = sp2aaHtml;
+                    document.getElementById('modal').classList.add('active');
+                    return;
+                }
+            }
+
             // ── FUGL-MEYER (FMA-ES) dedicated display ───────────────────────
             if (evaluation.scaleId === 'fuglmeyer-preloaded') {
                 const fm = fuglMeyerBreakdown(evaluation.answers);
@@ -15107,7 +15360,9 @@
                                     <div class="item-details">
                                         📅 ${new Date(ev.date).toLocaleString('es-ES')}<br>
                                         📊 ${ev.isSensoryProfile2
-                                            ? '🧠 Ver perfil sensorial completo'
+                                            ? '🧠 Ver perfil sensorial completo (niños)'
+                                            : ev.isSP2AA
+                                                ? '🧠 Ver perfil sensorial (adolescentes/adultos)'
                                             : (ev.isABASInfantil || ev.scaleId === 'abas-infantil-padres-preloaded')
                                                 ? (() => { try { const d=JSON.parse(ev.details||'{}'); return d.ptGAC ? `CAG PT=${d.ptGAC} · Con=${d.ptDominio?.conceptual||'—'} · Soc=${d.ptDominio?.social||'—'} · Prac=${d.ptDominio?.practico||'—'}` : ev.interpretation; } catch(e){ return ev.interpretation; } })()
                                                 : `${ev.totalPoints} puntos — ${ev.interpretation}`}
@@ -15116,6 +15371,7 @@
                                 <div class="item-actions">
                                     ${ev.isDP3 ? `<button class="btn btn-small" style="background:#1a8a8a;color:white;" onclick="dp3AbrirCorrectorManual(${ev.id})" title="Corregir DP-3">🧮 Corregir</button>` : ''}
                                     ${ev.isSensoryProfile2 ? `<button class="btn btn-small" style="background:#764ba2;color:white;" onclick="showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver Perfil Sensorial">🧠 Ver Perfil</button>` : ''}
+                                    ${ev.isSP2AA ? `<button class="btn btn-small" style="background:#2c3e50;color:white;" onclick="showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver Perfil Sensorial A/A">🧠 Ver Perfil</button>` : ''}
                                     ${(ev.isABASInfantil || ev.scaleId === 'abas-infantil-padres-preloaded') ? `<button class="btn btn-small" style="background:#e8a000;color:white;" onclick="closeModal();showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver informe ABAS Infantil">📊 Ver</button>` : ''}
                                     ${ev.scaleId === 'fuglmeyer-preloaded' ? `<button class="btn btn-small" style="background:#667eea;color:white;" onclick="closeModal();showEvaluationResults(evaluations[${evaluations.indexOf(ev)}], ${evaluations.indexOf(ev)})" title="Ver informe FMA-ES completo">💪 Ver</button>` : ''}
                                     <button class="btn btn-small" onclick="exportEvaluationPDF(${evaluations.indexOf(ev)})">📄 PDF</button>
@@ -26484,7 +26740,7 @@ Edad 12 - Conceptual
 
             const items = _getScaleItems(scale, patient);
             if (!items || items.length === 0) {
-                alert('Esta escala requiere evaluación clínica presencial y no puede enviarse como cuestionario.\n\nEscalas que requieren evaluación directa:\n• Beery VMI (copia de formas geométricas en papel)\n• NHPT (test cronometrado de clavijas)\n• BOT-2 (pruebas de rendimiento motor)\n• Pares Craneales (exploración neurológica)\n• Reflejos Primitivos (exploración neonatal)\n• Fugl-Meyer (valoración post-ictus)\n\nEscalas enviables: CAVIDACE, ABAS-II, Knox, Battelle, SCIM-III, FIM-FAM y escalas personalizadas tipo Likert.');
+                alert('Esta escala requiere evaluación clínica presencial y no puede enviarse como cuestionario.\n\nEscalas que requieren evaluación directa:\n• Beery VMI (copia de formas geométricas en papel)\n• NHPT (test cronometrado de clavijas)\n• BOT-2 (pruebas de rendimiento motor)\n• Pares Craneales (exploración neurológica)\n• Reflejos Primitivos (exploración neonatal)\n• Fugl-Meyer (valoración post-ictus)\n\nEscalas enviables: CAVIDACE, ABAS-II, Knox, Battelle, SCIM-III, FIM-FAM, Perfil Sensorial Adolescentes/Adultos y escalas personalizadas tipo Likert.');
                 return;
             }
 
@@ -26694,10 +26950,10 @@ render();
                 date: resp.submittedAt || new Date().toISOString(),
                 answers,
                 totalPoints,
-                interpretation: 'Cuestionario completado por padre/cuidador',
+                interpretation: 'Cuestionario completado (móvil)',
                 fromMobileForm: true
             };
-            // Si es CAVIDACE, calcular con motor dedicado
+            // CAVIDACE — calcular con motor dedicado
             if (resp.scaleId === 'cavidace-preloaded') {
                 const keys = ['BE','RI','BM','DP','BF','AU','IS','DE'];
                 const pds = {}, pes = {};
@@ -26714,9 +26970,37 @@ render();
                 const { icv, percentil } = cavidaceCompuesto_a_ICV(sumaPE);
                 const interpretacion = interpretarICV(icv);
                 evalRec.totalPoints = sumaPE;
-                evalRec.interpretation = 'ICV=' + icv + ' (pc' + percentil + ') — ' + interpretacion + ' [padre/cuidador]';
+                evalRec.interpretation = 'ICV=' + icv + ' (pc' + percentil + ') — ' + interpretacion + ' [móvil]';
                 evalRec.isCAVIDACE = true;
                 evalRec.details = JSON.stringify({ pds, pes, sumaPE, icv, percentil, interpretacion });
+            }
+            // SP-2 Cuidador — calcular cuadrantes
+            if (resp.scaleId === 'sensory-profile-2-preloaded') {
+                try {
+                    const sp2 = sp2CalcProfile(answers);
+                    const qL = { SK:'Buscador', AV:'Evitativo', SN:'Sensitivo', RG:'Registro' };
+                    evalRec.interpretation = Object.entries(sp2.cuadrantes).map(([k,v])=>`${qL[k]}: ${v.score} (${v.label})`).join(' · ');
+                    evalRec.isSensoryProfile2 = true;
+                    evalRec.details = JSON.stringify({ isSensoryProfile2:true, cuadrantes:sp2.cuadrantes, secciones:sp2.secciones });
+                } catch(e) { /* scoring failed, keep generic interpretation */ }
+            }
+            // SP-2 Adolescentes y Adultos — calcular cuadrantes con edad del paciente
+            if (resp.scaleId === 'sp2-adolescentes-adultos-preloaded') {
+                try {
+                    let ageYears = 30;
+                    const pat = patients.find(p => String(p.id) === String(resp.patientId));
+                    if (pat && pat.birthDate) {
+                        const hoy = new Date(), nac = new Date(pat.birthDate);
+                        ageYears = hoy.getFullYear() - nac.getFullYear() - (hoy < new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate()) ? 1 : 0);
+                    } else if (pat && pat.age) {
+                        ageYears = parseInt(pat.age) || 30;
+                    }
+                    const sp2aa = sp2AACalcProfile(answers, ageYears);
+                    const qL = { BR:'Bajo Registro', BS:'Búsqueda', SS:'Sensibilidad', ES:'Evitación' };
+                    evalRec.interpretation = Object.entries(sp2aa.cuadrantes).map(([k,v])=>`${qL[k]}: ${v.score} (${v.symbol})`).join(' · ');
+                    evalRec.isSP2AA = true;
+                    evalRec.details = JSON.stringify({ isSP2AA:true, cuadrantes:sp2aa.cuadrantes, secciones:sp2aa.secciones, ageGroup:sp2aa.ageGroup, ageYears });
+                } catch(e) { /* scoring failed, keep generic interpretation */ }
             }
             const existing = evaluations.findIndex(e => e.id === evalRec.id);
             if (existing !== -1) { evaluations[existing] = evalRec; }
@@ -26725,6 +27009,40 @@ render();
             if (typeof DB !== 'undefined') DB.save('evaluations', evalRec);
             if (silent) showDbToast('📥 Respuesta importada: ' + (evalRec.patientName || 'paciente') + ' — ' + (evalRec.scaleName || ''));
             else alert('✅ Evaluación importada correctamente para ' + (evalRec.patientName || 'paciente') + '.');
+        }
+
+        function renderMobileEvalsList() {
+            const el = document.getElementById('mobileEvalsList');
+            if (!el) return;
+            const mobileEvals = evaluations
+                .filter(e => e.fromMobileForm)
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (mobileEvals.length === 0) {
+                el.innerHTML = '<p style="color:#9ca3af;font-size:.85em;margin:4px 0;">Ninguna evaluación recibida por móvil aún.</p>';
+                return;
+            }
+
+            el.innerHTML = mobileEvals.map(ev => {
+                const dateStr = new Date(ev.date).toLocaleString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                const patIdx = patients.findIndex(p => String(p.id) === String(ev.patientId));
+                const patFound = patIdx !== -1;
+                const interp = ev.interpretation || '';
+                const truncInterp = interp.length > 80 ? interp.substring(0, 80) + '…' : interp;
+                return `<div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <div style="flex:1;min-width:200px;">
+                        <div style="font-weight:600;color:#1f2937;">${ev.patientName || '—'} <span style="font-weight:400;color:#6b7280;font-size:.85em;">· ${ev.scaleName || ev.scaleId || '—'}</span></div>
+                        <div style="font-size:.8em;color:#9ca3af;">📅 ${dateStr} · ${ev.answers ? ev.answers.length : 0} ítems</div>
+                        <div style="font-size:.82em;color:#4b5563;margin-top:2px;">${truncInterp}</div>
+                        ${!patFound ? '<div style="font-size:.78em;color:#dc2626;margin-top:2px;">⚠️ Paciente no encontrado en la app (ID: ' + ev.patientId + ')</div>' : ''}
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        ${patFound ? `<button onclick="viewPatientHistory(${patIdx})" style="padding:5px 10px;border-radius:6px;background:#6366f1;color:white;border:none;font-size:.82em;cursor:pointer;">👤 Ver paciente</button>` : ''}
+                        ${(ev.isSensoryProfile2 || ev.isSP2AA) ? `<button onclick="showEvaluationResults(evaluations[evaluations.findIndex(e=>e.id==='${ev.id}')], evaluations.findIndex(e=>e.id==='${ev.id}'))" style="padding:5px 10px;border-radius:6px;background:#2c3e50;color:white;border:none;font-size:.82em;cursor:pointer;">🧠 Ver perfil</button>` : ''}
+                        <button onclick="if(confirm('¿Eliminar esta evaluación?')){evaluations=evaluations.filter(e=>e.id!=='${ev.id}');localStorage.setItem('evaluations',JSON.stringify(evaluations));renderMobileEvalsList();}" style="padding:5px 8px;border-radius:6px;background:#fee2e2;color:#dc2626;border:none;font-size:.82em;cursor:pointer;">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         function importFormResponseFromFile() {
@@ -26737,6 +27055,7 @@ render();
                     try {
                         const resp = JSON.parse(ev.target.result);
                         _importFormResponsePayload(resp);
+                        renderMobileEvalsList();
                     } catch(err) { alert('Error al leer el archivo JSON: ' + err.message); }
                 };
                 reader.readAsText(file);
@@ -26744,39 +27063,177 @@ render();
             input.click();
         }
 
+        async function diagnosticoGitHub() {
+            const mc = document.getElementById('modalContent');
+            mc.innerHTML = '<div style="text-align:center;padding:30px"><div style="border:4px solid #e0e7ff;border-top:4px solid #6366f1;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;margin:0 auto 12px"></div><p style="color:#6b7280">Consultando GitHub…</p></div>';
+            document.getElementById('modal').classList.add('active');
+
+            const ghToken = localStorage.getItem('gh_token') || localStorage.getItem('githubToken') || '';
+            const already = JSON.parse(localStorage.getItem('importedFormResponses') || '[]');
+            const tokenMask = ghToken ? ghToken.substring(0,8) + '…' + ghToken.slice(-4) : '(no configurado)';
+
+            let lines = `<h3 style="color:#6366f1;margin-bottom:16px;">🔍 Diagnóstico de recepción de formularios</h3>`;
+            lines += `<div style="background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:12px;font-size:.88em;">
+                <b>Token GitHub:</b> <code>${tokenMask}</code> ${ghToken ? '✅' : '❌ Sin token'}<br>
+                <b>Archivos ya importados (historial):</b> ${already.length}
+            </div>`;
+
+            if (!ghToken) {
+                lines += `<p style="color:#dc2626">❌ No hay token configurado. Ve a <b>🔒 Seguridad → GitHub Sync</b> para configurarlo.</p>`;
+                mc.innerHTML = lines;
+                return;
+            }
+
+            // Test acceso al repo
+            try {
+                const rTest = await fetch('https://api.github.com/repos/javii998/terapia-recursos', {
+                    headers: { 'Authorization': 'token ' + ghToken }
+                });
+                if (rTest.status === 401) { lines += `<p style="color:#dc2626">❌ Token inválido o expirado (HTTP 401). Genera un nuevo token en github.com → Settings → Developer settings → Personal access tokens.</p>`; mc.innerHTML = lines; return; }
+                if (rTest.status === 404) { lines += `<p style="color:#dc2626">❌ Repositorio <b>terapia-recursos</b> no encontrado (HTTP 404). ¿Existe en la cuenta javii998?</p>`; mc.innerHTML = lines; return; }
+                if (!rTest.ok) { lines += `<p style="color:#dc2626">❌ Error accediendo al repositorio: HTTP ${rTest.status}</p>`; mc.innerHTML = lines; return; }
+                lines += `<p style="color:#27ae60">✅ Repositorio <b>terapia-recursos</b> accesible.</p>`;
+            } catch(e) { lines += `<p style="color:#dc2626">❌ Error de red: ${e.message}</p>`; mc.innerHTML = lines; return; }
+
+            // Listar form-configs
+            try {
+                const rCfg = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-configs', {
+                    headers: { 'Authorization': 'token ' + ghToken, 'Cache-Control': 'no-cache' }
+                });
+                if (rCfg.status === 404) {
+                    lines += `<p style="color:#f39c12">⚠️ Carpeta <b>form-configs/</b> no existe — aún no se ha generado ningún formulario.</p>`;
+                } else if (rCfg.ok) {
+                    const cfgs = await rCfg.json();
+                    lines += `<p style="color:#27ae60">✅ Formularios generados: <b>${cfgs.length}</b></p>`;
+                }
+            } catch(e) {}
+
+            // Listar form-responses
+            try {
+                const rResp = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-responses', {
+                    headers: { 'Authorization': 'token ' + ghToken, 'Cache-Control': 'no-cache' }
+                });
+                if (rResp.status === 404) {
+                    lines += `<div style="background:#fff3cd;border-radius:8px;padding:12px;margin:10px 0;font-size:.88em;">
+                        ⚠️ <b>Carpeta form-responses/ vacía o no existe.</b><br>
+                        Significa que <b>ningún formulario ha sido enviado aún</b>.<br>
+                        Cuando rellenaste el formulario, ¿viste el mensaje ✅ "¡Enviado!" al final?
+                    </div>`;
+                } else if (rResp.ok) {
+                    const files = (await rResp.json()).filter(f => f.name.endsWith('.json'));
+                    if (files.length === 0) {
+                        lines += `<div style="background:#fff3cd;border-radius:8px;padding:12px;margin:10px 0;font-size:.88em;">⚠️ La carpeta form-responses/ existe pero está vacía. El formulario no se envió correctamente.</div>`;
+                    } else {
+                        lines += `<p style="color:#27ae60;margin:8px 0">✅ <b>${files.length} respuesta(s)</b> en GitHub:</p>`;
+                        lines += `<div style="max-height:200px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;">`;
+                        files.forEach(f => {
+                            const isImported = already.includes(f.name);
+                            lines += `<div style="padding:8px 12px;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center;font-size:.85em;">
+                                <span style="font-family:monospace;color:#374151;">${f.name}</span>
+                                <span style="${isImported ? 'color:#27ae60' : 'color:#f39c12;font-weight:600'}">${isImported ? '✅ importado' : '⚠️ PENDIENTE'}</span>
+                            </div>`;
+                        });
+                        lines += `</div>`;
+                        const pendientes = files.filter(f => !already.includes(f.name));
+                        if (pendientes.length > 0) {
+                            lines += `<p style="margin-top:10px;color:#f39c12;font-weight:600">⚠️ Hay ${pendientes.length} archivo(s) pendiente(s) de importar. Pulsa <b>☁️ Comprobar GitHub</b> para importarlos.</p>`;
+                        }
+                    }
+                } else {
+                    lines += `<p style="color:#dc2626">❌ Error al leer form-responses/: HTTP ${rResp.status}</p>`;
+                }
+            } catch(e) { lines += `<p style="color:#dc2626">❌ Error: ${e.message}</p>`; }
+
+            lines += `<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-small" onclick="closeModal();checkFormResponses()">☁️ Comprobar ahora</button>
+                <button class="btn btn-small btn-secondary" onclick="closeModal()">Cerrar</button>
+            </div>`;
+            mc.innerHTML = lines;
+        }
+
         let _ghCheckInProgress = false;
         async function _checkGitHubFormResponses() {
             if (_ghCheckInProgress) return;
             _ghCheckInProgress = true;
+
+            const list = document.getElementById('formResponsesList');
+            const setStatus = (html) => { if (list) list.innerHTML = html; };
+
             const ghToken = localStorage.getItem('gh_token') || localStorage.getItem('githubToken') || '';
-            if (!ghToken) { _ghCheckInProgress = false; return; }
+            if (!ghToken) {
+                _ghCheckInProgress = false;
+                setStatus('<p style="color:#dc2626;font-size:.9em;">⚠️ Sin token de GitHub. Ve a <strong>🔒 Seguridad → GitHub Sync</strong> y configura el token.</p>');
+                return;
+            }
+
+            setStatus('<em style="color:#9ca3af;font-size:.9em;">🔍 Consultando GitHub…</em>');
+
             let dirItems;
             try {
                 const r = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-responses', {
                     headers: { 'Authorization': 'token ' + ghToken, 'Cache-Control': 'no-cache' }
                 });
-                if (!r.ok) { _ghCheckInProgress = false; return; }
+                if (!r.ok) {
+                    _ghCheckInProgress = false;
+                    setStatus('<p style="color:#dc2626;font-size:.9em;">❌ Error al acceder a GitHub (HTTP ' + r.status + '). Verifica el token en <strong>🔒 Seguridad</strong>.</p>');
+                    return;
+                }
                 dirItems = await r.json();
-            } catch(e) { _ghCheckInProgress = false; return; }
-            if (!Array.isArray(dirItems) || dirItems.length === 0) { _ghCheckInProgress = false; return; }
+            } catch(e) {
+                _ghCheckInProgress = false;
+                setStatus('<p style="color:#dc2626;font-size:.9em;">❌ Error de red: ' + e.message + '</p>');
+                return;
+            }
+
+            const jsonFiles = Array.isArray(dirItems) ? dirItems.filter(i => i.name && i.name.endsWith('.json')) : [];
+            if (jsonFiles.length === 0) {
+                _ghCheckInProgress = false;
+                setStatus('<p style="color:#6b7280;font-size:.9em;">📭 No hay archivos de respuesta en GitHub todavía.</p>');
+                return;
+            }
+
             const already = JSON.parse(localStorage.getItem('importedFormResponses') || '[]');
-            let imported = 0;
-            for (const item of dirItems) {
-                if (!item.name.endsWith('.json') || already.includes(item.name)) continue;
+            const newFiles = jsonFiles.filter(i => !already.includes(i.name));
+
+            if (newFiles.length === 0) {
+                _ghCheckInProgress = false;
+                setStatus('<p style="color:#27ae60;font-size:.9em;">✅ Todo al día — ' + jsonFiles.length + ' respuesta(s) ya importada(s). Usa <em>🔄 Reimportar todo</em> si falta alguna.</p>');
+                return;
+            }
+
+            setStatus('<em style="color:#9ca3af;font-size:.9em;">⬇️ Descargando ' + newFiles.length + ' respuesta(s) nueva(s)…</em>');
+
+            let imported = 0, errors = 0;
+            for (const item of newFiles) {
                 try {
-                    const r2 = await fetch(item.download_url, { headers: { 'Cache-Control': 'no-cache' } });
-                    if (!r2.ok) continue;
+                    // Usar API autenticada (funciona con repos públicos y privados)
+                    const r2 = await fetch(item.url, {
+                        headers: {
+                            'Authorization': 'token ' + ghToken,
+                            'Accept': 'application/vnd.github.v3.raw',
+                            'Cache-Control': 'no-cache'
+                        }
+                    });
+                    if (!r2.ok) { errors++; continue; }
                     const resp = await r2.json();
-                    _importFormResponsePayload(resp, true); // silencioso en batch
+                    _importFormResponsePayload(resp, true);
                     already.push(item.name);
                     imported++;
-                } catch(e) { /* skip file */ }
+                } catch(e) { errors++; }
             }
+
             localStorage.setItem('importedFormResponses', JSON.stringify(already));
             _ghCheckInProgress = false;
+
+            const errMsg = errors > 0 ? ' (' + errors + ' error(es))' : '';
             if (imported > 0) {
-                showDbToast('📥 ' + imported + ' respuesta(s) de cuestionario importada(s) desde GitHub.');
-                renderEvaluationList && renderEvaluationList();
+                setStatus('<p style="color:#27ae60;font-size:.9em;">📥 <strong>' + imported + ' respuesta(s) importada(s)</strong> correctamente.' + errMsg + ' Las ves abajo en "📱 Evaluaciones recibidas".</p>');
+                showDbToast('📥 ' + imported + ' respuesta(s) importada(s) desde GitHub.');
+                renderMobileEvalsList();
+            } else if (errors > 0) {
+                setStatus('<p style="color:#dc2626;font-size:.9em;">❌ No se pudo importar ninguna respuesta (' + errors + ' error(es)). Prueba <em>🔄 Reimportar todo</em> o verifica el token.</p>');
+            } else {
+                setStatus('<p style="color:#27ae60;font-size:.9em;">✅ Sin respuestas nuevas.</p>');
             }
         }
 
@@ -26801,11 +27258,24 @@ render();
                         <input type="password" id="geminiKeyInput" placeholder="AIzaSy..."
                             style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:1em;font-family:monospace;margin-top:6px;">
                     </div>
+                    <div class="form-group" style="margin-top:12px;">
+                        <label style="font-weight:600;">Modelo</label>
+                        <select id="geminiModelInput" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:8px;font-size:0.95em;margin-top:6px;">
+                            <option value="gemini-2.0-flash">gemini-2.0-flash (recomendado)</option>
+                            <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
+                            <option value="gemini-2.0-flash-001">gemini-2.0-flash-001</option>
+                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                            <option value="gemini-1.5-flash">gemini-1.5-flash (antiguo)</option>
+                        </select>
+                        <small style="color:#9ca3af;font-size:0.8em;">Si falla, prueba otro modelo. Consulta los disponibles en aistudio.google.com</small>
+                    </div>
                     <div style="display:flex;gap:10px;margin-top:16px;">
                         <button class="btn" style="flex:1;" onclick="
                             const k=document.getElementById('geminiKeyInput').value.trim();
+                            const m=document.getElementById('geminiModelInput').value;
                             if(!k){alert('Introduce una API key');return;}
                             localStorage.setItem('gemini_api_key',k);
+                            localStorage.setItem('gemini_model',m);
                             closeModal();
                             setTimeout(()=>generarInformeIA(${patientIndex}),300);
                         ">💾 Guardar y continuar</button>
@@ -26864,20 +27334,38 @@ render();
 
             prompt += `Genera un informe clínico de terapia ocupacional con estas secciones:\n\n## 1. RESUMEN DEL PERFIL FUNCIONAL\nDescribe brevemente el nivel funcional actual del paciente según los datos disponibles.\n\n## 2. ÁREAS PRIORITARIAS DE INTERVENCIÓN\nLista las 3-5 áreas que requieren mayor atención, justificando con los datos de las evaluaciones.\n\n## 3. OBJETIVOS TERAPÉUTICOS (SMART)\nPropón 4-6 objetivos concretos, medibles y alcanzables para este paciente.\n\n## 4. ACTIVIDADES Y EJERCICIOS RECOMENDADOS\nPara cada área prioritaria, sugiere actividades específicas de terapia ocupacional (actividades de la vida diaria, ejercicios funcionales, adaptaciones, etc.).\n\n## 5. PLANIFICACIÓN DE SESIONES SUGERIDA\nPropón una estructura de sesión tipo y una frecuencia recomendada.\n\nUsa lenguaje clínico profesional pero accesible. Sé específico y práctico.`;
 
+            // Modelos a intentar en orden
+            const preferredModel = localStorage.getItem('gemini_model') || 'gemini-2.0-flash';
+            const modelCandidates = [preferredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-2.0-flash-001', 'gemini-1.5-flash']
+                .filter((v,i,a) => a.indexOf(v) === i); // deduplica
+            let lastError = null;
+            let data = null;
+            for (const modelId of modelCandidates) {
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+                        })
+                    });
+                    if (res.status === 404 || res.status === 400) {
+                        const err = await res.json().catch(()=>({}));
+                        lastError = new Error((err.error?.message || 'Modelo no disponible') + ' [' + modelId + ']');
+                        continue; // probar siguiente modelo
+                    }
+                    if (!res.ok) {
+                        const err = await res.json().catch(()=>({}));
+                        throw new Error(err.error?.message || 'HTTP ' + res.status);
+                    }
+                    data = await res.json();
+                    localStorage.setItem('gemini_model', modelId); // guardar el que funcionó
+                    break;
+                } catch(e) { lastError = e; if (e.message && !e.message.includes('Modelo no disponible')) break; }
+            }
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
-                    })
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error?.message || 'HTTP ' + res.status);
-                }
-                const data = await res.json();
+                if (!data) throw lastError || new Error('No se pudo conectar con ningún modelo Gemini');
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sin respuesta';
 
                 const html = text
@@ -26913,10 +27401,10 @@ render();
             } catch(e) {
                 document.getElementById('modalContent').innerHTML = `
                     <h3 style="color:#dc2626;">Error al generar informe</h3>
-                    <p style="margin-top:8px;color:#6b7280;">${e.message}</p>
-                    <p style="margin-top:12px;font-size:0.85em;color:#9ca3af;">Comprueba que tu API key de Gemini es válida. Puedes obtener una gratis en aistudio.google.com</p>
-                    <div style="display:flex;gap:8px;margin-top:16px;">
-                        <button class="btn btn-small" onclick="localStorage.removeItem('gemini_api_key');closeModal();setTimeout(()=>generarInformeIA(${patientIndex}),300);">🔑 Cambiar API key</button>
+                    <p style="margin-top:8px;color:#374151;background:#fee2e2;padding:10px;border-radius:8px;font-family:monospace;font-size:.9em;">${e.message}</p>
+                    <p style="margin-top:12px;font-size:0.85em;color:#6b7280;">Comprueba que tu API key de Gemini es válida en <strong>aistudio.google.com</strong>.<br>Si el error menciona el modelo, prueba cambiarlo con el botón de abajo.</p>
+                    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+                        <button class="btn btn-small" onclick="localStorage.removeItem('gemini_api_key');localStorage.removeItem('gemini_model');closeModal();setTimeout(()=>generarInformeIA(${patientIndex}),300);">🔑 Cambiar key/modelo</button>
                         <button class="btn btn-small btn-secondary" onclick="closeModal()">Cerrar</button>
                     </div>`;
             }
