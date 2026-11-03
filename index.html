@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-03-v27-fix-cors-github-api';
+            const BUILD_VERSION = '2026-11-03-v28-fix-gemini-fallback';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27335,8 +27335,11 @@ render();
             prompt += `Genera un informe clínico de terapia ocupacional con estas secciones:\n\n## 1. RESUMEN DEL PERFIL FUNCIONAL\nDescribe brevemente el nivel funcional actual del paciente según los datos disponibles.\n\n## 2. ÁREAS PRIORITARIAS DE INTERVENCIÓN\nLista las 3-5 áreas que requieren mayor atención, justificando con los datos de las evaluaciones.\n\n## 3. OBJETIVOS TERAPÉUTICOS (SMART)\nPropón 4-6 objetivos concretos, medibles y alcanzables para este paciente.\n\n## 4. ACTIVIDADES Y EJERCICIOS RECOMENDADOS\nPara cada área prioritaria, sugiere actividades específicas de terapia ocupacional (actividades de la vida diaria, ejercicios funcionales, adaptaciones, etc.).\n\n## 5. PLANIFICACIÓN DE SESIONES SUGERIDA\nPropón una estructura de sesión tipo y una frecuencia recomendada.\n\nUsa lenguaje clínico profesional pero accesible. Sé específico y práctico.`;
 
             // Modelos a intentar en orden
-            const preferredModel = localStorage.getItem('gemini_model') || 'gemini-2.0-flash';
-            const modelCandidates = [preferredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-2.0-flash-001', 'gemini-1.5-flash']
+            const stored = localStorage.getItem('gemini_model') || '';
+            // Si hay un modelo guardado y no es uno deprecado, usarlo primero
+            const DEPRECATED = ['gemini-1.5-flash', 'gemini-1.5-pro'];
+            const preferredModel = (stored && !DEPRECATED.includes(stored)) ? stored : 'gemini-2.0-flash';
+            const modelCandidates = [preferredModel, 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-2.0-flash-001', 'gemini-1.5-flash-latest']
                 .filter((v,i,a) => a.indexOf(v) === i); // deduplica
             let lastError = null;
             let data = null;
@@ -27362,7 +27365,13 @@ render();
                     data = await res.json();
                     localStorage.setItem('gemini_model', modelId); // guardar el que funcionó
                     break;
-                } catch(e) { lastError = e; if (e.message && !e.message.includes('Modelo no disponible')) break; }
+                } catch(e) {
+                    lastError = e;
+                    const msg = (e.message || '').toLowerCase();
+                    // Solo reintentar con otro modelo si el error es por modelo no disponible
+                    const isModelError = msg.includes('not found') || msg.includes('not supported') || msg.includes('deprecated') || msg.includes('unavailable') || msg.includes('no encontrado');
+                    if (!isModelError) break;
+                }
             }
             try {
                 if (!data) throw lastError || new Error('No se pudo conectar con ningún modelo Gemini');
