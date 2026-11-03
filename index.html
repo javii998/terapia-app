@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-03-v29-fix-cors-download-gemini25';
+            const BUILD_VERSION = '2026-11-03-v30-fix-descarga-base64';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27207,14 +27207,14 @@ render();
             for (const item of newFiles) {
                 try {
                     // Usar API autenticada (funciona con repos públicos y privados)
-                    const r2 = await fetch(item.url + '?t=' + Date.now(), {
-                        headers: {
-                            'Authorization': 'token ' + ghToken,
-                            'Accept': 'application/vnd.github.v3.raw'
-                        }
+                    const r2 = await fetch(item.url, {
+                        headers: { 'Authorization': 'token ' + ghToken }
                     });
                     if (!r2.ok) { errors++; continue; }
-                    const resp = await r2.json();
+                    const meta = await r2.json();
+                    // API devuelve contenido en base64; decodificar manualmente
+                    const text = decodeURIComponent(escape(atob(meta.content.replace(/\n/g, ''))));
+                    const resp = JSON.parse(text);
                     _importFormResponsePayload(resp, true);
                     already.push(item.name);
                     imported++;
