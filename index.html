@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-04-v33-gemini38-only';
+            const BUILD_VERSION = '2026-11-04-v34-gemini-autodetect';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27331,12 +27331,31 @@ render();
 
             prompt += `Genera un informe clínico de terapia ocupacional con estas secciones:\n\n## 1. RESUMEN DEL PERFIL FUNCIONAL\nDescribe brevemente el nivel funcional actual del paciente según los datos disponibles.\n\n## 2. ÁREAS PRIORITARIAS DE INTERVENCIÓN\nLista las 3-5 áreas que requieren mayor atención, justificando con los datos de las evaluaciones.\n\n## 3. OBJETIVOS TERAPÉUTICOS (SMART)\nPropón 4-6 objetivos concretos, medibles y alcanzables para este paciente.\n\n## 4. ACTIVIDADES Y EJERCICIOS RECOMENDADOS\nPara cada área prioritaria, sugiere actividades específicas de terapia ocupacional (actividades de la vida diaria, ejercicios funcionales, adaptaciones, etc.).\n\n## 5. PLANIFICACIÓN DE SESIONES SUGERIDA\nPropón una estructura de sesión tipo y una frecuencia recomendada.\n\nUsa lenguaje clínico profesional pero accesible. Sé específico y práctico.`;
 
-            // Modelos a intentar en orden
+            // Autodetectar modelos disponibles via ListModels
+            let modelCandidates = [];
             const stored = localStorage.getItem('gemini_model') || '';
             const DEPRECATED = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-latest', 'gemini-2.0-flash-001', 'gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-2.5-flash'];
-            const preferredModel = (stored && !DEPRECATED.includes(stored)) ? stored : 'gemini-3.8-flash';
-            const modelCandidates = [preferredModel, 'gemini-3.8-flash', 'gemini-3.8-flash-latest', 'gemini-3.8-flash-001']
-                .filter((v,i,a) => a.indexOf(v) === i); // deduplica
+            if (stored && !DEPRECATED.includes(stored)) {
+                modelCandidates = [stored];
+            } else {
+                try {
+                    const listR = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=50`);
+                    if (listR.ok) {
+                        const listData = await listR.json();
+                        const available = (listData.models || [])
+                            .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+                            .map(m => m.name.replace('models/', ''))
+                            .filter(id => id.includes('flash') || id.includes('pro'));
+                        // ordenar: preferir versiones más nuevas (número más alto)
+                        available.sort((a,b) => b.localeCompare(a, undefined, {numeric: true}));
+                        modelCandidates = available;
+                        localStorage.setItem('gemini_model', modelCandidates[0] || '');
+                    }
+                } catch(e) {}
+                if (modelCandidates.length === 0) {
+                    modelCandidates = ['gemini-3.8-flash', 'gemini-3.8-flash-latest'];
+                }
+            }
             let lastError = null;
             let data = null;
             for (const modelId of modelCandidates) {
