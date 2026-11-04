@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-04-v34-gemini-autodetect';
+            const BUILD_VERSION = '2026-11-04-v35-diagnostico-gemini';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27437,9 +27437,67 @@ render();
                     <p style="margin-top:12px;font-size:0.85em;color:#6b7280;">Comprueba que tu API key de Gemini es válida en <strong>aistudio.google.com</strong>.<br>Si el error menciona el modelo, prueba cambiarlo con el botón de abajo.</p>
                     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
                         <button class="btn btn-small" onclick="localStorage.removeItem('gemini_api_key');localStorage.removeItem('gemini_model');closeModal();setTimeout(()=>generarInformeIA(${patientIndex}),300);">🔑 Cambiar key/modelo</button>
+                        <button class="btn btn-small" style="background:#f59e0b;color:white;border:none;" onclick="diagnosticoGemini()">🔍 Diagnóstico Gemini</button>
                         <button class="btn btn-small btn-secondary" onclick="closeModal()">Cerrar</button>
                     </div>`;
             }
+        }
+
+        async function diagnosticoGemini() {
+            const mc = document.getElementById('modalContent');
+            const apiKey = localStorage.getItem('gemini_api_key') || '';
+            mc.innerHTML = '<div style="text-align:center;padding:30px"><div style="border:4px solid #e0e7ff;border-top:4px solid #f59e0b;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;margin:0 auto 12px"></div><p style="color:#6b7280">Diagnosticando Gemini…</p></div>';
+            document.getElementById('modal').classList.add('active');
+
+            let lines = '<h3 style="color:#f59e0b;margin-bottom:16px;">🔍 Diagnóstico Gemini AI</h3>';
+            const keyMask = apiKey ? apiKey.substring(0,8) + '…' + apiKey.slice(-4) : '(no configurada)';
+            lines += `<div style="background:#f8f9fa;border-radius:8px;padding:10px;margin-bottom:12px;font-size:.88em;"><b>API Key:</b> <code>${keyMask}</code> ${apiKey ? '' : '❌ Sin clave'}</div>`;
+
+            if (!apiKey) { mc.innerHTML = lines + '<p style="color:#dc2626">❌ Configura la API key primero.</p>'; return; }
+
+            // Test 1: ListModels
+            lines += '<b>1. Modelos disponibles:</b><br>';
+            try {
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=50`);
+                if (r.status === 400 || r.status === 403) {
+                    const d = await r.json().catch(()=>({}));
+                    lines += `<span style="color:#dc2626">❌ API key inválida (HTTP ${r.status}): ${d.error?.message || ''}</span><br>`;
+                } else if (r.ok) {
+                    const d = await r.json();
+                    const models = (d.models || []).filter(m => (m.supportedGenerationMethods||[]).includes('generateContent'));
+                    if (models.length === 0) {
+                        lines += '<span style="color:#dc2626">❌ No hay modelos con generateContent disponibles para esta key.</span><br>';
+                    } else {
+                        lines += `<span style="color:#27ae60">✅ ${models.length} modelo(s) disponible(s):</span><br>`;
+                        lines += '<div style="max-height:120px;overflow-y:auto;background:#f0fdf4;border-radius:6px;padding:6px 10px;font-size:.82em;font-family:monospace;">';
+                        models.forEach(m => { lines += m.name.replace('models/','') + '<br>'; });
+                        lines += '</div>';
+                        // guardar el primero flash disponible
+                        const bestFlash = models.map(m=>m.name.replace('models/','')).find(id=>id.includes('flash'));
+                        if (bestFlash) { localStorage.setItem('gemini_model', bestFlash); lines += `<p style="color:#6366f1;font-size:.85em;margin-top:4px;">→ Modelo guardado: <b>${bestFlash}</b></p>`; }
+                    }
+                } else { lines += `<span style="color:#dc2626">❌ HTTP ${r.status}</span><br>`; }
+            } catch(e) { lines += `<span style="color:#dc2626">❌ Error de red: ${e.message}<br>Puede que tu red esté bloqueando generativelanguage.googleapis.com</span><br>`; }
+
+            // Test 2: llamada mínima
+            const testModel = localStorage.getItem('gemini_model') || 'gemini-3.8-flash';
+            lines += `<br><b>2. Test de generación (${testModel}):</b><br>`;
+            try {
+                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${testModel}:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({contents:[{parts:[{text:'Di hola en una palabra'}]}], generationConfig:{maxOutputTokens:10}})
+                });
+                const d2 = await r2.json().catch(()=>({}));
+                if (r2.ok) {
+                    const txt = d2.candidates?.[0]?.content?.parts?.[0]?.text || '(ok)';
+                    lines += `<span style="color:#27ae60">✅ Respuesta: "${txt}"</span><br>`;
+                } else {
+                    lines += `<span style="color:#dc2626">❌ HTTP ${r2.status}: ${d2.error?.message || JSON.stringify(d2).substring(0,150)}</span><br>`;
+                }
+            } catch(e) { lines += `<span style="color:#dc2626">❌ Error: ${e.message}</span><br>`; }
+
+            lines += `<div style="margin-top:16px;"><button class="btn btn-small btn-secondary" onclick="closeModal()">Cerrar</button></div>`;
+            mc.innerHTML = lines;
         }
 
         // ═══════════════════════════════════════════════════════════════
