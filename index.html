@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-04-v35-diagnostico-gemini';
+            const BUILD_VERSION = '2026-11-04-v36-fix-gemini-empty-response';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27398,7 +27398,20 @@ render();
             }
             try {
                 if (!data) throw lastError || new Error('No se pudo conectar con ningún modelo Gemini');
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sin respuesta';
+                const candidate = data.candidates?.[0];
+                let text = candidate?.content?.parts?.[0]?.text;
+                if (!text) {
+                    const reason = candidate?.finishReason || 'UNKNOWN';
+                    if (reason === 'SAFETY') {
+                        // Reintentar con prompt más neutro si lo bloquean por seguridad
+                        throw new Error('El modelo bloqueó la respuesta por filtros de seguridad. Intenta de nuevo o con menos datos clínicos detallados.');
+                    } else if (reason === 'MAX_TOKENS') {
+                        text = candidate?.content?.parts?.map(p=>p.text||'').join('') || '';
+                        if (!text) throw new Error('Respuesta cortada por límite de tokens. Inténtalo de nuevo.');
+                    } else {
+                        throw new Error(`Sin respuesta del modelo (motivo: ${reason}). Inténtalo de nuevo.`);
+                    }
+                }
 
                 const html = text
                     .replace(/^## (.+)$/gm, '<h3 style="color:#6366f1;margin:20px 0 8px;font-size:1em;border-bottom:2px solid #e0e7ff;padding-bottom:4px;">$1</h3>')
