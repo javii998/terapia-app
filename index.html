@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-04-v37-gemini-sin-reintentos';
+            const BUILD_VERSION = '2026-11-05-v38-gemini-preferred-model';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27344,11 +27344,11 @@ render();
                         const listData = await listR.json();
                         const available = (listData.models || [])
                             .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
-                            .map(m => m.name.replace('models/', ''))
-                            .filter(id => id.includes('flash') || id.includes('pro'));
-                        // ordenar: preferir versiones más nuevas (número más alto)
-                        available.sort((a,b) => b.localeCompare(a, undefined, {numeric: true}));
-                        modelCandidates = available;
+                            .map(m => m.name.replace('models/', ''));
+                        // Orden de preferencia explícito — evita coger modelos deprecados
+                        const PREFERRED = ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-flash-latest','gemini-3.1-flash-lite','gemini-3-flash-preview'];
+                        const best = PREFERRED.find(m => available.includes(m));
+                        modelCandidates = best ? [best] : available.filter(id => id.includes('flash')).slice(0,3);
                         localStorage.setItem('gemini_model', modelCandidates[0] || '');
                     }
                 } catch(e) {}
