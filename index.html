@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v49-informe-ia-detallado';
+            const BUILD_VERSION = '2026-11-05-v50-pubmed-evidence';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27342,6 +27342,60 @@ render();
         // INFORME IA — GEMINI
         // ═══════════════════════════════════════════════════════════════
 
+        async function _fetchPubMedEvidence(diagnosis) {
+            const BASE = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
+            const diagClean = diagnosis.replace(/[^\w\s\-]/g, ' ').trim();
+
+            // Build two searches: high-evidence types first, then RCTs
+            const searches = [
+                { label: 'systematic review[pt] OR meta-analysis[pt]', max: 4 },
+                { label: 'randomized controlled trial[pt]',             max: 4 }
+            ];
+            const collected = [];
+
+            for (const s of searches) {
+                if (collected.length >= 8) break;
+                const need = Math.min(s.max, 8 - collected.length);
+                const term = encodeURIComponent(
+                    `(${diagClean}) AND ("occupational therapy" OR "rehabilitation") AND (${s.label})`
+                );
+                const url = `${BASE}esearch.fcgi?db=pubmed&term=${term}&retmax=${need}&retmode=json&sort=relevance&datetype=pdat&mindate=2015&maxdate=2026`;
+                const sr = await fetch(url, { signal: AbortSignal.timeout(8000) });
+                if (!sr.ok) continue;
+                const sd = await sr.json();
+                const ids = (sd.esearchresult?.idlist || []).filter(id => !collected.find(c => c.id === id));
+                if (ids.length === 0) continue;
+
+                // Fetch summaries (title + authors + year + abstract)
+                const fr = await fetch(
+                    `${BASE}efetch.fcgi?db=pubmed&id=${ids.join(',')}&rettype=abstract&retmode=text`,
+                    { signal: AbortSignal.timeout(10000) }
+                );
+                if (!fr.ok) continue;
+                const text = await fr.text();
+
+                // Split by article (each starts with a PMID line)
+                const articles = text.split(/\n\n\d+\. /).filter(Boolean);
+                const first = text.match(/^\d+\. ([\s\S]+?)(?=\n\n\d+\. |$)/);
+                const allArticles = first ? [first[1], ...articles.slice(1)] : articles;
+
+                for (const art of allArticles) {
+                    if (collected.length >= 8) break;
+                    // Truncate each abstract to ~500 chars to limit token usage while keeping substance
+                    const trimmed = art.replace(/\n+/g, ' ').trim();
+                    const truncated = trimmed.length > 900 ? trimmed.slice(0, 900) + '…' : trimmed;
+                    if (truncated.length > 80) collected.push({ text: truncated });
+                }
+            }
+
+            if (collected.length === 0) return '';
+
+            let block = `\nEVIDENCIA CIENTÍFICA RECIENTE DE PUBMED (${collected.length} artículos — cítalos en el informe):\n`;
+            collected.forEach((a, i) => { block += `\n[${i+1}] ${a.text}\n`; });
+            block += '\n';
+            return block;
+        }
+
         async function generarInformeIA(patientIndex) {
             const patient = patients[patientIndex];
             if (!patient) return;
@@ -27435,7 +27489,28 @@ render();
                 }
             }
 
-            prompt += `Eres un terapeuta ocupacional clínico experto con más de 15 años de experiencia en neurorrehabilitación. Basándote EXCLUSIVAMENTE en los datos anteriores, redacta un informe clínico de TO exhaustivo, de alta calidad y muy detallado. IMPORTANTE: cada sección debe ser extensa y profunda. Cita SIEMPRE las puntuaciones exactas de cada escala y cruza los datos entre escalas para obtener conclusiones clínicas. Nunca inventes datos que no aparezcan arriba. Si hay entrevista inicial disponible, intégrala en el análisis.
+            // PubMed evidence lookup
+            if (patient.diagnosis) {
+                const st = document.getElementById('geminiStatus');
+                if (st) st.textContent = 'Buscando evidencia científica en PubMed…';
+                try {
+                    const pubmedEvidence = await _fetchPubMedEvidence(patient.diagnosis);
+                    if (pubmedEvidence) {
+                        prompt += pubmedEvidence;
+                        const count = (pubmedEvidence.match(/^\[\d+\]/mg) || []).length;
+                        const st2 = document.getElementById('geminiStatus');
+                        if (st2) st2.textContent = `PubMed: ${count} artículo(s) encontrados. Generando informe…`;
+                    } else {
+                        const st2 = document.getElementById('geminiStatus');
+                        if (st2) st2.textContent = 'PubMed: sin resultados específicos. Generando informe…';
+                    }
+                } catch(e) {
+                    const st2 = document.getElementById('geminiStatus');
+                    if (st2) st2.textContent = 'PubMed no disponible. Generando informe con conocimiento Gemini…';
+                }
+            }
+
+            prompt += `Eres un terapeuta ocupacional clínico experto con más de 15 años de experiencia en neurorrehabilitación. Basándote EXCLUSIVAMENTE en los datos anteriores, redacta un informe clínico de TO exhaustivo, de alta calidad y muy detallado. IMPORTANTE: cada sección debe ser extensa y profunda. Cita SIEMPRE las puntuaciones exactas de cada escala y cruza los datos entre escalas para obtener conclusiones clínicas. Nunca inventes datos que no aparezcan arriba. Si hay entrevista inicial disponible, intégrala en el análisis. Si se han proporcionado artículos científicos de PubMed, cítalos explícitamente en el informe (autor, año) al justificar intervenciones — esto es OBLIGATORIO si hay evidencia disponible.
 
 REQUISITO DE LONGITUD: El informe debe ser exhaustivo. Cada sección debe tener un mínimo de 3-5 párrafos desarrollados. No uses bullets cuando puedas redactar párrafos clínicos completos.
 
