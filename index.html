@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v51-fix-entrevista-sync';
+            const BUILD_VERSION = '2026-11-05-v52-pauta-ia';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27613,17 +27613,19 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
                     .replace(/\n\n/g, '</p><p style="margin:6px 0;">')
                     .replace(/\n/g, '<br>');
 
+                window._lastReportPatientIndex = patientIndex;
                 document.getElementById('modalContent').innerHTML = `
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
                         <div>
                             <h2 style="margin:0;color:#6366f1;">🤖 Informe IA — ${patient.name}</h2>
                             <small style="color:#9ca3af;">Generado con Gemini AI · ${new Date().toLocaleString('es-ES')}</small>
                         </div>
-                        <div style="display:flex;gap:8px;">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button onclick="generarPautaIA(window._lastReportPatientIndex)" style="padding:6px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#10b981,#059669);color:white;cursor:pointer;font-size:0.85em;font-weight:600;">📋 Pauta</button>
                             <button onclick="
                                 const t=document.getElementById('aiReportText').innerText;
-                                navigator.clipboard.writeText(t).then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>this.textContent='📋 Copiar',2000)});
-                            " style="padding:6px 14px;border-radius:8px;border:1px solid #6366f1;background:white;color:#6366f1;cursor:pointer;font-size:0.85em;">📋 Copiar</button>
+                                navigator.clipboard.writeText(t).then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>this.textContent='📄 Copiar',2000)});
+                            " style="padding:6px 14px;border-radius:8px;border:1px solid #6366f1;background:white;color:#6366f1;cursor:pointer;font-size:0.85em;">📄 Copiar</button>
                             <button onclick="
                                 localStorage.removeItem('gemini_api_key');
                                 alert('API key eliminada.');
@@ -27644,6 +27646,131 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
                         <button class="btn btn-small" style="background:#f59e0b;color:white;border:none;" onclick="diagnosticoGemini()">🔍 Diagnóstico Gemini</button>
                         <button class="btn btn-small btn-secondary" onclick="closeModal()">Cerrar</button>
                     </div>`;
+            }
+        }
+
+        async function generarPautaIA(patientIndex) {
+            const patient = patients[patientIndex];
+            if (!patient) return;
+            const patientEvaluations = evaluations.filter(e => e.patientId === patient.id);
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) { alert('Configura primero tu API key de Gemini en Informe IA.'); return; }
+
+            document.getElementById('modalContent').innerHTML = `
+                <div style="text-align:center;padding:40px 20px;">
+                    <div style="border:4px solid #d1fae5;border-top:4px solid #10b981;border-radius:50%;width:48px;height:48px;animation:spin 1s linear infinite;margin:0 auto 20px;"></div>
+                    <p style="color:#6b7280;font-size:0.95em;" id="pautaStatus">Generando pauta personalizada…</p>
+                </div>`;
+            document.getElementById('modal').classList.add('active');
+
+            let prompt = `Eres un terapeuta ocupacional experto. Basándote en el perfil del siguiente paciente, genera una PAUTA DE EJERCICIOS Y RECOMENDACIONES PARA CASA, escrita en lenguaje sencillo y comprensible para el paciente y su cuidador. NO uses términos clínicos complejos. El documento debe ser práctico, claro y motivador.
+
+PACIENTE: ${patient.name}
+DIAGNÓSTICO: ${patient.diagnosis || 'No especificado'}
+`;
+            if (patient.notes) prompt += `NOTAS: ${patient.notes}\n`;
+            if (patientEvaluations.length > 0) {
+                prompt += `\nEVALUACIONES REALIZADAS:\n`;
+                patientEvaluations.forEach(ev => {
+                    prompt += `- ${ev.scaleName}: ${ev.interpretation || ev.totalPoints + ' puntos'}\n`;
+                    if (ev.answers && ev.answers.length <= 20) {
+                        ev.answers.filter(a => a.selectedOption && a.selectedOption !== 'Sin respuesta')
+                            .slice(0, 8).forEach(a => { prompt += `    · ${a.itemName}: ${a.selectedOption}\n`; });
+                    }
+                });
+            }
+            if (patient.interviewData) {
+                const form = patient.interviewData.type === 'adult' ? _INTERVIEW_FORM_ADULT : _INTERVIEW_FORM_PEDIATRIC;
+                form.forEach(sec => sec.fields.forEach(f => {
+                    const v = patient.interviewData[f.id];
+                    if (v) prompt += `${f.label}: ${v}\n`;
+                }));
+            }
+
+            prompt += `
+Genera la pauta en este formato:
+
+## PAUTA DE EJERCICIOS EN CASA — ${patient.name}
+
+### 🏠 EJERCICIOS DIARIOS
+Para cada ejercicio indica: nombre claro, descripción paso a paso, cuántas repeticiones y veces al día, qué sensación es normal y cuándo parar. Incluye 5-8 ejercicios adaptados a las limitaciones del paciente, ordenados de menor a mayor esfuerzo.
+
+### ⚠️ COSAS IMPORTANTES A TENER EN CUENTA
+Lista de precauciones, señales de alarma y situaciones en las que no hacer los ejercicios. Explícalas de forma clara y directa.
+
+### 💡 CONSEJOS DEL DÍA A DÍA
+Trucos prácticos para las actividades cotidianas: cómo vestirse, cómo desplazarse, cómo coger objetos, cómo descansar. Personalizados al diagnóstico y limitaciones del paciente.
+
+### 🛑 CUÁNDO LLAMAR AL TERAPEUTA
+Lista concreta de situaciones en las que el paciente o cuidador debe contactar al terapeuta antes de la próxima sesión.
+
+Usa lenguaje simple, directo y amable. Nada de tecnicismos. El objetivo es que el paciente y su familia puedan seguir la pauta sin ayuda.`;
+
+            const stored = localStorage.getItem('gemini_model') || '';
+            const startModel = (stored && !_geminiIsDeprecated(stored)) ? stored : _GEMINI_PREFERRED[0];
+            const modelCandidates = [startModel, ..._GEMINI_PREFERRED.filter(m => m !== startModel)];
+            let data = null, lastError = null;
+            for (const modelId of modelCandidates.slice(0, 7)) {
+                const st = document.getElementById('pautaStatus');
+                if (st) st.textContent = `Probando ${modelId}…`;
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 30000);
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { temperature: 0.5, maxOutputTokens: 4096 }
+                        }),
+                        signal: ctrl.signal
+                    });
+                    clearTimeout(timer);
+                    const resData = await res.json().catch(()=>({}));
+                    if (!res.ok) { lastError = new Error((resData.error?.message || 'HTTP '+res.status)+' ['+modelId+']'); continue; }
+                    data = resData; localStorage.setItem('gemini_model', modelId); break;
+                } catch(e) {
+                    clearTimeout(timer);
+                    lastError = e.name === 'AbortError' ? new Error('Timeout ['+modelId+']') : e;
+                }
+            }
+            try {
+                if (!data) throw lastError || new Error('No se pudo conectar con Gemini');
+                let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) throw new Error('Sin respuesta del modelo. Inténtalo de nuevo.');
+
+                const html = text
+                    .replace(/^## (.+)$/gm, '<h2 style="color:#059669;margin:20px 0 10px;font-size:1.1em;">$1</h2>')
+                    .replace(/^### (.+)$/gm, '<h3 style="color:#374151;margin:16px 0 8px;font-size:1em;border-left:4px solid #10b981;padding-left:10px;">$1</h3>')
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/^\- (.+)$/gm, '<li style="margin-bottom:6px;">$1</li>')
+                    .replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => `<ul style="padding-left:20px;margin:8px 0;">${m}</ul>`)
+                    .replace(/\n\n/g, '</p><p style="margin:8px 0;">')
+                    .replace(/\n/g, '<br>');
+
+                document.getElementById('modalContent').innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+                        <div>
+                            <h2 style="margin:0;color:#059669;">📋 Pauta para casa — ${patient.name}</h2>
+                            <small style="color:#9ca3af;">Generado con Gemini AI · ${new Date().toLocaleString('es-ES')}</small>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button onclick="window.print()" style="padding:6px 14px;border-radius:8px;border:none;background:#374151;color:white;cursor:pointer;font-size:0.85em;">🖨️ Imprimir</button>
+                            <button onclick="
+                                const t=document.getElementById('pautaText').innerText;
+                                navigator.clipboard.writeText(t).then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>this.textContent='📄 Copiar',2000)});
+                            " style="padding:6px 14px;border-radius:8px;border:1px solid #059669;background:white;color:#059669;cursor:pointer;font-size:0.85em;">📄 Copiar</button>
+                            <button onclick="generarInformeIA(${patientIndex})" style="padding:6px 12px;border-radius:8px;border:1px solid #6366f1;background:white;color:#6366f1;cursor:pointer;font-size:0.85em;">← Volver al informe</button>
+                        </div>
+                    </div>
+                    <div id="pautaText" style="font-size:0.93em;line-height:1.7;max-height:65vh;overflow-y:auto;padding-right:4px;">
+                        <p style="margin:6px 0;">${html}</p>
+                    </div>`;
+            } catch(e) {
+                document.getElementById('modalContent').innerHTML = `
+                    <h3 style="color:#dc2626;">Error al generar la pauta</h3>
+                    <p style="color:#374151;background:#fee2e2;padding:10px;border-radius:8px;font-size:.9em;">${e.message}</p>
+                    <button class="btn btn-secondary" style="margin-top:12px;" onclick="generarInformeIA(${patientIndex})">← Volver al informe</button>`;
             }
         }
 
