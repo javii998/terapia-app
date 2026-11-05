@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v52-pauta-ia';
+            const BUILD_VERSION = '2026-11-05-v53-pubmed-strong-evidence';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27344,55 +27344,75 @@ render();
 
         async function _fetchPubMedEvidence(diagnosis) {
             const BASE = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
-            const diagClean = diagnosis.replace(/[^\w\s\-]/g, ' ').trim();
 
-            // Build two searches: high-evidence types first, then RCTs
-            const searches = [
-                { label: 'systematic review[pt] OR meta-analysis[pt]', max: 4 },
-                { label: 'randomized controlled trial[pt]',             max: 4 }
+            // Translate common Spanish diagnosis terms to English for PubMed
+            const diagEn = diagnosis
+                .replace(/lesi[oó]n medular/gi, 'spinal cord injury')
+                .replace(/ictus|ACV|ACVA|accidente cerebrovascular/gi, 'stroke')
+                .replace(/par[aá]lisis cerebral/gi, 'cerebral palsy')
+                .replace(/traumatismo craneoencef[aá]lico|TCE/gi, 'traumatic brain injury')
+                .replace(/demencia|alzheimer/gi, 'dementia')
+                .replace(/parkinson/gi, 'Parkinson disease')
+                .replace(/esclerosis lateral amiotr[oó]fica|ELA/gi, 'amyotrophic lateral sclerosis')
+                .replace(/esclerosis m[uú]ltiple/gi, 'multiple sclerosis')
+                .replace(/fractura de cadera/gi, 'hip fracture')
+                .replace(/fractura/gi, 'fracture')
+                .replace(/hemiplej[ií]a/gi, 'hemiplegia')
+                .replace(/tetraplejia|tetraplegia/gi, 'tetraplegia')
+                .replace(/paraplejia/gi, 'paraplegia');
+            const diagClean = diagEn.replace(/[^\w\s\-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+            // 4 parallel searches targeting different evidence types
+            const searchConfigs = [
+                { term: `(${diagClean}) AND "occupational therapy" AND (systematic review[pt] OR meta-analysis[pt])`,                                                     max: 4, type: 'SR/MA — Terapia Ocupacional' },
+                { term: `(${diagClean}) AND rehabilitation AND (systematic review[pt] OR meta-analysis[pt])`,                                                              max: 4, type: 'SR/MA — Rehabilitación' },
+                { term: `(${diagClean}) AND ("activities of daily living" OR "upper extremity rehabilitation" OR "hand function") AND randomized controlled trial[pt]`,   max: 4, type: 'ECA — AVD/Función' },
+                { term: `(${diagClean}) AND rehabilitation AND (guideline[pt] OR practice guideline[pt] OR clinical practice guideline[tiab])`,                           max: 3, type: 'Guía Clínica' },
             ];
-            const collected = [];
 
-            for (const s of searches) {
-                if (collected.length >= 8) break;
-                const need = Math.min(s.max, 8 - collected.length);
-                const term = encodeURIComponent(
-                    `(${diagClean}) AND ("occupational therapy" OR "rehabilitation") AND (${s.label})`
-                );
-                const url = `${BASE}esearch.fcgi?db=pubmed&term=${term}&retmax=${need}&retmode=json&sort=relevance&datetype=pdat&mindate=2015&maxdate=2026`;
-                const sr = await fetch(url, { signal: AbortSignal.timeout(8000) });
-                if (!sr.ok) continue;
-                const sd = await sr.json();
-                const ids = (sd.esearchresult?.idlist || []).filter(id => !collected.find(c => c.id === id));
-                if (ids.length === 0) continue;
+            // Run all 4 searches in parallel
+            const searchResults = await Promise.allSettled(searchConfigs.map(async cfg => {
+                const url = `${BASE}esearch.fcgi?db=pubmed&term=${encodeURIComponent(cfg.term)}&retmax=${cfg.max}&retmode=json&sort=relevance&datetype=pdat&mindate=2015&maxdate=2026`;
+                const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+                if (!r.ok) return [];
+                const d = await r.json();
+                return (d.esearchresult?.idlist || []).map(id => ({ id, type: cfg.type }));
+            }));
 
-                // Fetch summaries (title + authors + year + abstract)
-                const fr = await fetch(
-                    `${BASE}efetch.fcgi?db=pubmed&id=${ids.join(',')}&rettype=abstract&retmode=text`,
-                    { signal: AbortSignal.timeout(10000) }
-                );
-                if (!fr.ok) continue;
-                const text = await fr.text();
-
-                // Split by article (each starts with a PMID line)
-                const articles = text.split(/\n\n\d+\. /).filter(Boolean);
-                const first = text.match(/^\d+\. ([\s\S]+?)(?=\n\n\d+\. |$)/);
-                const allArticles = first ? [first[1], ...articles.slice(1)] : articles;
-
-                for (const art of allArticles) {
-                    if (collected.length >= 8) break;
-                    // Truncate each abstract to ~500 chars to limit token usage while keeping substance
-                    const trimmed = art.replace(/\n+/g, ' ').trim();
-                    const truncated = trimmed.length > 900 ? trimmed.slice(0, 900) + '…' : trimmed;
-                    if (truncated.length > 80) collected.push({ text: truncated });
+            // Deduplicate IDs, preserving study-type label
+            const seen = new Set();
+            const entries = [];
+            for (const r of searchResults) {
+                if (r.status !== 'fulfilled') continue;
+                for (const e of r.value) {
+                    if (!seen.has(e.id)) { seen.add(e.id); entries.push(e); }
                 }
             }
+            if (entries.length === 0) return '';
 
-            if (collected.length === 0) return '';
+            // Fetch full abstracts for up to 12 articles
+            const batch = entries.slice(0, 12);
+            const fr = await fetch(
+                `${BASE}efetch.fcgi?db=pubmed&id=${batch.map(e=>e.id).join(',')}&rettype=abstract&retmode=text`,
+                { signal: AbortSignal.timeout(15000) }
+            );
+            if (!fr.ok) return '';
+            const raw = await fr.text();
 
-            let block = `\nEVIDENCIA CIENTÍFICA RECIENTE DE PUBMED (${collected.length} artículos — cítalos en el informe):\n`;
-            collected.forEach((a, i) => { block += `\n[${i+1}] ${a.text}\n`; });
-            block += '\n';
+            // Parse individual articles (PubMed separates them with "\n\n<n>. ")
+            const splitRaw = raw.split(/\n(?=\d+\. )/).map(s => s.trim()).filter(s => s.length > 80);
+
+            let block = `\nEVIDENCIA CIENTÍFICA PUBMED — ${splitRaw.length} ARTÍCULOS DE ALTA JERARQUÍA\n`;
+            block += `INSTRUCCIÓN CRÍTICA: Cada recomendación terapéutica del informe DEBE estar respaldada por al menos uno de estos artículos citado como (Autor, año). Si la evidencia disponible contradice o matiza alguna intervención, indícalo explícitamente. Indica el nivel de evidencia (Ia/Ib/IIa/IIb/III/IV) para cada recomendación.\n\n`;
+
+            splitRaw.forEach((art, i) => {
+                const entry = batch[i];
+                const typeTag = entry ? `[${entry.type}]` : '[Artículo]';
+                const trimmed = art.replace(/\n+/g, ' ').trim();
+                // Keep up to 1400 chars per abstract to preserve key findings
+                const truncated = trimmed.length > 1400 ? trimmed.slice(0, 1400) + '…' : trimmed;
+                block += `[${i+1}] ${typeTag}\n${truncated}\n\n`;
+            });
             return block;
         }
 
@@ -27445,7 +27465,7 @@ render();
             document.getElementById('modalContent').innerHTML = `
                 <div style="text-align:center;padding:40px 20px;">
                     <div style="border:4px solid #e0e7ff;border-top:4px solid #6366f1;border-radius:50%;width:48px;height:48px;animation:spin 1s linear infinite;margin:0 auto 20px;"></div>
-                    <p style="color:#6b7280;font-size:0.95em;" id="geminiStatus">Detectando modelo disponible…</p>
+                    <p style="color:#6b7280;font-size:0.95em;" id="geminiStatus">Buscando evidencia en PubMed (SR, MA, ECA, guías)…</p>
                 </div>`;
             document.getElementById('modal').classList.add('active');
 
@@ -27510,7 +27530,15 @@ render();
                 }
             }
 
-            prompt += `Eres un terapeuta ocupacional clínico experto con más de 15 años de experiencia en neurorrehabilitación. Basándote EXCLUSIVAMENTE en los datos anteriores, redacta un informe clínico de TO exhaustivo, de alta calidad y muy detallado. IMPORTANTE: cada sección debe ser extensa y profunda. Cita SIEMPRE las puntuaciones exactas de cada escala y cruza los datos entre escalas para obtener conclusiones clínicas. Nunca inventes datos que no aparezcan arriba. Si hay entrevista inicial disponible, intégrala en el análisis. Si se han proporcionado artículos científicos de PubMed, cítalos explícitamente en el informe (autor, año) al justificar intervenciones — esto es OBLIGATORIO si hay evidencia disponible.
+            prompt += `Eres un terapeuta ocupacional clínico experto en práctica basada en evidencia. Redacta un informe clínico de TO exhaustivo integrando TODOS los datos del paciente con la evidencia científica proporcionada de PubMed.
+
+REGLAS OBLIGATORIAS — INCUMPLIRLAS INVALIDA EL INFORME:
+1. EVIDENCIA: Cada recomendación de intervención DEBE citar al menos un artículo de la lista PubMed (formato: Apellido et al., año) O indicar su nivel de evidencia si proviene de tu conocimiento de entrenamiento.
+2. NIVEL DE EVIDENCIA: Incluye el nivel (Ia = meta-análisis de ECA, Ib = ECA individual, IIa = estudio controlado sin aleatorización, IIb = estudio cuasi-experimental, III = estudio descriptivo, IV = consenso de expertos/opinión) para cada recomendación principal.
+3. CONTRADICCIONES: Si la evidencia disponible contradice una práctica habitual, señálalo explícitamente.
+4. DATOS CLÍNICOS: Cita siempre las puntuaciones exactas de las escalas y cruza resultados entre ellas.
+5. LONGITUD: Mínimo 3-5 párrafos por sección. Párrafos clínicos completos, no bullets.
+6. NUNCA inventes datos clínicos que no aparezcan en los datos del paciente.
 
 REQUISITO DE LONGITUD: El informe debe ser exhaustivo. Cada sección debe tener un mínimo de 3-5 párrafos desarrollados. No uses bullets cuando puedas redactar párrafos clínicos completos.
 
@@ -27534,22 +27562,22 @@ Justifica detalladamente el pronóstico (favorable / reservado / limitado) basá
 ## 4. ÁREAS PRIORITARIAS DE INTERVENCIÓN
 Para cada una de las 5-7 áreas prioritarias, desarrolla: (a) justificación clínica detallada con datos de escala, (b) impacto en la calidad de vida y autonomía, (c) potencial de mejora. Ordénalas por impacto funcional. No uses bullets — redacta párrafos.
 
-## 5. OBJETIVOS TERAPÉUTICOS (SMART)
-Propón 8-10 objetivos específicos. Para cada objetivo desarrolla: conducta observable precisa, criterio de éxito cuantificable, plazo realista, método de medición (escala o indicador), y justificación basada en los datos del paciente.
+## 5. OBJETIVOS TERAPÉUTICOS (SMART) — CON RESPALDO EMPÍRICO
+Propón 8-10 objetivos específicos. Para cada objetivo: conducta observable, criterio cuantificable, plazo, método de medición, y cita la evidencia que sustenta la viabilidad del objetivo (artículo PubMed o nivel de evidencia).
 
-## 6. PLAN DE INTERVENCIÓN DETALLADO
-Para CADA área prioritaria desarrolla en profundidad:
-- Marco teórico o enfoque de TO aplicado (compensatorio, rehabilitador, educativo, de habilidades, etc.) con justificación
-- Actividades terapéuticas específicas con gradación de dificultad progresiva (al menos 3 niveles por área)
-- Técnicas concretas (nombres técnicos: Bobath, CIMT, biofeedback, mirror therapy, etc. según corresponda)
-- Productos de apoyo y adaptaciones del entorno recomendados con nombres comerciales o descriptivos precisos
-- Estrategias para el entorno familiar y cuidadores
-- Indicadores de progreso específicos para cada área
+## 6. PLAN DE INTERVENCIÓN BASADO EN EVIDENCIA
+Para CADA área prioritaria desarrolla:
+- Marco teórico con cita de evidencia que lo sustenta (nivel Ia/Ib preferiblemente)
+- Actividades terapéuticas con gradación progresiva (3 niveles) y respaldo empírico de cada técnica
+- Técnicas específicas con su nivel de evidencia (CIMT: nivel Ia; Bobath: nivel IIa; etc.)
+- Si hay evidencia que muestra que alguna técnica NO es superior a otras, indícalo
+- Productos de apoyo y adaptaciones con nombres precisos y evidencia de eficacia si existe
+- Estrategias para cuidadores con nivel de evidencia
 
-## 7. PLANIFICACIÓN Y SEGUIMIENTO
-Detalla: frecuencia, duración e intensidad de sesiones con justificación; estructura detallada de cada tipo de sesión; cronograma de reevaluación indicando qué escala aplicar y cuándo; criterios de progresión de objetivos; criterios de alta funcional o derivación; recomendaciones para domicilio y entorno.
+## 7. PLANIFICACIÓN Y SEGUIMIENTO BASADO EN EVIDENCIA
+Justifica la frecuencia e intensidad de sesiones con evidencia (dosis-respuesta si está disponible); cronograma de reevaluación indicando qué escala y cuándo; criterios de progresión basados en puntos de corte clínicamente relevantes (MCID si está disponible para las escalas usadas); criterios de alta; recomendaciones para domicilio con evidencia.
 
-Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en España. Redacta párrafos completos y argumentados. El informe debe demostrar profundidad clínica, no ser una lista de bullets. Integra todos los datos disponibles — entrevista, escalas, sesiones — de forma coherente.`;
+Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en España. Redacta párrafos completos y argumentados. CADA sección debe referenciar la evidencia disponible de forma explícita. Si la evidencia para el diagnóstico específico es limitada, indícalo y cita la evidencia más próxima disponible.`;
 
             // Siempre intentar todos los PREFERRED; el modelo guardado va primero
             const stored = localStorage.getItem('gemini_model') || '';
