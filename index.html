@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v43-gemini-prompt-clinico';
+            const BUILD_VERSION = '2026-11-05-v44-test-informe-consola';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27482,6 +27482,70 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional en España. S�
             } catch(e) {}
             return ['gemini-3.8-flash'];
         }
+
+        // ── Test mode: llamar desde consola del navegador ───────────────
+        // Uso: testInformeIA(0)  ← índice del paciente en el array patients
+        window.testInformeIA = function(patientIndex) {
+            const patient = patients[patientIndex];
+            if (!patient) { console.error('Paciente no encontrado. Índices válidos: 0-' + (patients.length-1)); return; }
+            const mockText = `## 1. ANÁLISIS DEL PERFIL OCUPACIONAL
+**${patient.name}** presenta limitaciones en AVD básicas (higiene, vestido) e instrumentales (preparación de comidas, gestión del hogar). La evaluación evidencia un patrón de dependencia moderada con preservación cognitiva.
+
+## 2. ANÁLISIS FUNCIONAL (MARCO ICF)
+**Funciones corporales:** Reducción de fuerza muscular en MMSS y déficit de coordinación fina. **Actividad:** Limitaciones en autocuidado y movilidad funcional. **Participación:** Restricción en roles domésticos y sociales. Factores ambientales: barreras arquitectónicas en domicilio.
+
+## 3. PRONÓSTICO Y POTENCIAL DE REHABILITACIÓN
+Pronóstico **favorable-moderado**. La preservación cognitiva y la motivación del paciente son factores facilitadores. La cronificación del proceso limita la recuperación completa pero permite mejora funcional significativa.
+
+## 4. ÁREAS PRIORITARIAS DE INTERVENCIÓN
+1. **Autocuidado** — mayor impacto en calidad de vida
+2. **Destreza manual** — limitante para múltiples ocupaciones
+3. **Movilidad funcional** — base para la independencia
+4. **Participación en el hogar** — rol valorado por el paciente
+
+## 5. OBJETIVOS TERAPÉUTICOS (SMART)
+1. En 8 semanas, realizará el vestido superior con supervisión mínima usando adaptaciones (criterio: 4/5 intentos exitosos).
+2. En 6 semanas, completará la higiene facial de forma autónoma con productos de apoyo.
+3. En 3 meses, incrementará la fuerza de prensión en 10% según dinamometría.
+
+## 6. PLAN DE INTERVENCIÓN DETALLADO
+**Autocuidado:** Técnica de vestido sentado, abotonadores, calzadores de mango largo. Gradación: supervisión → independencia con adaptaciones.
+**Destreza:** Terapia de restricción, actividades de pinza fina graduada, plastilina terapéutica.
+**Entorno:** Evaluación domiciliaria, instalación de barras de apoyo, reorganización del espacio.
+
+## 7. PLANIFICACIÓN Y SEGUIMIENTO
+**Frecuencia:** 3 sesiones/semana × 45 min. **Reevaluación:** mensual con las mismas escalas. **Criterios de alta:** consecución del 80% de objetivos o meseta funcional mantenida 3 meses.
+
+---
+*⚠️ Este es un informe de PRUEBA generado localmente sin API. No usar con fines clínicos.*`;
+
+            // Reutilizar el mismo renderer que generarInformeIA
+            const html = mockText
+                .replace(/^## (.+)$/gm, '<h3 style="color:#6366f1;margin:20px 0 8px;font-size:1em;border-bottom:2px solid #e0e7ff;padding-bottom:4px;">$1</h3>')
+                .replace(/^### (.+)$/gm, '<h4 style="color:#374151;margin:12px 0 4px;">$1</h4>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^\- (.+)$/gm, '<li style="margin-bottom:4px;">$1</li>')
+                .replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => `<ul style="padding-left:20px;margin:6px 0;">${m}</ul>`)
+                .replace(/\n\n/g, '</p><p style="margin:6px 0;">')
+                .replace(/\n/g, '<br>');
+
+            document.getElementById('modalContent').innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        <h2 style="margin:0;color:#6366f1;">🧪 Informe TEST — ${patient.name}</h2>
+                        <small style="color:#f59e0b;font-weight:600;">Modo prueba local · sin API · no usar clínicamente</small>
+                    </div>
+                    <button onclick="
+                        const t=document.getElementById('aiReportText').innerText;
+                        navigator.clipboard.writeText(t).then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>this.textContent='📋 Copiar',2000)});
+                    " style="padding:6px 14px;border-radius:8px;border:1px solid #6366f1;background:white;color:#6366f1;cursor:pointer;font-size:0.85em;">📋 Copiar</button>
+                </div>
+                <div id="aiReportText" style="font-size:0.92em;line-height:1.6;max-height:65vh;overflow-y:auto;padding-right:4px;">
+                    <p style="margin:6px 0;">${html}</p>
+                </div>`;
+            document.getElementById('modal').classList.add('active');
+            console.log('✅ Test report rendered for patient:', patient.name);
+        };
 
         async function diagnosticoGemini() {
             const mc = document.getElementById('modalContent');
