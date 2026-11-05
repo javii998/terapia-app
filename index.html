@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v38-gemini-preferred-model';
+            const BUILD_VERSION = '2026-11-05-v39-gemini-helpers-testeado';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27334,27 +27334,10 @@ render();
             // Autodetectar modelos disponibles via ListModels
             let modelCandidates = [];
             const stored = localStorage.getItem('gemini_model') || '';
-            const DEPRECATED = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-latest', 'gemini-2.0-flash-001', 'gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-2.5-flash'];
-            if (stored && !DEPRECATED.includes(stored)) {
+            if (stored && !_geminiIsDeprecated(stored)) {
                 modelCandidates = [stored];
             } else {
-                try {
-                    const listR = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=50`);
-                    if (listR.ok) {
-                        const listData = await listR.json();
-                        const available = (listData.models || [])
-                            .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
-                            .map(m => m.name.replace('models/', ''));
-                        // Orden de preferencia explícito — evita coger modelos deprecados
-                        const PREFERRED = ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-flash-latest','gemini-3.1-flash-lite','gemini-3-flash-preview'];
-                        const best = PREFERRED.find(m => available.includes(m));
-                        modelCandidates = best ? [best] : available.filter(id => id.includes('flash')).slice(0,3);
-                        localStorage.setItem('gemini_model', modelCandidates[0] || '');
-                    }
-                } catch(e) {}
-                if (modelCandidates.length === 0) {
-                    modelCandidates = ['gemini-3.8-flash', 'gemini-3.8-flash-latest'];
-                }
+                modelCandidates = await _geminiDetectModels(apiKey);
             }
             let lastError = null;
             let data = null;
@@ -27439,6 +27422,31 @@ render();
             }
         }
 
+        // ── Helpers Gemini ──────────────────────────────────────────────
+        const _GEMINI_DEPRECATED = ['gemini-1.5-flash','gemini-1.5-pro','gemini-1.5-flash-latest','gemini-2.0-flash','gemini-2.0-flash-001','gemini-2.0-flash-exp','gemini-2.5-flash','gemini-2.5-pro'];
+        const _GEMINI_PREFERRED  = ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-flash-latest','gemini-3.1-flash-lite','gemini-3-flash-preview'];
+
+        function _geminiIsDeprecated(modelId) {
+            return _GEMINI_DEPRECATED.includes(modelId);
+        }
+
+        async function _geminiDetectModels(apiKey) {
+            try {
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=50`);
+                if (r.ok) {
+                    const d = await r.json();
+                    const available = (d.models || [])
+                        .filter(m => (m.supportedGenerationMethods||[]).includes('generateContent'))
+                        .map(m => m.name.replace('models/',''));
+                    const best = _GEMINI_PREFERRED.find(m => available.includes(m));
+                    const candidates = best ? [best] : available.filter(id => id.includes('flash') && !_geminiIsDeprecated(id)).slice(0,3);
+                    if (candidates.length > 0) localStorage.setItem('gemini_model', candidates[0]);
+                    return candidates;
+                }
+            } catch(e) {}
+            return ['gemini-3.8-flash'];
+        }
+
         async function diagnosticoGemini() {
             const mc = document.getElementById('modalContent');
             const apiKey = localStorage.getItem('gemini_api_key') || '';
@@ -27468,18 +27476,21 @@ render();
                         lines += '<div style="max-height:120px;overflow-y:auto;background:#f0fdf4;border-radius:6px;padding:6px 10px;font-size:.82em;font-family:monospace;">';
                         models.forEach(m => { lines += m.name.replace('models/','') + '<br>'; });
                         lines += '</div>';
-                        // guardar el primero flash disponible
-                        const bestFlash = models.map(m=>m.name.replace('models/','')).find(id=>id.includes('flash'));
-                        if (bestFlash) { localStorage.setItem('gemini_model', bestFlash); lines += `<p style="color:#6366f1;font-size:.85em;margin-top:4px;">→ Modelo guardado: <b>${bestFlash}</b></p>`; }
+                        // guardar el mejor modelo disponible (usando lista de preferencia)
+                        const available = models.map(m=>m.name.replace('models/',''));
+                        const bestModel = _GEMINI_PREFERRED.find(m => available.includes(m)) || available.find(id=>id.includes('flash')&&!_geminiIsDeprecated(id));
+                        if (bestModel) { localStorage.setItem('gemini_model', bestModel); lines += `<p style="color:#6366f1;font-size:.85em;margin-top:4px;">→ Modelo guardado: <b>${bestModel}</b></p>`; }
                     }
                 } else { lines += `<span style="color:#dc2626">❌ HTTP ${r.status}</span><br>`; }
             } catch(e) { lines += `<span style="color:#dc2626">❌ Error de red: ${e.message}<br>Puede que tu red esté bloqueando generativelanguage.googleapis.com</span><br>`; }
 
-            // Test 2: llamada mínima
+            // Test 2: llamada mínima con el mejor modelo detectado
             const testModel = localStorage.getItem('gemini_model') || 'gemini-3.8-flash';
-            lines += `<br><b>2. Test de generación (${testModel}):</b><br>`;
+            // Asegurar que no usamos un modelo deprecado para el test
+            const finalTestModel = _geminiIsDeprecated(testModel) ? 'gemini-3.8-flash' : testModel;
+            lines += `<br><b>2. Test de generación (${finalTestModel}):</b><br>`;
             try {
-                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${testModel}:generateContent?key=${apiKey}`, {
+                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${finalTestModel}:generateContent?key=${apiKey}`, {
                     method: 'POST', headers: {'Content-Type':'application/json'},
                     body: JSON.stringify({contents:[{parts:[{text:'Di hola en una palabra'}]}], generationConfig:{maxOutputTokens:10}})
                 });
