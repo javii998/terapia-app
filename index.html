@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v50-pubmed-evidence';
+            const BUILD_VERSION = '2026-11-05-v51-fix-entrevista-sync';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27831,8 +27831,10 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
           const pts = JSON.parse(localStorage.getItem('patients') || '[]');
           if (!pts[patientIndex]) return;
           pts[patientIndex].interviewData = data;
+          pts[patientIndex].editedAt = new Date().toISOString();
           localStorage.setItem('patients', JSON.stringify(pts));
           patients[patientIndex] = pts[patientIndex];
+          ghScheduleSync();
           closeModal();
           showNotification('Entrevista guardada correctamente', 'success');
           renderPatientList();
