@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v55-save-chat-pauta-topics';
+            const BUILD_VERSION = '2026-11-05-v56-aidocs-github-sync';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -18830,6 +18830,7 @@
                 rutasHistorial: JSON.parse(localStorage.getItem('gestor-rutas-historial') || '[]'),
                 rutasSitios:    JSON.parse(localStorage.getItem('gestor-rutas-sitios')    || '[]'),
                 rutasBaseConfig: JSON.parse(localStorage.getItem('gestor-rutas-base')     || 'null'),
+                aiDocuments:    JSON.parse(localStorage.getItem('ai_documents')          || '[]'),
                 savedAt: new Date().toISOString()
             };
         }
@@ -18984,6 +18985,11 @@
                 ingTarifas     = ghMergeArray(localTarifas,    remote.ingTarifas);
                 ingProgramadas = ghMergeArray(localProgramadas,remote.ingProgramadas);
                 ingContratos   = ghMergeArray(localContratos,  remote.ingContratos);
+
+                // Merge AI documents
+                const localAIDocs = JSON.parse(localStorage.getItem('ai_documents') || '[]');
+                const mergedAIDocs = ghMergeArray(localAIDocs, remote.aiDocuments || []);
+                localStorage.setItem('ai_documents', JSON.stringify(mergedAIDocs));
 
                 localStorage.setItem('patients',       JSON.stringify(patients));
                 localStorage.setItem('evaluations',    JSON.stringify(evaluations));
@@ -27693,7 +27699,8 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
             const doc = { id: Date.now(), patientId: patient.id, patientName: patient.name, type, topic: topic || null, text, date: new Date().toISOString() };
             docs.push(doc);
             localStorage.setItem('ai_documents', JSON.stringify(docs));
-            showNotification((type === 'informe' ? 'Informe' : 'Pauta') + ' guardado en el historial', 'success');
+            ghScheduleSync();
+            showNotification((type === 'informe' ? 'Informe' : 'Pauta') + ' guardado y sincronizando con GitHub…', 'success');
         }
 
         function viewAIDocuments(patientIndex) {
