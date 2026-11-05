@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v44-test-informe-consola';
+            const BUILD_VERSION = '2026-11-05-v45-historia-clinica-ampliada';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -15224,6 +15224,22 @@
                     </div>
                 </div>
 
+                <div style="margin-top:12px;border-top:2px solid #e0e7ff;padding-top:12px;">
+                    <div style="font-weight:700;color:#6366f1;margin-bottom:10px;font-size:0.95em;">📋 Historia Clínica Ampliada</div>
+                    <div class="form-group">
+                        <label>Entrevista / Anamnesis</label>
+                        <textarea id="patientAnamnesis" placeholder="Motivo de consulta, historia de la enfermedad actual, antecedentes personales y familiares relevantes, situación sociofamiliar, rol ocupacional previo..." style="min-height:100px">${p.anamnesis || ''}</textarea>
+                    </div>
+                    <div class="form-group" style="margin-top:8px;">
+                        <label>Pruebas Diagnósticas</label>
+                        <textarea id="patientDiagTests" placeholder="Resultados de RMN, TAC, radiografías, analíticas, electromiografía, neuropsicología..." style="min-height:80px">${p.diagTests || ''}</textarea>
+                    </div>
+                    <div class="form-group" style="margin-top:8px;">
+                        <label>Informes de Otros Servicios</label>
+                        <textarea id="patientOtherServices" placeholder="Fisioterapia, enfermería, cirugía, neurología, psicología, trabajo social, logopedia..." style="min-height:80px">${p.otherServices || ''}</textarea>
+                    </div>
+                </div>
+
                 <div style="display:flex;gap:10px;margin-top:10px;">
                     <button class="btn" onclick="savePatient(${isEdit ? editIndex : 'null'})" style="flex:1">
                         ${isEdit ? '💾 Actualizar' : '✅ Guardar Paciente'}
@@ -15244,6 +15260,9 @@
             const diagnosis = document.getElementById('patientDiagnosis').value.trim();
             const phone = document.getElementById('patientPhone').value.trim();
             const notes = document.getElementById('patientNotes').value.trim();
+            const anamnesis = document.getElementById('patientAnamnesis').value.trim();
+            const diagTests = document.getElementById('patientDiagTests').value.trim();
+            const otherServices = document.getElementById('patientOtherServices').value.trim();
             
             if (!name) {
                 alert('Por favor, ingresa el nombre del paciente');
@@ -15255,6 +15274,7 @@
                 patients[editIndex] = {
                     ...patients[editIndex],
                     name, birthDate, gender, historia, diagnosis, phone, notes,
+                    anamnesis, diagTests, otherServices,
                     updatedAt: new Date().toISOString()
                 };
             } else {
@@ -15262,6 +15282,7 @@
                 patients.push({
                     id: Date.now(),
                     name, birthDate, gender, historia, diagnosis, phone, notes,
+                    anamnesis, diagTests, otherServices,
                     createdAt: new Date().toISOString()
                 });
             }
@@ -27297,7 +27318,10 @@ render();
             if (age) prompt += `- Edad: ${age} años\n`;
             if (patient.gender) prompt += `- Género: ${patient.gender}\n`;
             if (patient.diagnosis) prompt += `- Diagnóstico: ${patient.diagnosis}\n`;
-            if (patient.notes) prompt += `- Notas clínicas / Observaciones: ${patient.notes}\n`;
+            if (patient.notes) prompt += `- Notas clínicas: ${patient.notes}\n`;
+            if (patient.anamnesis) prompt += `\nENTREVISTA / ANAMNESIS:\n${patient.anamnesis}\n`;
+            if (patient.diagTests) prompt += `\nPRUEBAS DIAGNÓSTICAS (imagen, analítica, neurofisiología, etc.):\n${patient.diagTests}\n`;
+            if (patient.otherServices) prompt += `\nINFORMES DE OTROS SERVICIOS (fisio, enfermería, cirugía, neurología, etc.):\n${patient.otherServices}\n`;
             prompt += '\n';
 
             if (patientEvaluations.length > 0) {
