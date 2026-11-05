@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v46-entrevista-inicial';
+            const BUILD_VERSION = '2026-11-05-v47-fix-entrevista-importar-escalas';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -1788,7 +1788,11 @@
             <div id="escalas" class="tab-content">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 style="margin: 0;">Mis Escalas Configuradas</h2>
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn" onclick="importScaleFromJSON()" style="font-size: 0.9em; background: linear-gradient(135deg,#10b981,#059669);">
+                            📂 Importar escala (JSON)
+                        </button>
+                        <input type="file" id="importScaleFileInput" accept=".json" style="display:none" onchange="handleScaleFileImport(event)">
                         <button class="btn btn-secondary" onclick="abasImportarTablas()" style="font-size: 0.9em; background: linear-gradient(135deg,#e74c3c,#c0392b);">
                             📊 Importar Tablas ABAS
                         </button>
@@ -9789,6 +9793,7 @@
                     </div>
                     <div class="btn-group" onclick="event.stopPropagation();">
                         <button class="btn btn-small btn-secondary" onclick="editScale(${index})">✏️ Editar</button>
+                        <button class="btn btn-small btn-secondary" onclick="exportScaleToJSON('${scale.id}')" title="Exportar como JSON para compartir o hacer copia de seguridad" style="background:linear-gradient(135deg,#10b981,#059669);">📤 Exportar</button>
                         <button class="btn btn-small btn-danger" onclick="deleteScale(${index})">🗑️ Eliminar</button>
                     </div>
                 </div>
@@ -10643,6 +10648,62 @@
             alert('✅ Escala guardada correctamente');
             resetScaleForm();
             switchTab('escalas');
+        }
+
+        // ===== IMPORTAR / EXPORTAR ESCALAS (JSON) =====
+        function importScaleFromJSON() {
+            document.getElementById('importScaleFileInput').value = '';
+            document.getElementById('importScaleFileInput').click();
+        }
+
+        function handleScaleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    // Accepts single scale object OR array of scales
+                    const list = Array.isArray(data) ? data : [data];
+                    let added = 0, skipped = 0;
+                    list.forEach(raw => {
+                        if (!raw.name || !Array.isArray(raw.items) || raw.items.length === 0) { skipped++; return; }
+                        const scale = {
+                            id: raw.id || 'imported-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
+                            name: raw.name,
+                            description: raw.description || '',
+                            category: raw.category || 'general',
+                            type: raw.type || 'mixto',
+                            items: raw.items,
+                            baremos: raw.baremos || [],
+                            preloaded: false,
+                            createdAt: new Date().toISOString()
+                        };
+                        // Avoid duplicate id
+                        if (scales.some(s => s.id === scale.id)) scale.id = 'imported-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+                        scales.push(scale);
+                        added++;
+                    });
+                    localStorage.setItem('scales', JSON.stringify(scales));
+                    renderScalesList();
+                    switchTab('escalas');
+                    alert('✅ ' + added + ' escala(s) importada(s) correctamente' + (skipped ? '. ' + skipped + ' omitida(s) por formato incorrecto.' : '.'));
+                } catch(err) {
+                    alert('❌ Error al leer el archivo JSON:\n' + err.message + '\n\nAsegúrate de que es un JSON válido con los campos: name, items.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportScaleToJSON(scaleId) {
+            const scale = scales.find(s => s.id === scaleId);
+            if (!scale) return;
+            const blob = new Blob([JSON.stringify(scale, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = scale.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
         }
 
         // ===== EVALUACIONES =====
@@ -16054,7 +16115,9 @@
         }
         // ===== MODAL =====
         function closeModal() {
-            document.getElementById('modal').classList.remove('active');
+            const m = document.getElementById('modal');
+            m.classList.remove('active');
+            m.style.display = '';
         }
 
         // Cerrar modal al hacer clic fuera
@@ -27628,7 +27691,7 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional en España. S�
         }
 
         function showInterviewForm(patientIndex, type) {
-          const patients = JSON.parse(localStorage.getItem('to_patients') || '[]');
+          const patients = JSON.parse(localStorage.getItem('patients') || '[]');
           const patient = patients[patientIndex];
           if (!patient) return;
           const form = type === 'adult' ? _INTERVIEW_FORM_ADULT : _INTERVIEW_FORM_PEDIATRIC;
@@ -27667,10 +27730,10 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional en España. S�
               if (el) data[f.id] = el.value.trim();
             });
           });
-          const patients = JSON.parse(localStorage.getItem('to_patients') || '[]');
+          const patients = JSON.parse(localStorage.getItem('patients') || '[]');
           if (!patients[patientIndex]) return;
           patients[patientIndex].interviewData = data;
-          localStorage.setItem('to_patients', JSON.stringify(patients));
+          localStorage.setItem('patients', JSON.stringify(patients));
           closeModal();
           showNotification('Entrevista guardada correctamente', 'success');
           renderPatients();
