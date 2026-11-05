@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v56-aidocs-github-sync';
+            const BUILD_VERSION = '2026-11-05-v57-chat-tokens';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27993,14 +27993,17 @@ Lenguaje simple, amable. El objetivo es autonomía del paciente en casa.`;
                 try {
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents, generationConfig: { temperature: 0.3, maxOutputTokens: 1024 } }),
+                        body: JSON.stringify({ contents, generationConfig: { temperature: 0.3, maxOutputTokens: 3072 } }),
                         signal: ctrl.signal
                     });
                     clearTimeout(timer);
                     if (!res.ok) continue;
                     const d = await res.json().catch(()=>({}));
-                    responseText = d.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (responseText) { localStorage.setItem('gemini_model', modelId); break; }
+                    const candidate = d.candidates?.[0];
+                    // Collect text even if MAX_TOKENS cut it
+                    const partial = candidate?.content?.parts?.map(p => p.text||'').join('') || '';
+                    const wasCut = candidate?.finishReason === 'MAX_TOKENS';
+                    if (partial) { responseText = partial + (wasCut ? '\n\n_(respuesta recortada — pregunta más específico para obtener una respuesta completa)_' : ''); localStorage.setItem('gemini_model', modelId); break; }
                 } catch(e) { clearTimeout(timer); }
             }
 
@@ -28009,6 +28012,7 @@ Lenguaje simple, amable. El objetivo es autonomía del paciente en casa.`;
                 window._chatHistory.push({ role: 'model', text: responseText });
                 const safeHtml = responseText
                     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/_(.*?)_/g, '<em>$1</em>')
                     .replace(/\n/g, '<br>');
                 messagesDiv.innerHTML += `<div style="margin-bottom:12px;"><span style="background:white;border:1px solid #e5e7eb;padding:7px 12px;border-radius:2px 12px 12px 12px;font-size:0.9em;display:inline-block;max-width:92%;line-height:1.5;">${safeHtml}</span></div>`;
             } else {
