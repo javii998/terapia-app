@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v42-gemini-always-full-fallback';
+            const BUILD_VERSION = '2026-11-05-v43-gemini-prompt-clinico';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27329,7 +27329,36 @@ render();
                 }
             }
 
-            prompt += `Genera un informe clínico de terapia ocupacional con estas secciones:\n\n## 1. RESUMEN DEL PERFIL FUNCIONAL\nDescribe brevemente el nivel funcional actual del paciente según los datos disponibles.\n\n## 2. ÁREAS PRIORITARIAS DE INTERVENCIÓN\nLista las 3-5 áreas que requieren mayor atención, justificando con los datos de las evaluaciones.\n\n## 3. OBJETIVOS TERAPÉUTICOS (SMART)\nPropón 4-6 objetivos concretos, medibles y alcanzables para este paciente.\n\n## 4. ACTIVIDADES Y EJERCICIOS RECOMENDADOS\nPara cada área prioritaria, sugiere actividades específicas de terapia ocupacional (actividades de la vida diaria, ejercicios funcionales, adaptaciones, etc.).\n\n## 5. PLANIFICACIÓN DE SESIONES SUGERIDA\nPropón una estructura de sesión tipo y una frecuencia recomendada.\n\nUsa lenguaje clínico profesional pero accesible. Sé específico y práctico.`;
+            prompt += `Eres un terapeuta ocupacional clínico experto. Basándote EXCLUSIVAMENTE en los datos anteriores, redacta un informe clínico de TO completo, riguroso y profundo. Cita siempre los nombres de las escalas y sus puntuaciones específicas para justificar cada afirmación. Nunca inventes datos que no aparezcan arriba.
+
+Estructura del informe:
+
+## 1. ANÁLISIS DEL PERFIL OCUPACIONAL
+Describe las áreas ocupacionales afectadas (AVD básicas e instrumentales, trabajo/productividad, ocio, participación social). Cruza los resultados de las distintas escalas para identificar patrones y discrepancias. Menciona puntuaciones concretas.
+
+## 2. ANÁLISIS FUNCIONAL (MARCO ICF)
+Analiza las funciones y estructuras corporales comprometidas, las limitaciones en actividad y las restricciones en participación, según los datos de evaluación. Identifica factores contextuales (personales y ambientales) relevantes.
+
+## 3. PRONÓSTICO Y POTENCIAL DE REHABILITACIÓN
+Valora el potencial de mejora basándote en el perfil de las escalas, la naturaleza del diagnóstico y la evolución reflejada en las sesiones. Indica nivel de pronóstico (favorable / reservado / limitado) y justifícalo.
+
+## 4. ÁREAS PRIORITARIAS DE INTERVENCIÓN
+Enumera y justifica las 4-6 áreas de mayor impacto en la autonomía y calidad de vida, ordenadas por prioridad. Para cada una indica la escala/puntuación que la sustenta.
+
+## 5. OBJETIVOS TERAPÉUTICOS (SMART)
+Propón 6-8 objetivos específicos, medibles, alcanzables, relevantes y temporalizados. Cada objetivo debe incluir: conducta observable, criterio de éxito, plazo y método de medición.
+
+## 6. PLAN DE INTERVENCIÓN DETALLADO
+Para cada área prioritaria:
+- Técnicas y enfoques de TO basados en evidencia (compensatorio, rehabilitador, educativo)
+- Actividades terapéuticas específicas con gradación de dificultad
+- Productos de apoyo y adaptaciones del entorno recomendados (con nombres comerciales si procede)
+- Estrategias de participación familiar/cuidadores si es relevante
+
+## 7. PLANIFICACIÓN Y SEGUIMIENTO
+Propón frecuencia e intensidad de sesiones, estructura de cada sesión, hitos de reevaluación con las escalas más sensibles al cambio, y criterios de alta o derivación.
+
+Usa lenguaje clínico preciso, propio de un terapeuta ocupacional en España. Sé exhaustivo y profundo. No uses frases genéricas — todo debe estar fundamentado en los datos del paciente.`;
 
             // Siempre intentar todos los PREFERRED; el modelo guardado va primero
             const stored = localStorage.getItem('gemini_model') || '';
@@ -27348,7 +27377,7 @@ render();
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contents: [{ parts: [{ text: prompt }] }],
-                            generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+                            generationConfig: { temperature: 0.4, maxOutputTokens: 4096 }
                         }),
                         signal: ctrl.signal
                     });
