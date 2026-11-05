@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v47-fix-entrevista-importar-escalas';
+            const BUILD_VERSION = '2026-11-05-v48-entrevista-fixes';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -15393,7 +15393,9 @@
                         </div>
                         <div class="btn-group">
                             <button class="btn btn-small" onclick="viewPatientHistory(${index})">📋 Historial</button>
-                            <button class="btn btn-small" style="background:#8b5cf6;color:white;border:none;" onclick="showInterviewTypeSelector(${index})">📝 Entrevista</button>
+                            ${patient.interviewData
+                              ? `<button class="btn btn-small" style="background:#8b5cf6;color:white;border:none;" onclick="viewInterviewData(${index})">📝 Ver entrevista</button>`
+                              : `<button class="btn btn-small" style="background:#8b5cf6;color:white;border:none;" onclick="showInterviewTypeSelector(${index})">📝 Entrevista</button>`}
                             <button class="btn btn-small btn-secondary" onclick="showNewPatientForm(${index})">✏️ Editar</button>
                             <button class="btn btn-small btn-danger" onclick="deletePatient(${index})">🗑️ Eliminar</button>
                         </div>
@@ -15433,7 +15435,22 @@
                     </div>
                 </div>
                 
-                ${patientEvaluations.length === 0 ? 
+                ${patient.interviewData ? `
+                <div style="margin-bottom:16px;">
+                  <h3 style="margin:0 0 8px;">📝 Entrevista Inicial</h3>
+                  <div class="item-card" style="margin-bottom:0;">
+                    <div class="item-info">
+                      <div class="item-name">${patient.interviewData.type === 'adult' ? 'Entrevista Adultos — Neurorrehabilitación' : 'Entrevista Pediátrica'}</div>
+                      <div class="item-details">📅 ${patient.interviewData.savedAt ? new Date(patient.interviewData.savedAt).toLocaleDateString('es-ES') : 'Registrada'}</div>
+                    </div>
+                    <div class="item-actions">
+                      <button class="btn btn-small" style="background:#8b5cf6;color:white;" onclick="closeModal();viewInterviewData(${index})">📋 Ver</button>
+                      <button class="btn btn-small btn-secondary" onclick="closeModal();showInterviewForm(${index},'${patient.interviewData.type}')">✏️ Editar</button>
+                    </div>
+                  </div>
+                </div>` : ''}
+
+                ${patientEvaluations.length === 0 ?
                     '<p style="text-align: center; color: #999; padding: 20px;">No hay evaluaciones registradas</p>' :
                     `<div style="max-height: 350px; overflow-y: auto;">
                         ${patientEvaluations.map((ev) => `
@@ -27679,15 +27696,13 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional en España. S�
         }
 
         function showInterviewTypeSelector(patientIndex) {
-          const modal = document.getElementById('modal');
-          modal.style.display = 'flex';
-          modal.innerHTML = `<div class="modal-content" style="max-width:380px;">
+          document.getElementById('modalContent').innerHTML = `
             <h3 style="margin-bottom:16px;">📝 Entrevista Inicial</h3>
             <p style="color:#6b7280;margin-bottom:20px;font-size:0.9em;">Selecciona el tipo de entrevista según el paciente:</p>
             <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="showInterviewForm(${patientIndex},'adult')">🧑 Adultos — Neurorrehabilitación</button>
             <button class="btn btn-primary" style="width:100%;margin-bottom:10px;background:#10b981;" onclick="showInterviewForm(${patientIndex},'pediatric')">🧒 Pediátrico</button>
-            <button class="btn btn-secondary" style="width:100%;margin-top:4px;" onclick="closeModal()">Cancelar</button>
-          </div>`;
+            <button class="btn btn-secondary" style="width:100%;margin-top:4px;" onclick="closeModal()">Cancelar</button>`;
+          document.getElementById('modal').classList.add('active');
         }
 
         function showInterviewForm(patientIndex, type) {
@@ -27708,35 +27723,59 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional en España. S�
             </details>`;
           });
 
-          const modal = document.getElementById('modal');
-          modal.style.display = 'flex';
-          modal.innerHTML = `<div class="modal-content" style="max-width:700px;max-height:90vh;overflow-y:auto;">
+          document.getElementById('modalContent').innerHTML = `
             <h3 style="margin-bottom:4px;">${title}</h3>
             <p style="color:#6b7280;font-size:0.82em;margin-bottom:16px;">Paciente: <strong>${patient.name || ''}</strong></p>
-            ${sectionsHtml}
+            <div style="max-height:60vh;overflow-y:auto;padding-right:4px;">${sectionsHtml}</div>
             <div style="display:flex;gap:10px;margin-top:16px;">
               <button class="btn btn-primary" style="flex:1;" onclick="saveInterview(${patientIndex},'${type}')">💾 Guardar Entrevista</button>
               <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-            </div>
-          </div>`;
+            </div>`;
+          document.getElementById('modal').classList.add('active');
         }
 
         function saveInterview(patientIndex, type) {
           const form = type === 'adult' ? _INTERVIEW_FORM_ADULT : _INTERVIEW_FORM_PEDIATRIC;
-          const data = { type };
+          const data = { type, savedAt: new Date().toISOString() };
           form.forEach(sec => {
             sec.fields.forEach(f => {
               const el = document.getElementById('ifield_' + f.id);
               if (el) data[f.id] = el.value.trim();
             });
           });
-          const patients = JSON.parse(localStorage.getItem('patients') || '[]');
-          if (!patients[patientIndex]) return;
-          patients[patientIndex].interviewData = data;
-          localStorage.setItem('patients', JSON.stringify(patients));
+          const pts = JSON.parse(localStorage.getItem('patients') || '[]');
+          if (!pts[patientIndex]) return;
+          pts[patientIndex].interviewData = data;
+          localStorage.setItem('patients', JSON.stringify(pts));
+          patients[patientIndex] = pts[patientIndex];
           closeModal();
           showNotification('Entrevista guardada correctamente', 'success');
-          renderPatients();
+          renderPatientList();
+        }
+
+        function viewInterviewData(patientIndex) {
+          const patient = patients[patientIndex];
+          if (!patient || !patient.interviewData) return;
+          const id = patient.interviewData;
+          const form = id.type === 'adult' ? _INTERVIEW_FORM_ADULT : _INTERVIEW_FORM_PEDIATRIC;
+          const title = id.type === 'adult' ? '🧑 Entrevista Adultos — Neurorrehabilitación' : '🧒 Entrevista Pediátrica';
+          let html = `<h3 style="margin-bottom:4px;">${title}</h3>
+            <p style="color:#6b7280;font-size:0.82em;margin-bottom:16px;">Paciente: <strong>${patient.name}</strong>${id.savedAt ? ' · ' + new Date(id.savedAt).toLocaleDateString('es-ES') : ''}</p>
+            <div style="max-height:60vh;overflow-y:auto;padding-right:4px;">`;
+          form.forEach(sec => {
+            const lines = sec.fields.map(f => {
+              const v = id[f.id];
+              return v ? `<div style="margin-bottom:6px;"><span style="font-size:0.82em;color:#6b7280;">${f.label}:</span><br><span style="font-size:0.92em;">${v}</span></div>` : '';
+            }).filter(Boolean).join('');
+            if (lines) html += `<details open style="margin-bottom:10px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+              <summary style="padding:10px 14px;background:#f9fafb;font-weight:600;cursor:pointer;font-size:0.88em;">${sec.section}</summary>
+              <div style="padding:12px 16px;">${lines}</div></details>`;
+          });
+          html += `</div><div style="display:flex;gap:10px;margin-top:16px;">
+            <button class="btn btn-primary" onclick="showInterviewForm(${patientIndex},'${id.type}')">✏️ Editar entrevista</button>
+            <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button></div>`;
+          document.getElementById('modalContent').innerHTML = html;
+          document.getElementById('modal').classList.add('active');
         }
 
         function _formatInterviewForAI(interviewData) {
