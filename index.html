@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v41-gemini-timeout-12s';
+            const BUILD_VERSION = '2026-11-05-v42-gemini-always-full-fallback';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27331,14 +27331,10 @@ render();
 
             prompt += `Genera un informe clínico de terapia ocupacional con estas secciones:\n\n## 1. RESUMEN DEL PERFIL FUNCIONAL\nDescribe brevemente el nivel funcional actual del paciente según los datos disponibles.\n\n## 2. ÁREAS PRIORITARIAS DE INTERVENCIÓN\nLista las 3-5 áreas que requieren mayor atención, justificando con los datos de las evaluaciones.\n\n## 3. OBJETIVOS TERAPÉUTICOS (SMART)\nPropón 4-6 objetivos concretos, medibles y alcanzables para este paciente.\n\n## 4. ACTIVIDADES Y EJERCICIOS RECOMENDADOS\nPara cada área prioritaria, sugiere actividades específicas de terapia ocupacional (actividades de la vida diaria, ejercicios funcionales, adaptaciones, etc.).\n\n## 5. PLANIFICACIÓN DE SESIONES SUGERIDA\nPropón una estructura de sesión tipo y una frecuencia recomendada.\n\nUsa lenguaje clínico profesional pero accesible. Sé específico y práctico.`;
 
-            // Autodetectar modelos disponibles via ListModels
-            let modelCandidates = [];
+            // Siempre intentar todos los PREFERRED; el modelo guardado va primero
             const stored = localStorage.getItem('gemini_model') || '';
-            if (stored && !_geminiIsDeprecated(stored)) {
-                modelCandidates = [stored];
-            } else {
-                modelCandidates = await _geminiDetectModels(apiKey);
-            }
+            const startModel = (stored && !_geminiIsDeprecated(stored)) ? stored : _GEMINI_PREFERRED[0];
+            const modelCandidates = [startModel, ..._GEMINI_PREFERRED.filter(m => m !== startModel)];
             let lastError = null;
             let data = null;
             for (const modelId of modelCandidates.slice(0, 7)) {
