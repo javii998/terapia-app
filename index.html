@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v45-historia-clinica-ampliada';
+            const BUILD_VERSION = '2026-11-05-v46-entrevista-inicial';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -15332,6 +15332,7 @@
                         </div>
                         <div class="btn-group">
                             <button class="btn btn-small" onclick="viewPatientHistory(${index})">📋 Historial</button>
+                            <button class="btn btn-small" style="background:#8b5cf6;color:white;border:none;" onclick="showInterviewTypeSelector(${index})">📝 Entrevista</button>
                             <button class="btn btn-small btn-secondary" onclick="showNewPatientForm(${index})">✏️ Editar</button>
                             <button class="btn btn-small btn-danger" onclick="deletePatient(${index})">🗑️ Eliminar</button>
                         </div>
@@ -27319,9 +27320,10 @@ render();
             if (patient.gender) prompt += `- Género: ${patient.gender}\n`;
             if (patient.diagnosis) prompt += `- Diagnóstico: ${patient.diagnosis}\n`;
             if (patient.notes) prompt += `- Notas clínicas: ${patient.notes}\n`;
-            if (patient.anamnesis) prompt += `\nENTREVISTA / ANAMNESIS:\n${patient.anamnesis}\n`;
-            if (patient.diagTests) prompt += `\nPRUEBAS DIAGNÓSTICAS (imagen, analítica, neurofisiología, etc.):\n${patient.diagTests}\n`;
-            if (patient.otherServices) prompt += `\nINFORMES DE OTROS SERVICIOS (fisio, enfermería, cirugía, neurología, etc.):\n${patient.otherServices}\n`;
+            if (patient.interviewData) prompt += `\nENTREVISTA ESTRUCTURADA (${patient.interviewData.type === 'adult' ? 'Adultos - Neurorrehabilitación' : 'Pediátrico'}):\n${_formatInterviewForAI(patient.interviewData)}\n`;
+            if (patient.anamnesis) prompt += `\nNOTAS ANAMNESIS:\n${patient.anamnesis}\n`;
+            if (patient.diagTests) prompt += `\nPRUEBAS DIAGNÓSTICAS:\n${patient.diagTests}\n`;
+            if (patient.otherServices) prompt += `\nINFORMES DE OTROS SERVICIOS:\n${patient.otherServices}\n`;
             prompt += '\n';
 
             if (patientEvaluations.length > 0) {
@@ -27478,6 +27480,215 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional en España. S�
                         <button class="btn btn-small btn-secondary" onclick="closeModal()">Cerrar</button>
                     </div>`;
             }
+        }
+
+        // ── Entrevista Inicial ──────────────────────────────────────────
+        const _INTERVIEW_FORM_ADULT = [
+          { section: '1. Datos de Identificación', fields: [
+            { id:'nombre', label:'Nombre y apellidos', type:'text' },
+            { id:'fechaNac', label:'Fecha de nacimiento / Edad', type:'text' },
+            { id:'domicilio', label:'Domicilio', type:'text' },
+            { id:'telefono', label:'Teléfono de contacto', type:'text' },
+            { id:'derivadoPor', label:'Derivado por / Motivo de derivación', type:'textarea' },
+          ]},
+          { section: '2. Diagnóstico Médico y Antecedentes', fields: [
+            { id:'diagnosticoMedico', label:'Diagnóstico médico principal', type:'textarea' },
+            { id:'fechaAparicion', label:'Fecha de aparición / evento (ACV, TCE, cirugía…)', type:'text' },
+            { id:'antecedentes', label:'Antecedentes médicos relevantes', type:'textarea' },
+            { id:'medicacion', label:'Medicación actual', type:'textarea' },
+          ]},
+          { section: '3. Situación Familiar y Social', fields: [
+            { id:'convivencia', label:'Con quién convive', type:'text' },
+            { id:'apoyoFamiliar', label:'Nivel de apoyo familiar / cuidador principal', type:'textarea' },
+            { id:'situacionLaboral', label:'Situación laboral / escolar previa', type:'text' },
+            { id:'redSocial', label:'Red social y actividades previas de ocio', type:'textarea' },
+          ]},
+          { section: '4. Vivienda y Entorno', fields: [
+            { id:'tipoVivienda', label:'Tipo de vivienda (piso, casa, residencia…)', type:'text' },
+            { id:'barreras', label:'Barreras arquitectónicas identificadas', type:'textarea' },
+            { id:'adaptaciones', label:'Adaptaciones ya realizadas', type:'textarea' },
+          ]},
+          { section: '5. Nivel Funcional Previo (antes del evento)', fields: [
+            { id:'avdPrevias', label:'AVD básicas previas (autocuidado, movilidad)', type:'textarea' },
+            { id:'avdiPrevias', label:'AVD instrumentales previas', type:'textarea' },
+            { id:'rolesOcupacionales', label:'Roles ocupacionales previos', type:'textarea' },
+          ]},
+          { section: '6. Nivel Funcional Actual', fields: [
+            { id:'avdActuales', label:'AVD básicas actuales', type:'textarea' },
+            { id:'movilidad', label:'Movilidad y traslados', type:'textarea' },
+            { id:'comunicacion', label:'Comunicación y lenguaje', type:'textarea' },
+            { id:'cognicion', label:'Función cognitiva percibida (memoria, atención, orientación)', type:'textarea' },
+          ]},
+          { section: '7. Aspectos Motores y Sensoriales', fields: [
+            { id:'tono', label:'Tono muscular / espasticidad', type:'textarea' },
+            { id:'fuerza', label:'Fuerza y control motor', type:'textarea' },
+            { id:'coordinacion', label:'Coordinación y equilibrio', type:'textarea' },
+            { id:'sensibilidad', label:'Sensibilidad y percepción', type:'textarea' },
+            { id:'dolor', label:'Dolor (localización, intensidad, factores)', type:'textarea' },
+          ]},
+          { section: '8. Aspectos Emocionales y Psicológicos', fields: [
+            { id:'estadoEmocional', label:'Estado emocional general', type:'textarea' },
+            { id:'motivacion', label:'Motivación y expectativas del paciente', type:'textarea' },
+            { id:'apoyoPsicologico', label:'Apoyo psicológico actual o previo', type:'text' },
+          ]},
+          { section: '9. Objetivos y Prioridades del Paciente', fields: [
+            { id:'objetivosPaciente', label:'Objetivos y prioridades del paciente / familia', type:'textarea' },
+            { id:'actividadesPrioritarias', label:'Actividades más prioritarias a recuperar', type:'textarea' },
+          ]},
+          { section: '10. Observaciones Adicionales', fields: [
+            { id:'observaciones', label:'Observaciones adicionales / información extra no recogida anteriormente', type:'textarea' },
+          ]},
+        ];
+
+        const _INTERVIEW_FORM_PEDIATRIC = [
+          { section: '1. Datos de Identificación', fields: [
+            { id:'nombre', label:'Nombre y apellidos del niño/a', type:'text' },
+            { id:'fechaNac', label:'Fecha de nacimiento / Edad', type:'text' },
+            { id:'nombrePadres', label:'Nombre de los padres / tutores', type:'text' },
+            { id:'telefono', label:'Teléfono de contacto', type:'text' },
+            { id:'colegio', label:'Centro escolar y curso', type:'text' },
+            { id:'derivadoPor', label:'Derivado por / Motivo de derivación', type:'textarea' },
+          ]},
+          { section: '2. Diagnóstico y Antecedentes Médicos', fields: [
+            { id:'diagnostico', label:'Diagnóstico médico principal', type:'textarea' },
+            { id:'antecedentesPrenatales', label:'Antecedentes prenatales / perinatales', type:'textarea' },
+            { id:'antecedentesPostnatales', label:'Antecedentes postnatales relevantes', type:'textarea' },
+            { id:'medicacion', label:'Medicación actual', type:'textarea' },
+            { id:'otrosProfesionales', label:'Otros profesionales que atienden al niño/a', type:'textarea' },
+          ]},
+          { section: '3. Historia del Desarrollo', fields: [
+            { id:'hitos', label:'Hitos del desarrollo (motor, lenguaje, social)', type:'textarea' },
+            { id:'escolarizacion', label:'Escolarización y adaptaciones curriculares', type:'textarea' },
+            { id:'dificultadesEscolares', label:'Dificultades escolares identificadas', type:'textarea' },
+          ]},
+          { section: '4. Situación Familiar y Social', fields: [
+            { id:'convivencia', label:'Composición familiar y convivencia', type:'text' },
+            { id:'dinamicaFamiliar', label:'Dinámica familiar y nivel de estrés percibido', type:'textarea' },
+            { id:'relacionesPares', label:'Relaciones con iguales / amigos', type:'textarea' },
+          ]},
+          { section: '5. Vivienda y Entorno', fields: [
+            { id:'tipoVivienda', label:'Tipo de vivienda y entorno', type:'text' },
+            { id:'barreras', label:'Barreras o facilitadores en el entorno', type:'textarea' },
+          ]},
+          { section: '6. Desempeño Ocupacional — Autocuidado', fields: [
+            { id:'higiene', label:'Higiene personal y baño', type:'textarea' },
+            { id:'vestido', label:'Vestido y calzado', type:'textarea' },
+            { id:'alimentacion', label:'Alimentación (texturas, utensilios, conducta)', type:'textarea' },
+            { id:'control', label:'Control de esfínteres', type:'text' },
+          ]},
+          { section: '7. Desempeño Ocupacional — Juego y Ocio', fields: [
+            { id:'juego', label:'Tipo de juego preferido y nivel de participación', type:'textarea' },
+            { id:'actividadesExtraesc', label:'Actividades extraescolares', type:'text' },
+            { id:'tecnologia', label:'Uso de pantallas / tecnología', type:'text' },
+          ]},
+          { section: '8. Aspectos Sensoriales y Motores', fields: [
+            { id:'procesamiento', label:'Procesamiento sensorial (hiper/hiposensibilidades)', type:'textarea' },
+            { id:'motricidadFina', label:'Motricidad fina (manipulación, escritura)', type:'textarea' },
+            { id:'motricidadGruesa', label:'Motricidad gruesa (equilibrio, coordinación)', type:'textarea' },
+            { id:'praxis', label:'Praxis / planificación motora', type:'textarea' },
+          ]},
+          { section: '9. Aspectos Cognitivos, Comunicativos y Emocionales', fields: [
+            { id:'atencion', label:'Atención y concentración', type:'textarea' },
+            { id:'lenguaje', label:'Lenguaje y comunicación', type:'textarea' },
+            { id:'conductaEmocional', label:'Conducta y regulación emocional', type:'textarea' },
+            { id:'autonomia', label:'Autonomía y autodirección', type:'textarea' },
+          ]},
+          { section: '10. Objetivos y Prioridades de la Familia', fields: [
+            { id:'objetivosFamilia', label:'Objetivos y prioridades de la familia', type:'textarea' },
+            { id:'expectativas', label:'Expectativas sobre la TO', type:'textarea' },
+            { id:'observaciones', label:'Observaciones adicionales / información extra no recogida anteriormente', type:'textarea' },
+          ]},
+        ];
+
+        function _renderInterviewField(field, savedData) {
+          const val = (savedData && savedData[field.id]) ? savedData[field.id] : '';
+          const esc = val.replace(/"/g, '&quot;');
+          if (field.type === 'textarea') {
+            return `<div style="margin-bottom:12px;">
+              <label style="display:block;font-size:0.82em;font-weight:600;color:#374151;margin-bottom:4px;">${field.label}</label>
+              <textarea id="ifield_${field.id}" rows="3" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:0.9em;resize:vertical;">${val}</textarea>
+            </div>`;
+          }
+          return `<div style="margin-bottom:12px;">
+            <label style="display:block;font-size:0.82em;font-weight:600;color:#374151;margin-bottom:4px;">${field.label}</label>
+            <input type="text" id="ifield_${field.id}" value="${esc}" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:0.9em;">
+          </div>`;
+        }
+
+        function showInterviewTypeSelector(patientIndex) {
+          const modal = document.getElementById('modal');
+          modal.style.display = 'flex';
+          modal.innerHTML = `<div class="modal-content" style="max-width:380px;">
+            <h3 style="margin-bottom:16px;">📝 Entrevista Inicial</h3>
+            <p style="color:#6b7280;margin-bottom:20px;font-size:0.9em;">Selecciona el tipo de entrevista según el paciente:</p>
+            <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="showInterviewForm(${patientIndex},'adult')">🧑 Adultos — Neurorrehabilitación</button>
+            <button class="btn btn-primary" style="width:100%;margin-bottom:10px;background:#10b981;" onclick="showInterviewForm(${patientIndex},'pediatric')">🧒 Pediátrico</button>
+            <button class="btn btn-secondary" style="width:100%;margin-top:4px;" onclick="closeModal()">Cancelar</button>
+          </div>`;
+        }
+
+        function showInterviewForm(patientIndex, type) {
+          const patients = JSON.parse(localStorage.getItem('to_patients') || '[]');
+          const patient = patients[patientIndex];
+          if (!patient) return;
+          const form = type === 'adult' ? _INTERVIEW_FORM_ADULT : _INTERVIEW_FORM_PEDIATRIC;
+          const saved = (patient.interviewData && patient.interviewData.type === type) ? patient.interviewData : null;
+          const title = type === 'adult' ? '🧑 Entrevista Adultos — Neurorrehabilitación' : '🧒 Entrevista Pediátrica';
+
+          let sectionsHtml = '';
+          form.forEach((sec, si) => {
+            sectionsHtml += `<details style="margin-bottom:10px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;" ${si===0?'open':''}>
+              <summary style="padding:12px 16px;background:#f9fafb;font-weight:600;cursor:pointer;font-size:0.9em;">${sec.section}</summary>
+              <div style="padding:14px 16px;">
+                ${sec.fields.map(f => _renderInterviewField(f, saved)).join('')}
+              </div>
+            </details>`;
+          });
+
+          const modal = document.getElementById('modal');
+          modal.style.display = 'flex';
+          modal.innerHTML = `<div class="modal-content" style="max-width:700px;max-height:90vh;overflow-y:auto;">
+            <h3 style="margin-bottom:4px;">${title}</h3>
+            <p style="color:#6b7280;font-size:0.82em;margin-bottom:16px;">Paciente: <strong>${patient.name || ''}</strong></p>
+            ${sectionsHtml}
+            <div style="display:flex;gap:10px;margin-top:16px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="saveInterview(${patientIndex},'${type}')">💾 Guardar Entrevista</button>
+              <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+            </div>
+          </div>`;
+        }
+
+        function saveInterview(patientIndex, type) {
+          const form = type === 'adult' ? _INTERVIEW_FORM_ADULT : _INTERVIEW_FORM_PEDIATRIC;
+          const data = { type };
+          form.forEach(sec => {
+            sec.fields.forEach(f => {
+              const el = document.getElementById('ifield_' + f.id);
+              if (el) data[f.id] = el.value.trim();
+            });
+          });
+          const patients = JSON.parse(localStorage.getItem('to_patients') || '[]');
+          if (!patients[patientIndex]) return;
+          patients[patientIndex].interviewData = data;
+          localStorage.setItem('to_patients', JSON.stringify(patients));
+          closeModal();
+          showNotification('Entrevista guardada correctamente', 'success');
+          renderPatients();
+        }
+
+        function _formatInterviewForAI(interviewData) {
+          if (!interviewData) return '';
+          const form = interviewData.type === 'adult' ? _INTERVIEW_FORM_ADULT : _INTERVIEW_FORM_PEDIATRIC;
+          let out = '';
+          form.forEach(sec => {
+            const lines = [];
+            sec.fields.forEach(f => {
+              const val = interviewData[f.id];
+              if (val) lines.push(`  ${f.label}: ${val}`);
+            });
+            if (lines.length) out += `\n${sec.section}:\n${lines.join('\n')}\n`;
+          });
+          return out.trim();
         }
 
         // ── Helpers Gemini ──────────────────────────────────────────────
