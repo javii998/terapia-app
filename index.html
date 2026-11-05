@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v48-entrevista-fixes';
+            const BUILD_VERSION = '2026-11-05-v49-informe-ia-detallado';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27435,36 +27435,46 @@ render();
                 }
             }
 
-            prompt += `Eres un terapeuta ocupacional clínico experto. Basándote EXCLUSIVAMENTE en los datos anteriores, redacta un informe clínico de TO completo, riguroso y profundo. Cita siempre los nombres de las escalas y sus puntuaciones específicas para justificar cada afirmación. Nunca inventes datos que no aparezcan arriba.
+            prompt += `Eres un terapeuta ocupacional clínico experto con más de 15 años de experiencia en neurorrehabilitación. Basándote EXCLUSIVAMENTE en los datos anteriores, redacta un informe clínico de TO exhaustivo, de alta calidad y muy detallado. IMPORTANTE: cada sección debe ser extensa y profunda. Cita SIEMPRE las puntuaciones exactas de cada escala y cruza los datos entre escalas para obtener conclusiones clínicas. Nunca inventes datos que no aparezcan arriba. Si hay entrevista inicial disponible, intégrala en el análisis.
+
+REQUISITO DE LONGITUD: El informe debe ser exhaustivo. Cada sección debe tener un mínimo de 3-5 párrafos desarrollados. No uses bullets cuando puedas redactar párrafos clínicos completos.
 
 Estructura del informe:
 
 ## 1. ANÁLISIS DEL PERFIL OCUPACIONAL
-Describe las áreas ocupacionales afectadas (AVD básicas e instrumentales, trabajo/productividad, ocio, participación social). Cruza los resultados de las distintas escalas para identificar patrones y discrepancias. Menciona puntuaciones concretas.
+Desarrolla en detalle cada área ocupacional: AVD básicas (con comparación entre escalas que evalúen lo mismo), AVD instrumentales, movilidad funcional, comunicación, trabajo/productividad, ocio y tiempo libre, y participación social. Para cada área cita las puntuaciones exactas y lo que indican clínicamente. Identifica patrones transversales y discrepancias relevantes entre los resultados de distintas escalas. Si hay entrevista, integra las respuestas del paciente. Escribe como mínimo 4 párrafos.
 
 ## 2. ANÁLISIS FUNCIONAL (MARCO ICF)
-Analiza las funciones y estructuras corporales comprometidas, las limitaciones en actividad y las restricciones en participación, según los datos de evaluación. Identifica factores contextuales (personales y ambientales) relevantes.
+Desarrolla en detalle cada componente:
+- **Funciones y estructuras corporales**: nombra y detalla cada déficit con su escala y puntuación.
+- **Limitaciones en la actividad**: cómo los déficits impactan en las tareas concretas, con datos.
+- **Restricciones en la participación**: cómo las limitaciones afectan roles sociales, laborales, familiares.
+- **Factores contextuales personales**: motivación, historia, recursos personales del paciente.
+- **Factores contextuales ambientales**: entorno físico, apoyos familiares, acceso a recursos.
+Escribe como mínimo 5 párrafos, uno por componente.
 
 ## 3. PRONÓSTICO Y POTENCIAL DE REHABILITACIÓN
-Valora el potencial de mejora basándote en el perfil de las escalas, la naturaleza del diagnóstico y la evolución reflejada en las sesiones. Indica nivel de pronóstico (favorable / reservado / limitado) y justifícalo.
+Justifica detalladamente el pronóstico (favorable / reservado / limitado) basándote en el diagnóstico, la naturaleza de los déficits, los factores protectores identificados, y los datos de evaluación. Distingue entre pronóstico motor, funcional y de participación. Indica qué capacidades residuales pueden ser aprovechadas. Escribe como mínimo 3 párrafos.
 
 ## 4. ÁREAS PRIORITARIAS DE INTERVENCIÓN
-Enumera y justifica las 4-6 áreas de mayor impacto en la autonomía y calidad de vida, ordenadas por prioridad. Para cada una indica la escala/puntuación que la sustenta.
+Para cada una de las 5-7 áreas prioritarias, desarrolla: (a) justificación clínica detallada con datos de escala, (b) impacto en la calidad de vida y autonomía, (c) potencial de mejora. Ordénalas por impacto funcional. No uses bullets — redacta párrafos.
 
 ## 5. OBJETIVOS TERAPÉUTICOS (SMART)
-Propón 6-8 objetivos específicos, medibles, alcanzables, relevantes y temporalizados. Cada objetivo debe incluir: conducta observable, criterio de éxito, plazo y método de medición.
+Propón 8-10 objetivos específicos. Para cada objetivo desarrolla: conducta observable precisa, criterio de éxito cuantificable, plazo realista, método de medición (escala o indicador), y justificación basada en los datos del paciente.
 
 ## 6. PLAN DE INTERVENCIÓN DETALLADO
-Para cada área prioritaria:
-- Técnicas y enfoques de TO basados en evidencia (compensatorio, rehabilitador, educativo)
-- Actividades terapéuticas específicas con gradación de dificultad
-- Productos de apoyo y adaptaciones del entorno recomendados (con nombres comerciales si procede)
-- Estrategias de participación familiar/cuidadores si es relevante
+Para CADA área prioritaria desarrolla en profundidad:
+- Marco teórico o enfoque de TO aplicado (compensatorio, rehabilitador, educativo, de habilidades, etc.) con justificación
+- Actividades terapéuticas específicas con gradación de dificultad progresiva (al menos 3 niveles por área)
+- Técnicas concretas (nombres técnicos: Bobath, CIMT, biofeedback, mirror therapy, etc. según corresponda)
+- Productos de apoyo y adaptaciones del entorno recomendados con nombres comerciales o descriptivos precisos
+- Estrategias para el entorno familiar y cuidadores
+- Indicadores de progreso específicos para cada área
 
 ## 7. PLANIFICACIÓN Y SEGUIMIENTO
-Propón frecuencia e intensidad de sesiones, estructura de cada sesión, hitos de reevaluación con las escalas más sensibles al cambio, y criterios de alta o derivación.
+Detalla: frecuencia, duración e intensidad de sesiones con justificación; estructura detallada de cada tipo de sesión; cronograma de reevaluación indicando qué escala aplicar y cuándo; criterios de progresión de objetivos; criterios de alta funcional o derivación; recomendaciones para domicilio y entorno.
 
-Usa lenguaje clínico preciso, propio de un terapeuta ocupacional en España. Sé exhaustivo y profundo. No uses frases genéricas — todo debe estar fundamentado en los datos del paciente.`;
+Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en España. Redacta párrafos completos y argumentados. El informe debe demostrar profundidad clínica, no ser una lista de bullets. Integra todos los datos disponibles — entrevista, escalas, sesiones — de forma coherente.`;
 
             // Siempre intentar todos los PREFERRED; el modelo guardado va primero
             const stored = localStorage.getItem('gemini_model') || '';
@@ -27476,14 +27486,14 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional en España. S�
                 const st = document.getElementById('geminiStatus');
                 if (st) st.textContent = `Probando ${modelId}…`;
                 const ctrl = new AbortController();
-                const timer = setTimeout(() => ctrl.abort(), 12000); // 12s timeout
+                const timer = setTimeout(() => ctrl.abort(), 30000); // 30s timeout for long reports
                 try {
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contents: [{ parts: [{ text: prompt }] }],
-                            generationConfig: { temperature: 0.4, maxOutputTokens: 4096 }
+                            generationConfig: { temperature: 0.4, maxOutputTokens: 8192 }
                         }),
                         signal: ctrl.signal
                     });
