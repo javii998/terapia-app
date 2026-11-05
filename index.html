@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v39-gemini-helpers-testeado';
+            const BUILD_VERSION = '2026-11-05-v40-gemini-7-fallbacks';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27424,7 +27424,8 @@ render();
 
         // ── Helpers Gemini ──────────────────────────────────────────────
         const _GEMINI_DEPRECATED = ['gemini-1.5-flash','gemini-1.5-pro','gemini-1.5-flash-latest','gemini-2.0-flash','gemini-2.0-flash-001','gemini-2.0-flash-exp','gemini-2.5-flash','gemini-2.5-pro'];
-        const _GEMINI_PREFERRED  = ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-flash-latest','gemini-3.1-flash-lite','gemini-3-flash-preview'];
+        // gemini-flash-latest primero: alias con cuota independiente, luego versiones concretas
+        const _GEMINI_PREFERRED  = ['gemini-flash-latest','gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.1-flash-lite','gemini-3-flash-preview'];
 
         function _geminiIsDeprecated(modelId) {
             return _GEMINI_DEPRECATED.includes(modelId);
@@ -27438,8 +27439,9 @@ render();
                     const available = (d.models || [])
                         .filter(m => (m.supportedGenerationMethods||[]).includes('generateContent'))
                         .map(m => m.name.replace('models/',''));
-                    const best = _GEMINI_PREFERRED.find(m => available.includes(m));
-                    const candidates = best ? [best] : available.filter(id => id.includes('flash') && !_geminiIsDeprecated(id)).slice(0,3);
+                    // Devolver todos los PREFERRED disponibles (para fallback si uno agota cuota)
+                    const candidates = _GEMINI_PREFERRED.filter(m => available.includes(m));
+                    if (candidates.length === 0) candidates.push(...available.filter(id => id.includes('flash') && !_geminiIsDeprecated(id)).slice(0,3));
                     if (candidates.length > 0) localStorage.setItem('gemini_model', candidates[0]);
                     return candidates;
                 }
