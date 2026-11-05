@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v40-gemini-7-fallbacks';
+            const BUILD_VERSION = '2026-11-05-v41-gemini-timeout-12s';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27289,7 +27289,7 @@ render();
             document.getElementById('modalContent').innerHTML = `
                 <div style="text-align:center;padding:40px 20px;">
                     <div style="border:4px solid #e0e7ff;border-top:4px solid #6366f1;border-radius:50%;width:48px;height:48px;animation:spin 1s linear infinite;margin:0 auto 20px;"></div>
-                    <p style="color:#6b7280;font-size:0.95em;">Analizando el perfil clínico con Gemini AI…<br><small>Esto puede tardar unos segundos</small></p>
+                    <p style="color:#6b7280;font-size:0.95em;" id="geminiStatus">Detectando modelo disponible…</p>
                 </div>`;
             document.getElementById('modal').classList.add('active');
 
@@ -27341,8 +27341,11 @@ render();
             }
             let lastError = null;
             let data = null;
-            // Un intento por modelo, sin esperas — si está saturado el usuario reintenta manualmente
-            for (const modelId of modelCandidates.slice(0, 5)) {
+            for (const modelId of modelCandidates.slice(0, 7)) {
+                const st = document.getElementById('geminiStatus');
+                if (st) st.textContent = `Probando ${modelId}…`;
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 12000); // 12s timeout
                 try {
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
                         method: 'POST',
@@ -27350,17 +27353,23 @@ render();
                         body: JSON.stringify({
                             contents: [{ parts: [{ text: prompt }] }],
                             generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
-                        })
+                        }),
+                        signal: ctrl.signal
                     });
+                    clearTimeout(timer);
                     const resData = await res.json().catch(()=>({}));
                     if (!res.ok) {
                         lastError = new Error((resData.error?.message || 'HTTP ' + res.status) + ' [' + modelId + ']');
-                        continue; // probar siguiente modelo
+                        continue;
                     }
                     data = resData;
                     localStorage.setItem('gemini_model', modelId);
                     break;
-                } catch(e) { lastError = e; continue; }
+                } catch(e) {
+                    clearTimeout(timer);
+                    lastError = e.name === 'AbortError' ? new Error('Timeout (12s) [' + modelId + ']') : e;
+                    continue;
+                }
             }
             try {
                 if (!data) throw lastError || new Error('No se pudo conectar con ningún modelo Gemini');
@@ -27492,9 +27501,12 @@ render();
             const finalTestModel = _geminiIsDeprecated(testModel) ? 'gemini-3.8-flash' : testModel;
             lines += `<br><b>2. Test de generación (${finalTestModel}):</b><br>`;
             try {
+                const ctrl2 = new AbortController();
+                setTimeout(() => ctrl2.abort(), 10000);
                 const r2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${finalTestModel}:generateContent?key=${apiKey}`, {
                     method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({contents:[{parts:[{text:'Di hola en una palabra'}]}], generationConfig:{maxOutputTokens:10}})
+                    body: JSON.stringify({contents:[{parts:[{text:'Di hola en una palabra'}]}], generationConfig:{maxOutputTokens:10}}),
+                    signal: ctrl2.signal
                 });
                 const d2 = await r2.json().catch(()=>({}));
                 if (r2.ok) {
