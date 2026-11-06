@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-05-v57-chat-tokens';
+            const BUILD_VERSION = '2026-11-06-v60-remote-server';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -2022,17 +2022,24 @@
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
                         <span style="font-size:1.4em;">⚡</span>
                         <h3 style="color:#667eea;margin:0;">Descarga directa</h3>
-                        <div id="rcMixedContentWarn" style="display:none;background:#fff3cd;border-left:4px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:.9em;">
-                        ⚠️ <strong>Estás usando la app desde internet (github.io).</strong><br>
-                        Para descargar recursos necesitas abrir la app desde el servidor local:<br>
-                        <code style="background:#f8f9fa;padding:2px 6px;border-radius:4px;">http://localhost:7734</code>
-                        &nbsp;(ejecuta <strong>iniciar.bat</strong> primero)
-                    </div>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+                            <label style="font-size:0.82em;color:#6b7280;white-space:nowrap;">URL servidor:</label>
+                            <input type="text" id="rcServerUrlInput" placeholder="http://localhost:7734  ó  https://xxxx.trycloudflare.com"
+                                style="flex:1;min-width:220px;padding:4px 10px;border:1px solid #c7d2fe;border-radius:6px;font-size:0.82em;"
+                                oninput="localStorage.setItem('toServerUrl',this.value.trim())"
+                                value="">
+                            <label style="font-size:0.82em;color:#6b7280;white-space:nowrap;">Token:</label>
+                            <input type="password" id="rcServerTokenInput" placeholder="tu-token-secreto"
+                                style="width:140px;padding:4px 10px;border:1px solid #c7d2fe;border-radius:6px;font-size:0.82em;"
+                                oninput="localStorage.setItem('server_token',this.value.trim())"
+                                value="">
+                            <button onclick="rcCheckServer()" style="padding:4px 10px;border-radius:6px;border:none;background:#667eea;color:white;cursor:pointer;font-size:.82em;">🔄 Conectar</button>
+                        </div>
                         <span id="rcServerBadge" style="margin-left:auto;padding:4px 12px;border-radius:20px;font-size:.8em;font-weight:600;background:#e0e0e0;color:#666;">Comprobando servidor…</span>
 
                     </div>
                     <div id="rcServerOff" style="display:none;background:#fff3cd;border-left:4px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:.9em;">
-                        ⚠️ El servidor local no está activo. <strong>Abre <code>iniciar.bat</code></strong> para activar la descarga directa, o arrastra los archivos manualmente abajo.
+                        ⚠️ Servidor no disponible. Si tienes una Raspberry Pi, introduce su URL de Cloudflare arriba. Si usas el PC, abre <code>iniciar.bat</code>.
                         <button onclick="rcCheckServer()" style="margin-left:12px;padding:4px 12px;border-radius:6px;border:none;background:#667eea;color:white;cursor:pointer;font-size:.85em;">Reintentar</button>
                     </div>
                     <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;">
@@ -2105,6 +2112,7 @@
                     </select>
                     <button class="btn btn-success" style="width:auto;padding:10px 18px;font-size:0.9em;" onclick="rcExportarZIP()">📦 Exportar ZIP</button>
                     <button class="btn btn-secondary" style="width:auto;padding:10px 18px;font-size:0.9em;" onclick="rcExportarCSV()">📊 Exportar CSV</button>
+                    <button class="btn" style="width:auto;padding:10px 18px;font-size:0.9em;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;" onclick="rcSyncMetaToGitHub()">☁️ Sincronizar</button>
                 </div>
 
                 <div id="rcContador" style="color:#666;font-size:0.9em;margin-bottom:15px;"></div>
@@ -9658,13 +9666,14 @@
                     setTimeout(rutasInitMapa, 520);
                 }
             } else if (tabName === 'recursos') {
-                // Si estamos en github.io, avisar que el servidor no puede conectar
-                if (window.location.protocol === 'https:' && window.location.hostname !== 'localhost') {
-                    const warn = document.getElementById('rcMixedContentWarn');
-                    if (warn) warn.style.display = 'block';
-                }
+                // Pre-fill server config inputs from localStorage
+                const urlIn = document.getElementById('rcServerUrlInput');
+                const tokIn = document.getElementById('rcServerTokenInput');
+                if (urlIn) urlIn.value = localStorage.getItem('toServerUrl') || '';
+                if (tokIn) tokIn.value = localStorage.getItem('server_token') || '';
                 rcCheckServer();
                 rcRender();
+                rcLoadFromGitHub();
             } else if (tabName === 'objetivos') {
                 populateGoalPatientSelect();
             } else if (tabName === 'sesiones') {
@@ -18488,6 +18497,48 @@
             alert(`✅ ${rcPendingFiles.length === 0 ? 'Recursos' : rcPendingFiles.length + ' recurso(s)'} guardados correctamente.`);
         }
 
+        // ── GitHub sync for exercise metadata ────────────────────────
+        async function rcSyncMetaToGitHub() {
+            const ghToken = localStorage.getItem('gh_token') || localStorage.getItem('githubToken') || '';
+            if (!ghToken) { alert('Configura primero GitHub Sync en la sección de Seguridad.'); return; }
+            const todos = await rcGetAll();
+            const payload = todos.map(r => ({ id:r.id, titulo:r.titulo, tipo:r.tipo, subcategoria:r.subcategoria, etiquetas:r.etiquetas||[], notas:r.notas||'', mime:r.mime||'', nombre:r.nombre||'', fecha:r.fecha, github_url:r.github_url||null }));
+            const path = 'ejercicios/index.json';
+            const apiUrl = `https://api.github.com/repos/javii998/terapia-recursos/contents/${path}`;
+            let sha = null;
+            try {
+                const existing = await fetch(apiUrl, { headers: { 'Authorization': 'token ' + ghToken } });
+                if (existing.ok) { const j = await existing.json(); sha = j.sha; }
+            } catch(e) {}
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+            const body = { message: 'Sync ejercicios biblioteca ' + new Date().toISOString().slice(0,10), content, branch: 'main' };
+            if (sha) body.sha = sha;
+            const res = await fetch(apiUrl, { method: 'PUT', headers: { 'Authorization': 'token ' + ghToken, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            if (res.ok) { showNotification(`Biblioteca sincronizada: ${payload.length} recurso(s) en la nube ☁️`, 'success'); }
+            else { const err = await res.json().catch(()=>({})); alert('Error al sincronizar: ' + (err.message || res.status)); }
+        }
+
+        async function rcLoadFromGitHub() {
+            try {
+                const r = await fetch('https://raw.githubusercontent.com/javii998/terapia-recursos/main/ejercicios/index.json?t=' + Date.now(), { signal: AbortSignal.timeout(8000) });
+                if (!r.ok) return;
+                const remoteItems = await r.json();
+                if (!Array.isArray(remoteItems)) return;
+                const local = await rcGetAll();
+                const localMap = new Map(local.map(x => [x.id, x]));
+                let added = 0;
+                for (const item of remoteItems) {
+                    const existing = localMap.get(item.id);
+                    const remoteNewer = !existing || (item.fecha || '') > (existing.fecha || '');
+                    if (remoteNewer) {
+                        await rcSaveMeta(item);
+                        added++;
+                    }
+                }
+                if (added > 0) rcRender();
+            } catch(e) { /* silent — offline or no index yet */ }
+        }
+
         // ── Render ───────────────────────────────────────────────────
         async function rcRender() {
             const lista    = document.getElementById('rcLista');
@@ -19062,7 +19113,17 @@
             badge.title = state === 'ok' ? 'Clic: sincronizar ahora | Token guardado en este dispositivo' : 'Clic para configurar sincronización';
         }
 
-                const RC_SERVER = "http://localhost:7734";
+        // Server URL and token — configurable for Pi/cloud deployment
+        function getRC_SERVER() {
+            return (localStorage.getItem('toServerUrl') || 'http://localhost:7734').replace(/\/$/, '');
+        }
+        function _svrHeaders(withContentType) {
+            const t = localStorage.getItem('server_token') || '';
+            const h = withContentType ? { 'Content-Type': 'application/json' } : {};
+            if (t) h['X-Server-Token'] = t;
+            return h;
+        }
+
         let rcServerActive = false;
         let dbSyncEnabled  = false;   // true cuando el servidor está disponible
 
@@ -19071,7 +19132,7 @@
         const DB = {
             /** Carga toda una tabla desde la BD del servidor */
             async load(table) {
-                const r = await fetch(`${RC_SERVER}/db/${table}`, { signal: AbortSignal.timeout(4000) });
+                const r = await fetch(`${getRC_SERVER()}/db/${table}`, { headers: _svrHeaders(false), signal: AbortSignal.timeout(4000) });
                 if (!r.ok) throw new Error(`load ${table} failed`);
                 return r.json();
             },
@@ -19080,9 +19141,9 @@
             async save(table, obj) {
                 if (!dbSyncEnabled) return;
                 try {
-                    await fetch(`${RC_SERVER}/db/${table}`, {
+                    await fetch(`${getRC_SERVER()}/db/${table}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: _svrHeaders(true),
                         body: JSON.stringify(obj),
                         signal: AbortSignal.timeout(3000)
                     });
@@ -19093,8 +19154,9 @@
             async remove(table, id) {
                 if (!dbSyncEnabled) return;
                 try {
-                    await fetch(`${RC_SERVER}/db/${table}/${id}`, {
+                    await fetch(`${getRC_SERVER()}/db/${table}/${id}`, {
                         method: 'DELETE',
+                        headers: _svrHeaders(false),
                         signal: AbortSignal.timeout(3000)
                     });
                 } catch(e) { console.warn('DB.remove falló:', e.message); }
@@ -19104,9 +19166,9 @@
             async bulkSync(table, items) {
                 if (!items || items.length === 0) return;
                 try {
-                    await fetch(`${RC_SERVER}/db/${table}/bulk`, {
+                    await fetch(`${getRC_SERVER()}/db/${table}/bulk`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: _svrHeaders(true),
                         body: JSON.stringify({ items }),
                         signal: AbortSignal.timeout(8000)
                     });
@@ -19184,23 +19246,24 @@
             const badge  = document.getElementById('rcServerBadge');
             const offDiv = document.getElementById('rcServerOff');
             if (!badge) return;
+            const svr = getRC_SERVER();
             try {
-                const r = await fetch(RC_SERVER + "/ping", { signal: AbortSignal.timeout(2000) });
+                const r = await fetch(svr + "/ping", { headers: _svrHeaders(false), signal: AbortSignal.timeout(3000) });
                 if (!r.ok) throw new Error("ping_failed");
                 const j = await r.json();
                 if (j && j.ok === true) {
                     const wasInactive = !rcServerActive;
                     rcServerActive = true;
-                    badge.textContent      = "✅ Servidor + BD activos";
+                    const isRemote = !svr.includes('localhost') && !svr.includes('127.0.0.1');
+                    badge.textContent      = isRemote ? "✅ Servidor remoto (Pi) activo" : "✅ Servidor + BD activos";
                     badge.style.background = "#d4edda";
                     badge.style.color      = "#155724";
                     if (offDiv) offDiv.style.display = "none";
                     try {
-                        const vr = await fetch(RC_SERVER + "/version", { signal: AbortSignal.timeout(3000) });
+                        const vr = await fetch(svr + "/version", { headers: _svrHeaders(false), signal: AbortSignal.timeout(3000) });
                         const vj = await vr.json();
                         badge.title = `yt-dlp: ${vj.ytdlp||'?'} | gallery-dl: ${vj.gallery||'?'}`;
                     } catch {}
-                    // Activar BD solo la primera vez (o si el servidor se reconectó)
                     if (wasInactive || !dbSyncEnabled) {
                         await dbActivate();
                     }
@@ -19233,9 +19296,9 @@
             </div>`;
 
             try {
-                const resp = await fetch(RC_SERVER + "/descargar", {
+                const resp = await fetch(getRC_SERVER() + "/descargar", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: _svrHeaders(true),
                     body: JSON.stringify({ url })
                 });
 
@@ -27397,32 +27460,49 @@ render();
                     if (!seen.has(e.id)) { seen.add(e.id); entries.push(e); }
                 }
             }
-            if (entries.length === 0) return '';
+            if (entries.length === 0) return { block: '', refs: [] };
 
-            // Fetch full abstracts for up to 12 articles
+            // Fetch full abstracts + metadata for up to 12 articles
             const batch = entries.slice(0, 12);
-            const fr = await fetch(
-                `${BASE}efetch.fcgi?db=pubmed&id=${batch.map(e=>e.id).join(',')}&rettype=abstract&retmode=text`,
-                { signal: AbortSignal.timeout(15000) }
-            );
-            if (!fr.ok) return '';
-            const raw = await fr.text();
+            const pmids = batch.map(e => e.id);
 
-            // Parse individual articles (PubMed separates them with "\n\n<n>. ")
+            // Fetch both abstract text AND esummary (for title/authors/year) in parallel
+            const [frText, frSum] = await Promise.all([
+                fetch(`${BASE}efetch.fcgi?db=pubmed&id=${pmids.join(',')}&rettype=abstract&retmode=text`, { signal: AbortSignal.timeout(15000) }),
+                fetch(`${BASE}esummary.fcgi?db=pubmed&id=${pmids.join(',')}&retmode=json`, { signal: AbortSignal.timeout(10000) })
+            ]);
+            if (!frText.ok) return { block: '', refs: [] };
+            const raw = await frText.text();
+            const sumData = frSum.ok ? await frSum.json().catch(()=>({})) : {};
+
+            // Build ref metadata from esummary
+            const refs = pmids.map((pmid, i) => {
+                const s = sumData?.result?.[pmid] || {};
+                const authors = (s.authors || []).slice(0, 3).map(a => a.name).join(', ') + ((s.authors||[]).length > 3 ? ' et al.' : '');
+                const year = (s.pubdate || '').slice(0, 4);
+                const title = s.title || '';
+                const journal = s.fulljournalname || s.source || '';
+                const type = batch[i]?.type || '';
+                return { pmid, authors, year, title, journal, type, url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/` };
+            });
+
+            // Parse individual article texts
             const splitRaw = raw.split(/\n(?=\d+\. )/).map(s => s.trim()).filter(s => s.length > 80);
 
-            let block = `\nEVIDENCIA CIENTÍFICA PUBMED — ${splitRaw.length} ARTÍCULOS DE ALTA JERARQUÍA\n`;
-            block += `INSTRUCCIÓN CRÍTICA: Cada recomendación terapéutica del informe DEBE estar respaldada por al menos uno de estos artículos citado como (Autor, año). Si la evidencia disponible contradice o matiza alguna intervención, indícalo explícitamente. Indica el nivel de evidencia (Ia/Ib/IIa/IIb/III/IV) para cada recomendación.\n\n`;
+            let block = `\nEVIDENCIA CIENTÍFICA PUBMED — ${refs.length} ARTÍCULOS VERIFICADOS\n`;
+            block += `REGLAS DE CITACIÓN ESTRICTAS:\n`;
+            block += `1. SOLO puedes citar artículos de esta lista usando [N] (ej: [1], [3]).\n`;
+            block += `2. NUNCA inventes, modifiques ni supongas referencias no incluidas aquí.\n`;
+            block += `3. Cualquier afirmación sin cita en esta lista debe marcarse como (conocimiento clínico general, sin cita PubMed).\n`;
+            block += `4. Indica el nivel de evidencia (Ia/Ib/IIa/IIb/III/IV) junto a cada cita.\n\n`;
 
-            splitRaw.forEach((art, i) => {
-                const entry = batch[i];
-                const typeTag = entry ? `[${entry.type}]` : '[Artículo]';
-                const trimmed = art.replace(/\n+/g, ' ').trim();
-                // Keep up to 1000 chars per abstract — enough for key findings without overloading the model
-                const truncated = trimmed.length > 1000 ? trimmed.slice(0, 1000) + '…' : trimmed;
-                block += `[${i+1}] ${typeTag}\n${truncated}\n\n`;
+            refs.forEach((ref, i) => {
+                const artText = splitRaw[i] ? splitRaw[i].replace(/\n+/g, ' ').trim() : '';
+                const truncated = artText.length > 1000 ? artText.slice(0, 1000) + '…' : artText;
+                block += `[${i+1}] ${ref.authors} (${ref.year}). "${ref.title}". ${ref.journal}. [${ref.type}] PMID:${ref.pmid}\n`;
+                if (truncated) block += `Resumen: ${truncated}\n\n`;
             });
-            return block;
+            return { block, refs };
         }
 
         async function generarInformeIA(patientIndex) {
@@ -27524,16 +27604,19 @@ render();
                 if (stP) stP.textContent = 'Buscando evidencia en PubMed (SR, MA, ECA, guías)…';
                 try {
                     // Hard cap: if PubMed takes more than 20s, skip and proceed
-                    const pubmedEvidence = await Promise.race([
+                    const pubmedResult = await Promise.race([
                         _fetchPubMedEvidence(patient.diagnosis),
-                        new Promise(res => setTimeout(() => res(''), 20000))
+                        new Promise(res => setTimeout(() => res({ block: '', refs: [] }), 20000))
                     ]);
+                    const pubmedBlock = pubmedResult?.block || '';
+                    window._lastPubMedRefs = pubmedResult?.refs || [];
                     const stP2 = document.getElementById('geminiStatus');
-                    if (pubmedEvidence) {
-                        prompt += pubmedEvidence;
-                        const count = (pubmedEvidence.match(/^\[\d+\]/mg) || []).length;
+                    if (pubmedBlock) {
+                        prompt += pubmedBlock;
+                        const count = window._lastPubMedRefs.length;
                         if (stP2) stP2.textContent = `PubMed: ${count} artículo(s) de alta evidencia. Generando informe…`;
                     } else {
+                        window._lastPubMedRefs = [];
                         if (stP2) stP2.textContent = 'PubMed: sin resultados. Generando con conocimiento Gemini…';
                     }
                 } catch(e) {
@@ -27545,8 +27628,8 @@ render();
             prompt += `Eres un terapeuta ocupacional clínico experto en práctica basada en evidencia. Redacta un informe clínico de TO exhaustivo integrando TODOS los datos del paciente con la evidencia científica proporcionada de PubMed.
 
 REGLAS OBLIGATORIAS — INCUMPLIRLAS INVALIDA EL INFORME:
-1. EVIDENCIA: Cada recomendación de intervención DEBE citar al menos un artículo de la lista PubMed (formato: Apellido et al., año) O indicar su nivel de evidencia si proviene de tu conocimiento de entrenamiento.
-2. NIVEL DE EVIDENCIA: Incluye el nivel (Ia = meta-análisis de ECA, Ib = ECA individual, IIa = estudio controlado sin aleatorización, IIb = estudio cuasi-experimental, III = estudio descriptivo, IV = consenso de expertos/opinión) para cada recomendación principal.
+1. CITAS: Cita SOLO artículos de la lista PubMed proporcionada usando el número exacto [N] (ej: [1], [3]). NUNCA inventes, cambies ni supongas referencias que no estén en la lista. Afirmaciones sin respaldo en la lista deben marcarse como (conocimiento clínico general, sin cita PubMed).
+2. NIVEL DE EVIDENCIA: Incluye el nivel (Ia = meta-análisis de ECA, Ib = ECA individual, IIa = estudio controlado sin aleatorización, IIb = estudio cuasi-experimental, III = estudio descriptivo, IV = consenso de expertos/opinión) junto a cada cita [N].
 3. CONTRADICCIONES: Si la evidencia disponible contradice una práctica habitual, señálalo explícitamente.
 4. DATOS CLÍNICOS: Cita siempre las puntuaciones exactas de las escalas y cruza resultados entre ellas.
 5. LONGITUD: Mínimo 3-5 párrafos por sección. Párrafos clínicos completos, no bullets.
@@ -27644,7 +27727,18 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
                     }
                 }
 
-                const html = text
+                // Build clickable [N] → PubMed link replacer
+                const pubRefs = window._lastPubMedRefs || [];
+                function linkifyRefs(str) {
+                    if (!pubRefs.length) return str;
+                    return str.replace(/\[(\d+)\]/g, (match, n) => {
+                        const ref = pubRefs[parseInt(n, 10) - 1];
+                        if (!ref) return match;
+                        return `<a href="${ref.url}" target="_blank" rel="noopener" title="${ref.authors} (${ref.year}). ${ref.title}" style="color:#6366f1;font-weight:600;text-decoration:none;">[${n}]</a>`;
+                    });
+                }
+
+                const html = linkifyRefs(text)
                     .replace(/^## (.+)$/gm, '<h3 style="color:#6366f1;margin:20px 0 8px;font-size:1em;border-bottom:2px solid #e0e7ff;padding-bottom:4px;">$1</h3>')
                     .replace(/^### (.+)$/gm, '<h4 style="color:#374151;margin:12px 0 4px;">$1</h4>')
                     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -27652,6 +27746,24 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
                     .replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => `<ul style="padding-left:20px;margin:6px 0;">${m}</ul>`)
                     .replace(/\n\n/g, '</p><p style="margin:6px 0;">')
                     .replace(/\n/g, '<br>');
+
+                // Build references section with real PubMed links
+                let refsHtml = '';
+                if (pubRefs.length) {
+                    refsHtml = `<div style="margin-top:24px;border-top:2px solid #e0e7ff;padding-top:16px;">
+                        <h3 style="color:#6366f1;margin:0 0 12px;font-size:1em;">📚 REFERENCIAS PUBMED</h3>
+                        <ol style="padding-left:20px;margin:0;">
+                        ${pubRefs.map((r, i) => `
+                          <li style="margin-bottom:8px;font-size:0.85em;line-height:1.5;">
+                            <a href="${r.url}" target="_blank" rel="noopener" style="color:#6366f1;font-weight:600;">[${i+1}]</a>
+                            ${r.authors ? `<strong>${r.authors}</strong> (${r.year}).` : ''} ${r.title ? `${r.title}.` : ''}
+                            ${r.journal ? `<em>${r.journal}</em>.` : ''}
+                            <span style="background:#e0e7ff;color:#6366f1;border-radius:4px;padding:1px 5px;font-size:0.8em;margin-left:4px;">${r.type}</span>
+                            <a href="${r.url}" target="_blank" rel="noopener" style="color:#9ca3af;font-size:0.8em;margin-left:6px;">PMID: ${r.pmid} ↗</a>
+                          </li>`).join('')}
+                        </ol>
+                      </div>`;
+                }
 
                 window._lastReportPatientIndex = patientIndex;
                 window._lastReportText = text;
@@ -27678,6 +27790,7 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
                     </div>
                     <div id="aiReportText" style="font-size:0.92em;line-height:1.6;max-height:60vh;overflow-y:auto;padding-right:4px;">
                         <p style="margin:6px 0;">${html}</p>
+                        ${refsHtml}
                     </div>`;
             } catch(e) {
                 document.getElementById('modalContent').innerHTML = `
@@ -27788,6 +27901,62 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
             document.getElementById('modal').classList.add('active');
         }
 
+        async function _getRelevantExercises(selectedTopics) {
+            try {
+                const todos = await rcGetAll();
+                const exercises = todos.filter(r => r.tipo === 'ejercicio');
+                if (exercises.length === 0) return '';
+                const topicLower = selectedTopics.map(t => t.toLowerCase());
+                const matched = exercises.filter(ex => {
+                    const sub = (ex.subcategoria || '').toLowerCase();
+                    const tags = (ex.etiquetas || []).map(t => t.toLowerCase());
+                    const titulo = (ex.titulo || '').toLowerCase();
+                    const notas = (ex.notas || '').toLowerCase();
+                    return topicLower.some(tp => sub.includes(tp) || tags.some(t => t.includes(tp)) || titulo.includes(tp) || notas.includes(tp));
+                });
+                const list = (matched.length > 0 ? matched : exercises).slice(0, 20);
+                if (list.length === 0) return '';
+                let block = '\nBIBLIOTECA DE EJERCICIOS DEL TERAPEUTA — USA ESTOS PRIMERO:\n';
+                block += 'INSTRUCCIÓN: Cuando uses un ejercicio de esta lista, cítalo por su título exacto entre comillas. Adapta las instrucciones al paciente pero mantén el nombre original.\n\n';
+                list.forEach((ex, i) => {
+                    block += `[EJ${i+1}] "${ex.titulo}" — Área: ${ex.subcategoria}`;
+                    if (ex.etiquetas?.length) block += ` | Tags: ${ex.etiquetas.join(', ')}`;
+                    if (ex.notas) block += ` | Descripción: ${ex.notas}`;
+                    block += '\n';
+                });
+                return block;
+            } catch(e) { return ''; }
+        }
+
+        function showPautaPaciente() {
+            const text = window._lastPautaText || '';
+            const topic = window._lastPautaTopic || '';
+            const patient = patients[window._lastPautaPatientIndex];
+            if (!text) return;
+            const html = text
+                .replace(/^## (.+)$/gm, '<h2 style="color:#059669;margin:24px 0 10px;font-size:1.3em;border-bottom:3px solid #d1fae5;padding-bottom:6px;">$1</h2>')
+                .replace(/^### (.+)$/gm, '<h3 style="color:#065f46;margin:16px 0 8px;font-size:1.1em;">$1</h3>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^\- (.+)$/gm, '<li style="margin-bottom:8px;font-size:1.05em;">$1</li>')
+                .replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => `<ul style="padding-left:24px;margin:8px 0;">${m}</ul>`)
+                .replace(/\n\n/g, '</p><p style="margin:10px 0;">')
+                .replace(/\n/g, '<br>');
+            const win = window.open('', '_blank');
+            if (!win) return;
+            win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pauta — ${patient?.name || ''}</title>
+            <style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:800px;margin:0 auto;padding:30px 24px;font-size:1.1em;line-height:1.7;color:#1f2937;}h1{color:#059669;border-bottom:3px solid #d1fae5;padding-bottom:12px;}@media print{body{padding:10px 20px;}}</style>
+            </head><body>
+            <h1>📋 Pauta de ejercicios — ${patient?.name || ''}</h1>
+            <p style="color:#6b7280;font-size:.9em;margin-bottom:24px;">Área: ${topic} · Fecha: ${new Date().toLocaleDateString('es-ES')}</p>
+            <p style="margin:10px 0;">${html}</p>
+            <div style="margin-top:40px;padding:16px;background:#f0fdf4;border-radius:10px;font-size:.9em;color:#065f46;">
+              <strong>⚠️ Recuerda:</strong> Si sientes dolor intenso, mareo o algo no va bien, para el ejercicio y contacta a tu terapeuta ocupacional.
+            </div>
+            <script>window.print();<\/script>
+            </body></html>`);
+            win.document.close();
+        }
+
         async function _ejecutarPautaIA(patientIndex) {
             const patient = patients[patientIndex];
             if (!patient) return;
@@ -27831,22 +28000,80 @@ DIAGNÓSTICO: ${patient.diagnosis || 'No especificado'}
                 }));
             }
 
+            // Load relevant exercises from library
+            const exerciseLib = await _getRelevantExercises(selected);
+            if (exerciseLib) prompt += exerciseLib;
+
+            // Lightweight PubMed for pautas (1 search, 6 articles, 10s)
+            if (patient.diagnosis) {
+                try {
+                    const pautaPubmed = await Promise.race([
+                        (async () => {
+                            const diagEn = patient.diagnosis
+                                .replace(/lesión medular/gi,'spinal cord injury')
+                                .replace(/accidente cerebrovascular|ictus/gi,'stroke')
+                                .replace(/parkinson/gi,'Parkinson disease')
+                                .replace(/alzheimer/gi,'Alzheimer disease')
+                                .replace(/parálisis cerebral/gi,'cerebral palsy')
+                                .replace(/esclerosis múltiple/gi,'multiple sclerosis')
+                                .replace(/traumatismo craneoencefálico/gi,'traumatic brain injury');
+                            const q = encodeURIComponent(`"occupational therapy" "${diagEn}" exercises rehabilitation[Title/Abstract]`);
+                            const r = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${q}&retmax=6&sort=relevance&retmode=json`, { signal: AbortSignal.timeout(8000) });
+                            if (!r.ok) return '';
+                            const data = await r.json();
+                            const pmids = (data?.esearchresult?.idlist || []).slice(0, 6);
+                            if (pmids.length === 0) return '';
+                            const fr = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${pmids.join(',')}&rettype=abstract&retmode=text`, { signal: AbortSignal.timeout(8000) });
+                            if (!fr.ok) return '';
+                            const raw = await fr.text();
+                            const arts = raw.split(/\n(?=\d+\. )/).map(s => s.trim()).filter(s => s.length > 60).slice(0, 6);
+                            if (arts.length === 0) return '';
+                            let blk = '\nEVIDENCIA PUBMED PARA EJERCICIOS:\n';
+                            arts.forEach((a, i) => { blk += `[P${i+1}] ${a.replace(/\n+/g,' ').slice(0, 500)}\n\n`; });
+                            return blk;
+                        })(),
+                        new Promise(res => setTimeout(() => res(''), 10000))
+                    ]);
+                    if (pautaPubmed) prompt += pautaPubmed;
+                } catch(e) {}
+            }
+
+            // Contraindications from interview
+            if (patient.interviewData) {
+                const iv = patient.interviewData;
+                const contraFields = ['dolor','espasticidad','precauciones','contraindicaciones','antecedentes','alergias','medicacion'];
+                const contraLines = contraFields.map(f => iv[f] ? `${f}: ${iv[f]}` : null).filter(Boolean);
+                if (contraLines.length > 0) {
+                    prompt += `\nCONTRAINDICACIONES Y PRECAUCIONES DEL PACIENTE (OBLIGATORIO RESPETAR):\n`;
+                    prompt += contraLines.join('\n') + '\n';
+                    prompt += 'REGLA: NUNCA recomiendas ejercicios que contradigan las contraindicaciones o precauciones listadas arriba.\n';
+                }
+            }
+
             prompt += `
 ## PAUTA: ${topicLabel.toUpperCase()} — ${patient.name}
 
-### 🏠 EJERCICIOS / ACTIVIDADES
-5-8 ejercicios o actividades específicos para el tema seleccionado. Para cada uno: nombre, descripción paso a paso, repeticiones/frecuencia, sensación normal y cuándo parar.
+IMPORTANTE: Si hay ejercicios en la biblioteca del terapeuta, úsalos citándolos por su nombre entre comillas. Adapta las instrucciones pero mantén el nombre original.
+
+### 🟢 NIVEL BÁSICO (semanas 1-2)
+3-4 ejercicios de baja intensidad para comenzar. Para cada uno: nombre exacto (si es de la biblioteca, entre comillas), descripción paso a paso, repeticiones/frecuencia, sensación normal y cuándo parar.
+
+### 🟡 NIVEL INTERMEDIO (semanas 3-6)
+3-4 ejercicios de dificultad media. Versión progresada de los básicos o nuevos ejercicios. Misma estructura.
+
+### 🔴 NIVEL AVANZADO (semanas 7+)
+3-4 ejercicios de mayor exigencia funcional. Solo cuando el paciente domina el nivel intermedio.
 
 ### ⚠️ PRECAUCIONES
-Lo que NO debe hacer y señales de alarma específicas para este tema.
+Lo que NO debe hacer y señales de alarma específicas para este tema y diagnóstico.
 
 ### 💡 CONSEJOS PRÁCTICOS
-Trucos del día a día relacionados con el tema elegido.
+Trucos del día a día. Adaptaciones del entorno. Estrategias para el cuidador.
 
 ### 🛑 CUÁNDO CONTACTAR AL TERAPEUTA
-Situaciones concretas en este tema que requieren contacto urgente.
+Situaciones concretas que requieren contacto urgente.
 
-Lenguaje simple, amable. El objetivo es autonomía del paciente en casa.`;
+Lenguaje simple, amable y motivador. Pensado para que el paciente lo pueda leer solo. El objetivo es autonomía en casa.`;
 
             const stored = localStorage.getItem('gemini_model') || '';
             const startModel = (stored && !_geminiIsDeprecated(stored)) ? stored : _GEMINI_PREFERRED[0];
@@ -27874,6 +28101,10 @@ Lenguaje simple, amable. El objetivo es autonomía del paciente en casa.`;
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!text) throw new Error('Sin respuesta del modelo.');
 
+                window._lastPautaPatientIndex = patientIndex;
+                window._lastPautaText = text;
+                window._lastPautaTopic = topicLabel;
+
                 const html = text
                     .replace(/^## (.+)$/gm, '<h2 style="color:#059669;margin:18px 0 8px;">$1</h2>')
                     .replace(/^### (.+)$/gm, '<h3 style="color:#374151;margin:14px 0 6px;border-left:4px solid #10b981;padding-left:8px;font-size:0.95em;">$1</h3>')
@@ -27890,7 +28121,7 @@ Lenguaje simple, amable. El objetivo es autonomía del paciente en casa.`;
                         </div>
                         <div style="display:flex;gap:6px;flex-wrap:wrap;">
                             <button onclick="saveAIDocument(${patientIndex},'pauta',\`${text.replace(/`/g,"'")}\`,'${topicLabel.replace(/'/g,'')}');this.textContent='✅ Guardada';this.disabled=true;" style="padding:5px 12px;border-radius:7px;border:none;background:linear-gradient(135deg,#10b981,#059669);color:white;font-size:0.82em;cursor:pointer;">💾 Guardar</button>
-                            <button onclick="window.print()" style="padding:5px 12px;border-radius:7px;border:none;background:#374151;color:white;font-size:0.82em;cursor:pointer;">🖨️ Imprimir</button>
+                            <button onclick="showPautaPaciente()" style="padding:5px 12px;border-radius:7px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;font-size:0.82em;cursor:pointer;font-weight:600;">🖨️ Versión paciente</button>
                             <button onclick="
                                 navigator.clipboard.writeText(document.getElementById('pautaText').innerText)
                                 .then(()=>{this.textContent='✅ Copiado';setTimeout(()=>this.textContent='📄 Copiar',2000)})
