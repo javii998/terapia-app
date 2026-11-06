@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-06-v60-remote-server';
+            const BUILD_VERSION = '2026-11-06-v61-auto-pi-url';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -88,7 +88,6 @@
 
             // LISTA BLANCA: cualquier clave que empiece por estos prefijos
             // es dato clínico y NUNCA se borra al actualizar versión.
-            // Si añades nuevas claves en futuras versiones, añade su prefijo aquí.
             var DATA_PREFIXES = [
                 'paciente', 'patient',
                 'evaluacion', 'evaluation',
@@ -102,6 +101,9 @@
                 'darkMode',
                 'tareas',
                 'gestor-rutas',
+                'toServerUrl', 'server_token',   // Pi server config — persist across updates
+                'gemini', 'gh_token', 'githubToken', 'gh_sync', 'gh_',
+                'ai_documents',
             ];
 
             function esDatoClinico(key) {
@@ -148,6 +150,24 @@
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
+
+            // Auto-fetch Pi server URL from terapia-recursos/servidor.json
+            // Runs silently on every load — keeps the app connected even after Pi reboots
+            (function() {
+                var SERVIDOR_JSON = 'https://raw.githubusercontent.com/javii998/terapia-recursos/main/servidor.json?t=' + Date.now();
+                fetch(SERVIDOR_JSON, { signal: AbortSignal.timeout(8000) })
+                    .then(function(r) { return r.ok ? r.json() : null; })
+                    .then(function(data) {
+                        if (!data || !data.url) return;
+                        var current = localStorage.getItem('toServerUrl') || '';
+                        if (current !== data.url) {
+                            localStorage.setItem('toServerUrl', data.url);
+                            console.log('[INIT] Pi URL actualizada:', data.url);
+                        }
+                        if (data.token) localStorage.setItem('server_token', data.token);
+                    })
+                    .catch(function() {});  // silent — offline or repo not found
+            })();
         })();
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
