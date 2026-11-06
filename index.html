@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-06-v61-auto-pi-url';
+            const BUILD_VERSION = '2026-11-06-v62-instagram-cookies';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -2061,6 +2061,11 @@
                     <div id="rcServerOff" style="display:none;background:#fff3cd;border-left:4px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:.9em;">
                         ⚠️ Servidor no disponible. Si tienes una Raspberry Pi, introduce su URL de Cloudflare arriba. Si usas el PC, abre <code>iniciar.bat</code>.
                         <button onclick="rcCheckServer()" style="margin-left:12px;padding:4px 12px;border-radius:6px;border:none;background:#667eea;color:white;cursor:pointer;font-size:.85em;">Reintentar</button>
+                    </div>
+                    <div id="rcCookiesBar" style="display:none;background:#fef9e7;border-left:4px solid #f39c12;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.85em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <span>🍪 <strong>Cookies Instagram:</strong> <span id="rcCookiesStatus">no configuradas</span></span>
+                        <button onclick="rcUploadCookies()" style="padding:4px 12px;border-radius:6px;border:none;background:#f39c12;color:white;cursor:pointer;font-size:.82em;">📋 Pegar cookies</button>
+                        <button onclick="rcCheckCookies()" style="padding:4px 10px;border-radius:6px;border:1px solid #aaa;background:white;color:#555;cursor:pointer;font-size:.82em;">🔄</button>
                     </div>
                     <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;">
                         <input type="text" id="rcUrlInput" placeholder="Pega aquí la URL del reel, post, vídeo o PDF…"
@@ -19287,6 +19292,7 @@
                     if (wasInactive || !dbSyncEnabled) {
                         await dbActivate();
                     }
+                    rcCheckCookies();
                     return;
                 }
             } catch {}
@@ -19296,6 +19302,62 @@
             badge.style.background = "#f8d7da";
             badge.style.color      = "#721c24";
             if (offDiv) offDiv.style.display = "block";
+        }
+
+        async function rcCheckCookies() {
+            const bar = document.getElementById('rcCookiesBar');
+            const st  = document.getElementById('rcCookiesStatus');
+            if (!bar || !st) return;
+            const svr = getRC_SERVER();
+            try {
+                const r = await fetch(svr + "/cookies", { headers: _svrHeaders(false), signal: AbortSignal.timeout(4000) });
+                const j = await r.json();
+                bar.style.display = 'flex';
+                if (j.cookies) {
+                    st.textContent = '✅ configuradas';
+                    st.style.color = '#155724';
+                    bar.style.borderLeftColor = '#27ae60';
+                    bar.style.background = '#eafaf1';
+                } else {
+                    st.textContent = '⚠️ no configuradas — Instagram puede fallar';
+                    st.style.color = '#856404';
+                    bar.style.borderLeftColor = '#f39c12';
+                    bar.style.background = '#fef9e7';
+                }
+            } catch { bar.style.display = 'none'; }
+        }
+
+        async function rcUploadCookies() {
+            const svr = getRC_SERVER();
+            const msg = `Para descargar desde Instagram necesitas exportar tus cookies.\n\n` +
+                `1. Instala la extensión "Get cookies.txt LOCALLY" en Chrome/Edge\n` +
+                `2. Abre instagram.com (con tu sesión iniciada)\n` +
+                `3. Haz clic en la extensión → Export → "Cookies for current tab"\n` +
+                `4. Abre el archivo .txt, selecciona todo (Ctrl+A) y cópialo\n` +
+                `5. Pulsa OK y pégalo en el cuadro que aparece`;
+            alert(msg);
+            const content = prompt('Pega aquí el contenido del archivo cookies.txt de Instagram:');
+            if (!content || !content.trim()) return;
+            if (!content.includes('instagram.com')) {
+                alert('Eso no parecen cookies de Instagram. Asegúrate de exportar desde instagram.com.');
+                return;
+            }
+            try {
+                const r = await fetch(svr + "/cookies", {
+                    method: 'POST',
+                    headers: _svrHeaders(true),
+                    body: JSON.stringify({ content: content.trim() })
+                });
+                const j = await r.json();
+                if (j.ok) {
+                    alert('✅ Cookies guardadas en la Pi. Los próximos downloads de Instagram funcionarán.');
+                    rcCheckCookies();
+                } else {
+                    alert('Error al guardar: ' + (j.error || 'desconocido'));
+                }
+            } catch(e) {
+                alert('Error de conexión: ' + e.message);
+            }
         }
 
         async function rcIniciarDescarga() {
