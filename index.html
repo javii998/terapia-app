@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-10-v70-gh-sync-error-diagnosis';
+            const BUILD_VERSION = '2026-11-10-v71-calendario-mejorado';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -969,13 +969,17 @@
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            min-height: 600px;
         }
 
         #calendar {
             max-width: 100%;
-            height: 650px;
-            min-height: 600px;
+            height: calc(100vh - 320px);
+            min-height: 550px;
+        }
+
+        .cal-money-chip {
+            display:inline-flex;align-items:center;gap:5px;
+            padding:6px 14px;border-radius:20px;font-size:.82em;font-weight:600;cursor:default;
         }
 
         .fc-event {
@@ -1799,6 +1803,8 @@
                     <h3 style="margin:0;">📅 Calendario de Sesiones</h3>
                     <button class="btn btn-secondary" style="width:auto;padding:8px 16px;font-size:0.9em;" onclick="mostrarAsistenciasConfirmadas()">📋 Ver Asistencias</button>
                 </div>
+                <!-- Money summary bar — populated by calUpdateMoneyBar() -->
+                <div id="calMoneyBar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
                 <div class="calendar-container">
                     <div id="calendar"></div>
                 </div>
@@ -17832,9 +17838,10 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
             if (calendar) { calendar.updateSize(); calendar.refetchEvents(); return; }
 
             calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
+                initialView: 'timeGridWeek',
                 locale: 'es',
-                height: 650,
+                height: 'auto',
+                scrollTime: (function(){ const h = new Date().getHours(); return String(Math.max(h-1,7)).padStart(2,'0')+':00:00'; }()),
                 slotMinTime: '07:00:00',
                 slotMaxTime: '21:00:00',
                 slotDuration: '00:30:00',
@@ -17850,13 +17857,17 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
                 },
                 buttonText: {
                     today: 'Hoy',
                     month: 'Mes',
                     week: 'Semana',
-                    day: 'Día'
+                    day: 'Día',
+                    listWeek: 'Lista'
+                },
+                datesSet: function(info) {
+                    calUpdateMoneyBar(info.start, info.end, info.view.type);
                 },
                 events: function(fetchInfo, successCallback, failureCallback) {
                   try {
@@ -17971,6 +17982,7 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
                                     title: (pagado ? '✅ ' : '💰 ') + c.patientName + ': ' + parseFloat(c.importe).toFixed(0) + '€/mes',
                                     start: fStr,
                                     allDay: true,
+                                    editable: false,
                                     backgroundColor: color,
                                     borderColor: color,
                                     extendedProps: { contrato: c, tipo: 'contrato' }
@@ -18082,6 +18094,66 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
             });
 
             calendar.render();
+        }
+
+        function calUpdateMoneyBar(start, end, viewType) {
+            const bar = document.getElementById('calMoneyBar');
+            if (!bar) return;
+
+            const isMonth = viewType === 'dayGridMonth';
+            const pad = n => String(n).padStart(2,'0');
+            const toDateStr = d => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+
+            // Label for the period
+            const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+            const label = isMonth
+                ? monthNames[start.getMonth()] + ' ' + start.getFullYear()
+                : (viewType === 'listWeek' || viewType === 'timeGridWeek')
+                    ? 'Semana del ' + start.getDate() + '/' + (start.getMonth()+1)
+                    : toDateStr(start);
+
+            // Sessions in range × tariff
+            let sesTotal = 0, sesCount = 0;
+            sessions.forEach(s => {
+                const d = s.date ? s.date.substring(0,10) : null;
+                if (!d) return;
+                if (d < toDateStr(start) || d >= toDateStr(end)) return;
+                sesCount++;
+                const precio = s.precio != null ? parseFloat(s.precio) :
+                    (typeof ingTarifas !== 'undefined' && ingTarifas[s.patientId] != null ? parseFloat(ingTarifas[s.patientId]) : 0);
+                sesTotal += isNaN(precio) ? 0 : precio;
+            });
+
+            // Contracts due in range
+            let contratosPendiente = 0, contratosCobrado = 0;
+            if (typeof ingContratos !== 'undefined') {
+                ingContratos.filter(c => c.activo).forEach(c => {
+                    // Find months in range
+                    for (let d = new Date(start.getFullYear(), start.getMonth(), 1); d < end; d.setMonth(d.getMonth()+1)) {
+                        const mes = d.getFullYear() + '-' + pad(d.getMonth()+1);
+                        const dia = c.diaCobro ? parseInt(c.diaCobro) : 1;
+                        const fechaCobro = new Date(d.getFullYear(), d.getMonth(), dia);
+                        if (fechaCobro < start || fechaCobro >= end) continue;
+                        const pagado = c.pagos && c.pagos.some(p => p.mes === mes && p.pagado);
+                        const importe = parseFloat(c.importe) || 0;
+                        if (pagado) contratosCobrado += importe;
+                        else contratosPendiente += importe;
+                    }
+                });
+            }
+
+            const chips = [];
+            chips.push({ icon:'📅', label: label + ': ' + sesCount + ' ses.', value: sesTotal > 0 ? sesTotal.toFixed(0) + '€' : '—', bg:'#e0e7ff', color:'#4338ca' });
+            if (contratosCobrado > 0) chips.push({ icon:'✅', label:'Cobrado', value: contratosCobrado.toFixed(0) + '€', bg:'#d1fae5', color:'#065f46' });
+            if (contratosPendiente > 0) chips.push({ icon:'⏳', label:'Pendiente', value: contratosPendiente.toFixed(0) + '€', bg:'#fef3c7', color:'#92400e' });
+            const totalVista = sesTotal + contratosCobrado;
+            if (totalVista > 0 && (contratosCobrado > 0 || contratosPendiente > 0)) {
+                chips.push({ icon:'💰', label:'Total', value: totalVista.toFixed(0) + '€', bg:'#f3e8ff', color:'#6d28d9' });
+            }
+
+            bar.innerHTML = chips.map(c =>
+                `<span class="cal-money-chip" style="background:${c.bg};color:${c.color};">${c.icon} <span>${c.label}</span> <strong>${c.value}</strong></span>`
+            ).join('');
         }
 
         function showQuickSessionForm(date = null, time = null, duration = 45) {
@@ -18273,28 +18345,20 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
         }
 
         function updateSessionDateTime(sessionId, newStart, newEnd) {
+            if (String(sessionId).startsWith('prog_') || String(sessionId).startsWith('contrato_') || String(sessionId).startsWith('ics_')) return;
             const session = sessions.find(s => s.id === sessionId);
             if (!session) return;
 
-            // Actualizar fecha/hora
-            session.date = newStart.toISOString();
-            
-            // Actualizar duración si cambió
-            if (newEnd && newStart) {
-                const durationMin = Math.round((newEnd - newStart) / 60000);
-                session.duration = durationMin;
-            }
+            // Store as local YYYY-MM-DD + HH:MM (events fn concatenates these two fields)
+            const pad = n => String(n).padStart(2, '0');
+            session.date = newStart.getFullYear() + '-' + pad(newStart.getMonth()+1) + '-' + pad(newStart.getDate());
+            session.hora = pad(newStart.getHours()) + ':' + pad(newStart.getMinutes());
+            if (newEnd) session.duration = Math.round((newEnd - newStart) / 60000);
+            session.editedAt = new Date().toISOString();
 
-            // Guardar
             localStorage.setItem('sessions', JSON.stringify(sessions));
             ghScheduleSync();
-            
-            // Mensaje de confirmación
-            const toast = document.createElement('div');
-            toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#28a745;color:white;padding:15px 25px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:10000;';
-            toast.textContent = '✓ Sesión actualizada';
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
+            showDbToast('✓ Sesión movida al ' + session.date + ' a las ' + session.hora);
         }
 
         // ===== TEMPLATES =====
