@@ -13,6 +13,7 @@ header p{font-size:0.85em;opacity:0.85;}
 .progress-wrap{background:#e0e0f8;height:6px;width:100%;}
 .progress-bar{background:#6366f1;height:6px;transition:width .3s;}
 .progress-label{text-align:center;font-size:0.8em;color:#6b7280;padding:8px 0 4px;}
+.scale-banner{background:#e0e7ff;text-align:center;padding:8px 14px;font-size:0.82em;color:#4338ca;font-weight:600;border-bottom:1px solid #c7d2fe;}
 .card{background:white;border-radius:14px;margin:12px 14px;padding:20px;box-shadow:0 2px 8px rgba(99,102,241,.1);}
 .q-num{font-size:0.75em;color:#9ca3af;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;}
 .q-domain{display:inline-block;font-size:0.72em;background:#e0e7ff;color:#6366f1;border-radius:10px;padding:2px 9px;margin-bottom:8px;font-weight:600;}
@@ -63,35 +64,61 @@ header p{font-size:0.85em;opacity:0.85;}
     return;
   }
 
-  const items = cfg.items || [];
-  if (items.length === 0) {
+  // ── Normalize: single scale OR bundle ───────────────────────────────────
+  // Bundle: { type:'bundle', scales:[{scaleId, scaleName, items},...] }
+  // Single: { scaleId, scaleName, items:[...] }
+  let scaleBlocks; // array of {scaleId, scaleName, items}
+  if (cfg.type === 'bundle' && Array.isArray(cfg.scales)) {
+    scaleBlocks = cfg.scales.filter(s => Array.isArray(s.items) && s.items.length > 0);
+  } else {
+    scaleBlocks = Array.isArray(cfg.items) && cfg.items.length > 0
+      ? [{ scaleId: cfg.scaleId, scaleName: cfg.scaleName, items: cfg.items }]
+      : [];
+  }
+
+  if (scaleBlocks.length === 0) {
     showError('Este cuestionario no tiene preguntas configuradas.');
     return;
   }
 
-  // ── Render engine ────────────────────────────────────────────────────
-  let idx = 0;
-  const answers = new Array(items.length).fill(null);
+  // ── Build flat item list with scale metadata ─────────────────────────────
+  const allItems = [];
+  scaleBlocks.forEach(block => {
+    block.items.forEach(it => allItems.push({ ...it, _scaleId: block.scaleId, _scaleName: block.scaleName }));
+  });
 
-  document.getElementById('root').innerHTML = `
-    <header>
-      <h1>📋 ${cfg.scaleName}</h1>
-      <p>Paciente: <strong>${cfg.patientName}</strong></p>
-    </header>
-    <div class="progress-wrap"><div class="progress-bar" id="pbar" style="width:0%"></div></div>
-    <div class="progress-label" id="plabel"></div>
-    <div id="app"></div>`;
+  const isBundle = scaleBlocks.length > 1;
+
+  // ── Render setup ─────────────────────────────────────────────────────────
+  let idx = 0;
+  const answers = new Array(allItems.length).fill(null);
+
+  document.getElementById('root').innerHTML =
+    '<header>' +
+      '<h1>📋 ' + (isBundle ? cfg.patientName + ' — ' + scaleBlocks.length + ' cuestionarios' : cfg.scaleName) + '</h1>' +
+      '<p>Paciente: <strong>' + cfg.patientName + '</strong></p>' +
+    '</header>' +
+    '<div class="progress-wrap"><div class="progress-bar" id="pbar" style="width:0%"></div></div>' +
+    '<div class="progress-label" id="plabel"></div>' +
+    (isBundle ? '<div class="scale-banner" id="scaleBanner"></div>' : '') +
+    '<div id="app"></div>';
 
   function render() {
-    const it  = items[idx];
-    const pct = Math.round((idx / items.length) * 100);
+    const it  = allItems[idx];
+    const pct = Math.round((idx / allItems.length) * 100);
     document.getElementById('pbar').style.width = pct + '%';
-    document.getElementById('plabel').textContent = 'Pregunta ' + (idx + 1) + ' de ' + items.length;
+    document.getElementById('plabel').textContent = 'Pregunta ' + (idx + 1) + ' de ' + allItems.length;
+
+    if (isBundle) {
+      const banner = document.getElementById('scaleBanner');
+      if (banner) banner.textContent = '📋 ' + it._scaleName;
+    }
+
     const sel = answers[idx];
-    const isLast = idx === items.length - 1;
+    const isLast = idx === allItems.length - 1;
     document.getElementById('app').innerHTML =
       '<div class="card">' +
-        '<div class="q-num">Pregunta ' + (idx + 1) + ' / ' + items.length + '</div>' +
+        '<div class="q-num">Pregunta ' + (idx + 1) + ' / ' + allItems.length + '</div>' +
         (it.description ? '<span class="q-domain">' + it.description + '</span>' : '') +
         '<div class="q-text">' + it.name.replace(/^[A-Z]{2}\d+ — /, '') + '</div>' +
         it.options.map((o, i) =>
@@ -109,28 +136,57 @@ header p{font-size:0.85em;opacity:0.85;}
   }
 
   window.pick = function(i) {
-    answers[idx] = { optionIndex: i, text: items[idx].options[i].text, points: items[idx].options[i].points };
+    answers[idx] = { optionIndex: i, text: allItems[idx].options[i].text, points: allItems[idx].options[i].points };
     render();
   };
   window.prev = function() { if (idx > 0) { idx--; render(); } };
-  window.next = function() { if (answers[idx] !== null && idx < items.length - 1) { idx++; render(); } };
+  window.next = function() { if (answers[idx] !== null && idx < allItems.length - 1) { idx++; render(); } };
 
   window.trySubmit = async function() {
     const unanswered = answers.filter(a => a === null).length;
     if (unanswered > 0 && !confirm('Hay ' + unanswered + ' pregunta(s) sin responder. ¿Enviar de todas formas?')) return;
 
+    // Build per-scale answer groups for bundle
+    let payloadScales;
+    if (isBundle) {
+      payloadScales = scaleBlocks.map(block => {
+        const blockAnswers = [];
+        let pos = 0;
+        scaleBlocks.forEach(b => {
+          if (b.scaleId === block.scaleId && b.scaleName === block.scaleName) {
+            b.items.forEach((it, i) => {
+              blockAnswers.push({
+                itemName: it.name,
+                points: answers[pos] ? answers[pos].points : 0,
+                selectedOption: answers[pos] ? answers[pos].text : 'Sin respuesta'
+              });
+              pos++;
+            });
+          } else {
+            pos += b.items.length;
+          }
+        });
+        return { scaleId: block.scaleId, scaleName: block.scaleName, answers: blockAnswers };
+      });
+    }
+
     const payload = {
       formId: cfg.formId,
       patientId: cfg.patientId,
       patientName: cfg.patientName,
-      scaleId: cfg.scaleId,
-      scaleName: cfg.scaleName,
       submittedAt: new Date().toISOString(),
-      answers: items.map((it, i) => ({
-        itemName: it.name,
-        points: answers[i] ? answers[i].points : 0,
-        selectedOption: answers[i] ? answers[i].text : 'Sin respuesta'
-      }))
+      ...(isBundle
+        ? { type: 'bundle', scales: payloadScales }
+        : {
+            scaleId: cfg.scaleId,
+            scaleName: cfg.scaleName,
+            answers: allItems.map((it, i) => ({
+              itemName: it.name,
+              points: answers[i] ? answers[i].points : 0,
+              selectedOption: answers[i] ? answers[i].text : 'Sin respuesta'
+            }))
+          }
+      )
     };
 
     document.getElementById('app').innerHTML = '<div class="screen"><div class="spinner"></div><p>Enviando respuestas…</p></div>';
@@ -141,7 +197,7 @@ header p{font-size:0.85em;opacity:0.85;}
       const r = await fetch('https://api.github.com/repos/javii998/terapia-recursos/contents/form-responses/' + fileName, {
         method: 'PUT',
         headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'Respuesta cuestionario ' + cfg.formId, content, branch: 'main' })
+        body: JSON.stringify({ message: 'Respuesta ' + cfg.formId, content, branch: 'main' })
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       document.getElementById('app').innerHTML =
