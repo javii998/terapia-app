@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-10-v66-fix-bundle-respuestas';
+            const BUILD_VERSION = '2026-11-10-v67-mejora-sugerir-y-pdf';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -10795,24 +10795,26 @@
                 return;
             }
 
-            const prompt = `Eres un experto en terapia ocupacional. Analiza esta imagen de una escala de evaluación clínica y extráela en formato JSON estructurado.
+            const prompt = `Eres un experto en terapia ocupacional. Analiza este documento de una escala de evaluación clínica y extráela en formato JSON estructurado.
 
 INSTRUCCIONES:
 - Identifica el nombre completo de la escala
-- Extrae TODOS los ítems con sus opciones de respuesta y valores numéricos
-- Extrae los baremos/interpretación si aparecen (rangos de puntuación + significado clínico)
-- Si no hay valores numéricos explícitos, asigna valores ordinales (0,1,2,3...) según el orden de las opciones
-- Responde SOLO con el JSON, sin texto adicional, sin markdown, sin explicaciones
+- Extrae ABSOLUTAMENTE TODOS los ítems de TODAS las páginas — no pares hasta haberlos extraído todos. Si la escala tiene 50, 100, 200 ítems, extráelos todos.
+- Si reconoces la escala (ej: Vineland-3, ABAS, Bayley, etc.) usa tu conocimiento para completar ítems que no se lean bien en el documento.
+- Para cada ítem incluye sus opciones de respuesta y valores numéricos exactos del documento.
+- Si no hay valores numéricos explícitos, asigna valores ordinales (0,1,2,3...) según orden de opciones.
+- Extrae los baremos/interpretación si aparecen.
+- Responde SOLO con el JSON, sin texto adicional, sin markdown.
 
 FORMATO DE RESPUESTA (JSON puro):
 {
   "name": "Nombre completo de la escala",
-  "description": "Qué evalúa esta escala, población diana, referencia si aparece",
+  "description": "Qué evalúa, población diana, referencia si aparece",
   "category": "adultos|ninos|general",
   "type": "avd|motor|cognitivo|sensitivo|mixto",
   "items": [
     {
-      "name": "Nombre del ítem o subescala",
+      "name": "Nombre o código del ítem (incluir subdominio si lo hay, ej: 'Comunicación — Recepción: Presta atención a sonidos')",
       "options": [
         { "label": "Texto de la opción", "value": 0 },
         { "label": "Texto de la opción", "value": 1 }
@@ -10820,12 +10822,11 @@ FORMATO DE RESPUESTA (JSON puro):
     }
   ],
   "baremos": [
-    { "min": 0, "max": 20, "interpretation": "Descripción clínica del rango", "category": "Etiqueta corta (ej: Independencia total)" }
+    { "min": 0, "max": 20, "interpretation": "Descripción clínica del rango", "category": "Etiqueta corta" }
   ]
 }
 
-Si no encuentras baremos en la imagen, deja el array "baremos" vacío [].
-IMPORTANTE: Si el documento tiene múltiples páginas, analiza TODAS las páginas exhaustivamente. Extrae todos los ítems de todas las páginas sin excepción.`;
+CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un ítem con opciones simplificadas que saltárselo. Si la lista es muy larga, no la cortes — sigue hasta el final.`;
 
             const stored = localStorage.getItem('gemini_model') || '';
             const startModel = (stored && !_geminiIsDeprecated(stored)) ? stored : _GEMINI_PREFERRED[0];
@@ -10847,7 +10848,7 @@ IMPORTANTE: Si el documento tiene múltiples páginas, analiza TODAS las página
                                     : { inlineData: { mimeType, data: base64data } },
                                 { text: prompt }
                             ]}],
-                            generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+                            generationConfig: { temperature: 0.1, maxOutputTokens: 65536 }
                         }),
                         signal: ctrl.signal
                     });
@@ -28484,11 +28485,19 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
             }
 
             // Get already-done scales
-            const allEvals = JSON.parse(localStorage.getItem('evaluaciones') || '[]');
+            const allEvals = JSON.parse(localStorage.getItem('evaluations') || '[]');
             const doneScales = allEvals
-                .filter(e => (e.patientId || e.pacienteId) == (patient.id || patientIndex))
-                .map(e => e.scaleName || e.nombreEscala || '').filter(Boolean);
+                .filter(e => String(e.patientId) === String(patient.id))
+                .map(e => e.scaleName || '').filter(Boolean);
             const doneText = doneScales.length ? '\nEscalas ya realizadas: ' + [...new Set(doneScales)].join(', ') : '';
+
+            // Determine rough age group from patient data
+            let ageYears = null;
+            if (patient.birthDate) {
+                const hoy = new Date(), nac = new Date(patient.birthDate);
+                ageYears = hoy.getFullYear() - nac.getFullYear() - (hoy < new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate()) ? 1 : 0);
+            } else if (patient.edad) { ageYears = parseInt(patient.edad) || null; }
+            const ageGroup = ageYears === null ? 'desconocida' : ageYears < 6 ? 'infantil (0-5 años)' : ageYears < 18 ? 'pediátrico/adolescente (' + ageYears + ' años)' : 'adulto (' + ageYears + ' años)';
 
             // In-app scale IDs for "Evaluar ahora" button
             const IN_APP_SCALES = [
@@ -28501,33 +28510,54 @@ Usa lenguaje clínico preciso, propio de un terapeuta ocupacional experto en Esp
             const customScales = JSON.parse(localStorage.getItem('customScales') || '[]');
             const customNames = customScales.map(s => s.name || s.nombre || '').filter(Boolean);
 
-            const prompt = `Eres un terapeuta ocupacional clínico experto en evaluación funcional. Analiza el perfil del paciente y recomienda las escalas de evaluación más adecuadas según la mejor evidencia disponible en terapia ocupacional.
+            const prompt = `Eres un terapeuta ocupacional clínico experto en evaluación funcional. Analiza el perfil del paciente y recomienda escalas de evaluación adecuadas según evidencia en terapia ocupacional.
 
 PERFIL DEL PACIENTE:
-${diagLines.join('\n')}${interviewText}${doneText}
+${diagLines.join('\n')}
+Grupo de edad: ${ageGroup}${interviewText}${doneText}
 
-ESCALAS DISPONIBLES EN LA APP:
-${[...IN_APP_SCALES, ...customNames].join(', ')}
+ESCALAS DISPONIBLES EN LA APP CON SUS RESTRICCIONES OBLIGATORIAS:
+- ABAS-II Escolar: conducta adaptativa, SOLO 5-21 años, contexto escolar
+- ABAS-II Infantil: conducta adaptativa, SOLO 0-5 años, pediátrico
+- FIM/FAM: independencia funcional, SOLO adultos, neurología/rehabilitación adultos
+- SCIM-III: independencia lesión medular, SOLO adultos con LM
+- NHPT: destreza manual, adultos y adolescentes
+- BOT-2 Short Form: motricidad global y fina, SOLO 4-21 años
+- Battelle: desarrollo infantil, SOLO 0-7 años
+- Beery VMI: integración visuomotora, SOLO 2-18 años, pediátrico
+- Knox: juego, SOLO 0-6 años, pediátrico
+- CAVIDACE: calidad de vida con discapacidad, SOLO 2-21 años
+- SP-2 Cuidador: perfil sensorial, SOLO 0-14 años, pediátrico
+- SP-2 Adolescentes y Adultos: perfil sensorial, SOLO 15+ años
+- Pares Craneales: exploración neurológica, SOLO adultos, presencial
+- Reflejos Primitivos: neonatal, SOLO 0-18 meses
+- Fugl-Meyer ES: extremidad superior post-ictus, SOLO adultos con ictus
+- DP-3 Cuestionario/Entrevista: perfil de desarrollo, SOLO 0-12 años
+${customNames.map(n => `- ${n}: importada (sin restricciones definidas, valorar por diagnóstico)`).join('\n')}
+
+REGLAS CRÍTICAS — INCUMPLIRLAS ES UN ERROR GRAVE:
+1. NUNCA recomiendes una escala fuera de su rango de edad. Si el paciente es adulto, NO sugieras Beery VMI, Battelle, Knox, ABAS Infantil, CAVIDACE, SP-2 Cuidador, Reflejos Primitivos, BOT-2 ni DP-3.
+2. NUNCA recomiendes SCIM-III ni Fugl-Meyer si no hay lesión medular ni ictus en el diagnóstico.
+3. NUNCA recomiendes escalas sensoriales pediátricas (SP-2 Cuidador) a adultos — usa SP-2 Adolescentes y Adultos.
+4. Si la edad es desconocida, señálalo en la justificación y no asumas que es adulto o niño.
+5. Recomienda 3-6 escalas, ordenadas por prioridad clínica, solo las realmente pertinentes.
 
 INSTRUCCIONES:
-- Recomienda entre 3 y 8 escalas ordenadas por prioridad clínica
-- Para cada escala indica: nombre, justificación clínica breve, dominio evaluado, y si hay evidencia en revistas TO (AJOT, BJOT, OTJR, Cochrane)
-- Incluye el término de búsqueda PubMed más específico para encontrar validación de esa escala en la población de este paciente
-- Si la escala está en la app, indica el campo "enApp": true
-- Si ya fue realizada, ponla al final con "yaRealizada": true
+- Para cada escala: nombre, justificación específica para ESTE diagnóstico/perfil, dominio, referencia breve en TO (AJOT, BJOT, OTJR o Cochrane), término PubMed
+- Si la escala está en la app: "enApp": true; si ya fue realizada: "yaRealizada": true
 - Responde SOLO con JSON válido, sin markdown, sin texto adicional
 
 FORMATO DE RESPUESTA:
 {
-  "perfil": "Resumen del perfil clínico en 1-2 frases",
+  "perfil": "Resumen del perfil clínico en 1-2 frases con edad, diagnóstico y área TO prioritaria",
   "escalas": [
     {
       "nombre": "Nombre de la escala",
       "acronimo": "Siglas",
       "dominio": "AVD | Motor | Cognitivo | Participación | Sensorial | Mixto",
-      "justificacion": "Por qué esta escala es adecuada para este paciente",
+      "justificacion": "Por qué esta escala es adecuada para ESTE paciente concreto",
       "evidencia": "Referencia breve (autor, año, revista) o 'Sin evidencia específica identificada'",
-      "pubmedQuery": "Término de búsqueda PubMed",
+      "pubmedQuery": "Término de búsqueda PubMed específico para esta escala + diagnóstico",
       "enApp": true,
       "yaRealizada": false
     }
