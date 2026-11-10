@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-10-v65-pdf-multipage-sugerir-escalas';
+            const BUILD_VERSION = '2026-11-10-v66-fix-bundle-respuestas';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -27672,6 +27672,24 @@ render();
         }
 
         function _importFormResponsePayload(resp, silent) {
+            // Bundle: import each scale as a separate evaluation record
+            if (resp.type === 'bundle' && Array.isArray(resp.scales) && resp.scales.length > 0) {
+                resp.scales.forEach(scale => {
+                    _importFormResponsePayload({
+                        formId: (resp.formId || '') + '_' + scale.scaleId,
+                        patientId: resp.patientId,
+                        patientName: resp.patientName,
+                        submittedAt: resp.submittedAt,
+                        scaleId: scale.scaleId,
+                        scaleName: scale.scaleName,
+                        answers: scale.answers
+                    }, true);
+                });
+                const msg = '📦 Bundle importado: ' + resp.scales.length + ' evaluaciones para ' + (resp.patientName || 'paciente');
+                if (silent) showDbToast(msg);
+                else alert('✅ ' + msg);
+                return;
+            }
             const answers = (resp.answers || []).map(a => ({
                 itemName: a.itemName,
                 points: a.points || 0,
