@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-10-v69-bundle-escalas-por-separado';
+            const BUILD_VERSION = '2026-11-10-v70-gh-sync-error-diagnosis';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -19203,24 +19203,20 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
 
             _sha: null,  // SHA del archivo actual en GitHub
 
-            /** Carga todos los datos desde GitHub */
+            /** Carga todos los datos desde GitHub. Lanza error con status HTTP para diagnóstico. */
             async load() {
-                try {
-                    const r = await fetch(this.apiBase, { headers: this.headers });
-                    if (r.status === 404) return null;  // archivo aún no existe
-                    if (!r.ok) throw new Error('GitHub load ' + r.status);
-                    const j = await r.json();
-                    this._sha = j.sha;
-                    // Decodificar base64 respetando UTF-8 (tildes, ñ, etc.)
-                    const b64 = j.content.replace(/\n/g, '');
-                    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-                    const text = new TextDecoder('utf-8').decode(bytes);
-                    const decoded = JSON.parse(text);
-                    return decoded;
-                } catch(e) {
-                    console.warn('GH.load error:', e.message);
-                    return null;
+                const r = await fetch(this.apiBase, { headers: this.headers });
+                if (r.status === 404) return null;  // archivo aún no existe — normal en primera conexión
+                if (!r.ok) {
+                    const err = { status: r.status };
+                    throw Object.assign(new Error('GitHub HTTP ' + r.status), err);
                 }
+                const j = await r.json();
+                this._sha = j.sha;
+                const b64 = j.content.replace(/\n/g, '');
+                const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+                const text = new TextDecoder('utf-8').decode(bytes);
+                return JSON.parse(text);
             },
 
             /** Guarda todos los datos en GitHub */
@@ -19389,7 +19385,7 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
             ghUpdateBadge('syncing');
 
             const TIMEOUT = '__timeout__';
-            let remote;
+            let remote, loadError = null;
             try {
                 remote = await Promise.race([
                     GH.load(),
@@ -19397,12 +19393,24 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
                 ]);
             } catch(e) {
                 remote = null;
+                loadError = e;
             }
 
             if (remote === TIMEOUT) {
-                ghUpdateBadge('ok');
-                ghSyncEnabled = true;
-                showDbToast('⚠️ GitHub no respondió. Usando datos locales.');
+                ghUpdateBadge('error');
+                showDbToast('⚠️ GitHub no respondió (timeout). Tus datos locales están intactos.');
+                return;
+            }
+
+            if (loadError) {
+                const st = loadError.status;
+                let msg;
+                if (st === 401) msg = '🔑 Token de GitHub caducado o inválido. Ve a Configuración → GitHub sync para renovarlo.';
+                else if (st === 403) msg = '🔒 El token no tiene permiso para acceder a este repositorio (necesita scope "repo").';
+                else if (st === 404) msg = '📁 Repositorio "terapia-datos" no encontrado en la cuenta javii998.';
+                else msg = '⚠️ Error GitHub (' + (st || loadError.message) + '). Tus datos locales están intactos.';
+                ghUpdateBadge('error');
+                showDbToast(msg);
                 return;
             }
 
