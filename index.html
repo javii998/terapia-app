@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-10-v67-mejora-sugerir-y-pdf';
+            const BUILD_VERSION = '2026-11-10-v68-fix-opciones-escala-importada';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -11077,6 +11077,15 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
             if (!Array.isArray(scale.items) || scale.items.length === 0) {
                 alert('No se encontraron ítems en la escala. Revisa el JSON.'); return;
             }
+
+            // Normalize options: Gemini returns {label,value} but the app uses {text,points}
+            scale.items = (scale.items || []).map(item => ({
+                ...item,
+                options: (item.options || []).map(opt => ({
+                    text: opt.text || opt.label || String(opt.value ?? ''),
+                    points: typeof opt.points === 'number' ? opt.points : (typeof opt.value === 'number' ? opt.value : 0)
+                }))
+            }));
 
             scale.id = 'img-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
             scale.type = scale.type || 'mixto';
