@@ -79,7 +79,7 @@
     <script>
         // Limpieza inicial al cargar - v5 (datos clínicos siempre persistentes)
         (function() {
-            const BUILD_VERSION = '2026-11-10-v71-calendario-mejorado';
+            const BUILD_VERSION = '2026-11-10-v72-fix-sesiones-calendario';
             const storedVersion = localStorage.getItem('app_version');
             const urlParams = new URLSearchParams(window.location.search);
             const nocache = urlParams.get('nocache');
@@ -16928,16 +16928,21 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
                 <p><strong>Paciente:</strong> ${patient.name}</p>
                 <p><strong>Número de sesión:</strong> #${nextSessionNumber}</p>
                 
-                <div class="form-group">
-                    <label>Fecha de la Sesión *</label>
-                    <input type="date" id="sessionDate" value="${new Date().toISOString().split('T')[0]}">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                <div class="form-group" style="margin:0">
+                    <label>Fecha *</label>
+                    <input type="date" id="sessionDate" value="${new Date().toISOString().split('T')[0]}" style="width:100%;padding:9px;border:2px solid #e0e0e0;border-radius:8px;font-size:1em;">
                 </div>
-                
-                <div class="form-group">
-                    <label>Duración (minutos)</label>
-                    <input type="number" id="sessionDuration" placeholder="Ej: 45" min="1">
+                <div class="form-group" style="margin:0">
+                    <label>Hora</label>
+                    <input type="time" id="sessionHora" value="" style="width:100%;padding:9px;border:2px solid #e0e0e0;border-radius:8px;font-size:1em;">
                 </div>
-                
+                <div class="form-group" style="margin:0">
+                    <label>Duración (min)</label>
+                    <input type="number" id="sessionDuration" placeholder="45" min="1" style="width:100%;padding:9px;border:2px solid #e0e0e0;border-radius:8px;font-size:1em;">
+                </div>
+                </div>
+
                 <div class="form-group">
                     <label>💰 Precio de esta sesión (€) — deja vacío para usar la tarifa del paciente</label>
                     <input type="number" id="sessionPrecio" placeholder="${ingTarifas[patient.id] != null ? 'Tarifa: '+ingTarifas[patient.id]+' €' : 'Sin tarifa definida'}" min="0" step="0.5" value="${ingTarifas[patient.id] != null ? ingTarifas[patient.id] : ''}">
@@ -16967,8 +16972,10 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
         function saveSession(sessionNumber) {
             const patientIndex = document.getElementById('sessionPatientSelect').value;
             const patient = patients[patientIndex];
-            
+
             const date = document.getElementById('sessionDate').value;
+            const horaEl = document.getElementById('sessionHora');
+            const hora = horaEl && horaEl.value ? horaEl.value : null;
             const duration = document.getElementById('sessionDuration').value;
             const activities = document.getElementById('sessionActivities').value.trim();
             const notes = document.getElementById('sessionNotes').value.trim();
@@ -16996,6 +17003,7 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
             if (existente) {
                 existente.activities = activities;
                 existente.notes = notes;
+                if (hora) existente.hora = hora;
                 existente.duration = duration ? parseInt(duration) : existente.duration;
                 existente.precio = precio !== null ? precio : existente.precio;
                 existente.relatedGoals = relatedGoals;
@@ -17011,6 +17019,7 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
                     patientName: patient.name,
                     sessionNumber,
                     date,
+                    hora,
                     duration: duration ? parseInt(duration) : null,
                     activities,
                     notes,
@@ -17026,6 +17035,7 @@ CRÍTICO: Prioriza la cantidad de ítems sobre cualquier otra cosa. Es mejor un 
             }
 
             closeModal();
+            if (calendar) calendar.refetchEvents();
             renderSessionsList();
             if (typeof ingRender === 'function') ingRender();
         }
